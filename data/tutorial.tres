@@ -67,9 +67,9 @@ story_id = "tutorial_section_6"
 [sub_resource type="Resource" id="section_7"]
 script = ExtResource("2")
 map_file = "res://levels/tutorial/sections/section_7.txt"
-hint = ""
-hint_hide_on = ""
-hint_hide_delay_ticks = 0
+hint = "골렘은 튕겨낸 탄에만 제대로 맞는다"
+hint_hide_on = "parry"
+hint_hide_delay_ticks = 180
 drain_ammo = false
 gate_rule = 0
 story_id = "tutorial_section_7"

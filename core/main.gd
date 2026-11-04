@@ -8,6 +8,7 @@ func _ready() -> void:
 	add_child(run)
 	add_child(Hud.new())
 	add_child(HintDisplay.new())
+	add_child(BossBar.new())
 	add_child(DialoguePlayer.new())
 	add_child(Crosshair.new())
 	add_child(PauseOverlay.new())

@@ -80,7 +80,8 @@ func _section_data(k: int) -> TutorialSectionData:
 
 func _physics_process(_delta: float) -> void:
 	var player := level.player
-	if player and _start_x.has(section + 1) and player.global_position.x >= _start_x[section + 1]:
+	# 순간이동·디버그 이동으로 여러 구간을 한 번에 넘어도 차례대로 모두 입장 처리
+	while player and _start_x.has(section + 1) and player.global_position.x >= _start_x[section + 1]:
 		_enter(section + 1)
 	if _hint_hide_timer >= 0:
 		_hint_hide_timer -= 1

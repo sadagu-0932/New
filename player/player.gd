@@ -27,6 +27,8 @@ var camera: Camera2D
 var stealth_ticks_left: int = 0
 ## 피격 후 무적 남은 틱
 var hurt_invuln_left: int = 0
+## 컷씬 중: 조작 불가·무적
+var cutscene_lock: bool = false
 
 var _sprite: AnimatedSprite2D
 var _hurtbox: Hurtbox
@@ -84,6 +86,12 @@ func _physics_process(_delta: float) -> void:
 	var input := PlayerInput.current
 	if state == State.DEAD:
 		velocity = Vector2.ZERO
+		return
+	if cutscene_lock:
+		velocity = Vector2.ZERO
+		if _sprite.animation != &"idle":
+			_sprite.play(&"idle")
+		_sprite.modulate = Color.WHITE
 		return
 	_update_aim(input)
 	melee.aim_dir = aim_dir
@@ -180,7 +188,7 @@ func _update_aim(input: InputFrame) -> void:
 
 ## 지금 무적인지 (회피 무적, 피격 후 무적, 디버그 무적)
 func is_invulnerable() -> bool:
-	return Debug.god_mode or dodge.is_invulnerable() or hurt_invuln_left > 0 \
+	return Debug.god_mode or cutscene_lock or dodge.is_invulnerable() or hurt_invuln_left > 0 \
 		or (skill != null and skill.grants_invulnerability())
 
 
@@ -213,6 +221,22 @@ func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
 	else:
 		hurt_invuln_left = data.hurt_invuln_ticks
 	return Hurtbox.Result.HIT
+
+
+## 컷씬 동안 조작을 막는다
+func set_cutscene_lock(value: bool) -> void:
+	cutscene_lock = value
+	velocity = Vector2.ZERO
+	melee.cancel()
+	stealth_ticks_left = 0
+
+
+## 컷씬: 쓰러짐 (사망 처리·재시작은 하지 않음)
+func cutscene_collapse() -> void:
+	state = State.DEAD
+	velocity = Vector2.ZERO
+	_sprite.modulate = Color.WHITE
+	_sprite.play(&"death")
 
 
 ## 스킬 장착 (출발 전 Tab 설정, 런 시작 시)

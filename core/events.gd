@@ -56,6 +56,17 @@ signal switch_activated(switch: Node2D)
 ## 스토리 트리거 발동 (데모에서는 비활성이라 발생하지 않음)
 signal story_triggered(story_id: String)
 
+# --- 보스 ---
+## 보스가 깨어남
+signal boss_started(boss: Node2D)
+signal boss_hp_changed(current: int, maximum: int)
+## 보스 그로기 시작
+signal boss_groggy()
+## 보스 1페이즈 격파 (타이머 정지)
+signal boss_defeated(boss: Node2D)
+## 데모 끝 (2페이즈 시작 컷씬 종료 → TODO(M7) 기록 화면)
+signal demo_finished()
+
 # --- 적 ---
 ## 적이 맞음
 signal enemy_damaged(enemy: Node2D, hit: HitInfo)

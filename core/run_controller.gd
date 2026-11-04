@@ -22,6 +22,7 @@ func _ready() -> void:
 	# 일시정지 중에도 재시작·해제 입력을 받는다
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	Events.player_died.connect(_on_player_died)
+	Events.demo_finished.connect(_on_demo_finished)
 	start_run()
 
 
@@ -79,6 +80,11 @@ func _physics_process(_delta: float) -> void:
 ## R 홀드 진행도 0~1 (TODO(M7): 화면에 작은 게이지로 표시)
 func restart_progress() -> float:
 	return float(_restart_hold) / float(maxi(Game.config.restart_hold_ticks, 1))
+
+
+## 데모 끝 (골렘 컷씬 종료). TODO(M7): 기록 화면·이니셜 입력으로 이동. 지금은 처음부터 다시
+func _on_demo_finished() -> void:
+	restart()
 
 
 func _on_player_died() -> void:

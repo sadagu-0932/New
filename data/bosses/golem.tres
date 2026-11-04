@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="GolemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://bosses/golem/golem_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/projectiles/golem_bullet.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+max_hp = 30
+move_speed = 0.0
+body_radius = 16.0
+hurtbox_radius = 20.0
+contact_damage = 1
+sight_range = 400.0
+arrive_distance = 3.0
+knockback_speed = 0.0
+knockback_ticks = 0
+sheet = "golem"
+intro_ticks = 60
+body_hits_per_damage = 5
+core_damage_mult = 1.0
+groggy_perfect_hits = 3
+groggy_chain_window_ticks = 360
+groggy_ticks = 240
+groggy_damage_mult = 3.0
+rest_ticks = 70
+projectile = ExtResource("2")
+muzzle_offset = 22.0
+ring_bullets = 12
+ring_volleys = 3
+ring_interval_ticks = 20
+ring_rotation_deg = 15.0
+fan_bullets = 5
+fan_spread_deg = 50.0
+fan_volleys = 3
+fan_interval_ticks = 40
+spiral_ticks = 150
+spiral_interval_ticks = 6
+spiral_arms = 3
+spiral_rotation_deg = 17.0
+phase2_speed_mult = 1.4
+cut_awaken_ticks = 120
+cut_special_ticks = 100
+cut_collapse_ticks = 80
+cut_fade_ticks = 60
+cut_text_ticks = 180
+cut_special_bullets = 24

@@ -1,0 +1,54 @@
+{
+  "frame_width": 48,
+  "frame_height": 48,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 2,
+      "fps": 3.0,
+      "loop": true
+    },
+    "move": {
+      "row": 1,
+      "frames": 2,
+      "fps": 3.0,
+      "loop": true
+    },
+    "attack": {
+      "row": 2,
+      "frames": 2,
+      "fps": 8.0,
+      "loop": true
+    },
+    "hurt": {
+      "row": 3,
+      "frames": 2,
+      "fps": 12.0,
+      "loop": false
+    },
+    "core_hit": {
+      "row": 4,
+      "frames": 2,
+      "fps": 12.0,
+      "loop": false
+    },
+    "groggy": {
+      "row": 5,
+      "frames": 2,
+      "fps": 3.0,
+      "loop": true
+    },
+    "awaken": {
+      "row": 6,
+      "frames": 3,
+      "fps": 6.0,
+      "loop": true
+    },
+    "special": {
+      "row": 7,
+      "frames": 2,
+      "fps": 8.0,
+      "loop": true
+    }
+  }
+}

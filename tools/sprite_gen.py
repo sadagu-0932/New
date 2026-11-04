@@ -913,6 +913,92 @@ SIGN = [
     "................",
 ]
 
+
+# ---------------------------------------------------------------------------
+# 탄막 골렘 (48x48). 가슴의 코어가 약점 (반사탄으로만 제대로 맞음)
+# ---------------------------------------------------------------------------
+def golem_frame(core: str = "cyan", eye: str = "yellow", arms_up: int = 0, bob: int = 0,
+                slump: int = 0, glow_cracks: bool = False, stars: bool = False) -> Canvas:
+    t = Canvas(48, 48)
+
+    def rect(x0, y0, x1, y1, col):
+        for y in range(y0, y1 + 1):
+            for x in range(x0, x1 + 1):
+                t.set(x, y, c(col))
+
+    def outline_rect(x0, y0, x1, y1, fill, edge="outline"):
+        rect(x0, y0, x1, y1, edge)
+        rect(x0 + 1, y0 + 1, x1 - 1, y1 - 1, fill)
+
+    oy = bob + slump
+    # 다리
+    outline_rect(13, 38, 21, 47, "stone_dark")
+    outline_rect(27, 38, 35, 47, "stone_dark")
+    # 몸통
+    outline_rect(9, 14 + oy, 39, 41, "stone")
+    rect(10, 15 + oy, 38, 17 + oy, "stone_light")
+    rect(10, 38, 38, 40, "stone_dark")
+    # 머리
+    hy = 3 + oy + slump
+    outline_rect(17, hy, 31, hy + 11, "stone")
+    rect(18, hy + 1, 30, hy + 2, "stone_light")
+    rect(19, hy + 5, 21, hy + 6, eye)
+    rect(27, hy + 5, 29, hy + 6, eye)
+    # 팔 (arms_up 만큼 들어올림)
+    ay = 16 + oy - arms_up
+    outline_rect(2, ay, 9, ay + 20, "stone")
+    outline_rect(39, ay, 46, ay + 20, "stone")
+    rect(3, ay + 1, 8, ay + 2, "stone_light")
+    rect(40, ay + 1, 45, ay + 2, "stone_light")
+    # 금
+    crack = "orange" if glow_cracks else "shadow"
+    t.line(12, 22 + oy, 16, 30 + oy, c(crack))
+    t.line(34, 20 + oy, 31, 27 + oy, c(crack))
+    t.line(20, 33, 24, 37, c(crack))
+    # 코어
+    cx, cy = 24, 25 + oy
+    for y in range(cy - 6, cy + 7):
+        for x in range(cx - 6, cx + 7):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if d <= 4.2:
+                t.set(x, y, c(core))
+            elif d <= 5.4:
+                t.set(x, y, c("outline"))
+    t.set(cx - 1, cy - 2, c("white"))
+    t.set(cx - 2, cy - 1, c("white"))
+    if stars:
+        for sx, sy in ((14, 1), (24, 0), (34, 1)):
+            t.set(sx, sy, c("yellow"))
+            t.set(sx - 1, sy + 1, c("yellow"))
+            t.set(sx + 1, sy + 1, c("yellow"))
+            t.set(sx, sy + 2, c("yellow"))
+    return t
+
+
+def build_golem() -> None:
+    outline = {c("outline")}
+    idle = [golem_frame(), golem_frame(bob=1)]
+    attack = [golem_frame(core="orange", arms_up=4), golem_frame(core="yellow", arms_up=6)]
+    hurt = [golem_frame().recolor(outline, c("white")), golem_frame()]
+    core_hit = [golem_frame(core="white"), golem_frame(core="cyan")]
+    groggy = [golem_frame(core="sky", eye="stone_dark", slump=3, stars=True),
+              golem_frame(core="sky", eye="stone_dark", slump=4, stars=True)]
+    awaken = [golem_frame(core="red", eye="red", glow_cracks=True),
+              golem_frame(core="red", eye="orange", glow_cracks=True, bob=1),
+              golem_frame(core="white", eye="red", glow_cracks=True, arms_up=3)]
+    special = [golem_frame(core="white", eye="red", glow_cracks=True, arms_up=10),
+               golem_frame(core="red", eye="white", glow_cracks=True, arms_up=12)]
+    save_sheet("golem", 48, 48, [
+        ("idle", idle, 3.0, True),
+        ("move", idle, 3.0, True),
+        ("attack", attack, 8.0, True),
+        ("hurt", hurt, 12.0, False),
+        ("core_hit", core_hit, 12.0, False),
+        ("groggy", groggy, 3.0, True),
+        ("awaken", awaken, 6.0, True),
+        ("special", special, 8.0, True),
+    ])
+
 # ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
@@ -1008,6 +1094,7 @@ def main() -> None:
     build_ui_icons()
     build_enemies()
     build_skill_icons()
+    build_golem()
     verify_palette()
     print(f"스프라이트 생성 완료: {OUT.relative_to(ROOT)}")
 

@@ -21,6 +21,7 @@ var enemies: Dictionary = {
 	"charger_weak": preload("res://data/enemies/charger_weak.tres"),
 	"shooter": preload("res://data/enemies/shooter.tres"),
 	"spreader": preload("res://data/enemies/spreader.tres"),
+	"golem": preload("res://data/bosses/golem.tres"),
 }
 ## 스킬 목록 (스킬 설정 창에 이 순서로 나온다)
 var skills: Array[SkillData] = [

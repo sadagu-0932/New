@@ -105,10 +105,8 @@ func test_sections_and_hints() -> void:
 		p.teleport(_section_start(k) + Vector2(4, 0))
 		await step(2)
 		check(level.director.section == k, "%d구간 입장" % k)
-		if k < 7:
-			check(_last_hint == _data(k).hint, "%d구간 안내 문구로 바뀜" % k)
+		check(_last_hint == _data(k).hint, "%d구간 안내 문구로 바뀜" % k)
 	check(_sections == [2, 3, 4, 5, 6, 7], "구간 입장 이벤트 순서 %s" % [_sections])
-	check(_last_hint == "", "7구간(보스)은 안내 문구 없음")
 	p.teleport(_section_start(2))
 	await step(2)
 	check(level.director.section == 7, "뒤로 가도 구간은 되돌아가지 않음")
