@@ -17,8 +17,10 @@ var lifetime: int = 60
 var kind: HitInfo.Kind = HitInfo.Kind.BULLET
 ## 완벽 패링으로 강화된 반사탄인지
 var perfect: bool = false
-## 반사된 횟수 (TODO(M8): 반사탄 재패링 연쇄 강화에 사용)
+## 반사된 횟수 (1 = 첫 반사, 2~ = 재패링 연쇄)
 var reflect_count: int = 0
+## 마지막으로 이 탄을 친 근접 휘두르기 번호
+var last_swing_id: int = -1
 var alive: bool = true
 
 var _shape := CircleShape2D.new()
@@ -81,7 +83,8 @@ func _physics_process(_delta: float) -> void:
 
 
 func _check_collisions() -> void:
-	if team == Team.ENEMY:
+	# 적 탄: 패링 / 반사탄: (숨은 테크) 재패링
+	if team == Team.ENEMY or kind == HitInfo.Kind.REFLECT:
 		for hitbox: Hitbox in _find(Layers.PLAYER_ATTACK, Hitbox):
 			if hitbox.try_parry(self):
 				return  # 반사됨: 이번 틱은 여기까지
@@ -136,6 +139,21 @@ func reflect(dir: Vector2, is_perfect: bool, parry: ParryData) -> void:
 		_set_anim(&"reflect")
 	_done.clear()
 	_update_group()
+
+
+## (숨은 테크 2) 재패링: 조준 방향으로 다시 날리며 강화. 단계가 오를수록 커지고 밝아진다
+func rechain(dir: Vector2, tech: AdvancedTechData) -> void:
+	reflect_count += 1
+	damage += tech.reparry_damage_bonus
+	velocity = dir.normalized() * velocity.length() * tech.reparry_speed_mult
+	radius += tech.reparry_radius_bonus
+	_shape.radius = radius
+	lifetime = DB.parry.reflect_lifetime_ticks
+	_done.clear()
+	_set_anim(&"reflect_perfect")
+	if _sprite:
+		_sprite.scale = Vector2.ONE * (1.0 + 0.25 * (reflect_count - 1))
+	Effect.spawn(&"perfect", global_position, 0.0, 1.0 + 0.5 * reflect_count)
 
 
 ## 없앤다 (show_effect: 맞은 자리 이펙트)

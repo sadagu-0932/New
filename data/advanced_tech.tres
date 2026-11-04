@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AdvancedTechData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/advanced_tech_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+execute_range = 20.0
+execute_damage = 10
+execute_ammo = 8
+reparry_max_chain = 3
+reparry_damage_bonus = 2
+reparry_speed_mult = 1.2
+reparry_radius_bonus = 1.0
+dash_slash_ticks = 8
+dash_slash_invuln = true
+combo_max_stage = 3
+combo_window_ticks = 300
+combo_speed_bonus = 0.12
+combo_damage_bonus = 0.25

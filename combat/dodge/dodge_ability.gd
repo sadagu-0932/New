@@ -39,6 +39,16 @@ func elapsed_ticks() -> int:
 	return 0
 
 
+## 회피 한 번의 총 이동 거리 (px). 돌진 베기 거리로 쓴다
+func total_distance() -> float:
+	return 0.0
+
+
+## 회피를 중간에 끝낸다 (돌진 베기로 이어질 때). 쿨타임은 정상 적용
+func cancel() -> void:
+	pass
+
+
 ## 이번 회피의 방향
 func direction() -> Vector2:
 	return Vector2.ZERO

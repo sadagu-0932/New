@@ -97,6 +97,10 @@ func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
 		damage = ceili(hit.damage * d.core_damage_mult)
 		_core_flash = HURT_FLASH_TICKS
 		_count_perfect(hit.perfect)
+	elif hit.kind == HitInfo.Kind.EXECUTE:
+		# (숨은 테크) 은신 처형은 코어에 직접 들어간다
+		damage = hit.damage
+		_core_flash = HURT_FLASH_TICKS
 	else:
 		_body_hits += 1
 		if _body_hits >= d.body_hits_per_damage:

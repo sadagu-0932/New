@@ -487,6 +487,7 @@ def build_effects() -> None:
         ("stealth_puff", puff, 12.0, False),
         ("hit", hit, 20.0, False),
         ("enemy_death", build_enemy_death(), 12.0, False),
+        ("combo_aura", build_combo_aura(), 10.0, True),
     ])
 
 
@@ -765,6 +766,21 @@ def build_enemies() -> None:
         ("attack", [sp_att[0], sp[1]], 10.0, True),
         ("hurt", [sp[0].recolor(outline, c("white")), sp[0]], 12.0, False),
     ])
+
+
+def build_combo_aura() -> list[Canvas]:
+    """콤보 단계 표시: 발밑을 도는 불꽃 고리 (게임에서 단계별 색·크기)."""
+    import math
+    frames = []
+    for phase in range(4):
+        cv = Canvas(16, 16)
+        for k in range(6):
+            a = math.radians(k * 60 + phase * 15)
+            x, y = round(7.5 + 6.5 * math.cos(a)), round(9.5 + 4.0 * math.sin(a))
+            cv.set(x, y, c("white"))
+            cv.set(x, y - 1, c("yellow"))
+        frames.append(cv)
+    return frames
 
 
 def build_enemy_death() -> list[Canvas]:

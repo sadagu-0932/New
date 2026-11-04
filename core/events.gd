@@ -39,6 +39,11 @@ signal stealth_changed(active: bool)
 signal player_hit(hit: HitInfo)
 ## 플레이어 사망
 signal player_died()
+## (숨은 테크) 은신 처형 / 반사탄 재패링(단계) / 돌진 베기 / 콤보 단계 변화 — UI 에 숫자·문구로 보이지 않는다
+signal executed()
+signal reparried(chain: int)
+signal dash_slashed()
+signal combo_changed(stage: int)
 ## 스킬 사용 (스킬 id)
 signal skill_used(skill_id: String)
 ## 장착 스킬이 바뀜 (출발 전 Tab 설정)

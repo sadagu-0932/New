@@ -20,11 +20,12 @@ func is_ready() -> bool:
 
 
 ## 쏘기 시도. 실제로 쐈으면 true
-func try_fire(ammo: Ammo, container: Node, origin: Vector2, dir: Vector2) -> bool:
+func try_fire(ammo: Ammo, container: Node, origin: Vector2, dir: Vector2, damage_mult: float = 1.0) -> bool:
 	if not is_ready() or container == null:
 		return false
 	if not ammo.consume():
 		return false
-	Projectile.spawn(container, Team.PLAYER, origin + dir * data.muzzle_offset, dir, data.projectile)
+	var p := Projectile.spawn(container, Team.PLAYER, origin + dir * data.muzzle_offset, dir, data.projectile)
+	p.damage = ceili(p.damage * damage_mult)
 	_cooldown = data.fire_interval_ticks
 	return true

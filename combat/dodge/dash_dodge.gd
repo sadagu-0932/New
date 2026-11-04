@@ -46,6 +46,16 @@ func tick_cooldown() -> void:
 		_cooldown_left -= 1
 
 
+func total_distance() -> float:
+	return _data.speed * _data.duration_ticks / float(Game.config.tick_rate)
+
+
+func cancel() -> void:
+	if _active:
+		_active = false
+		_cooldown_left = _data.cooldown_ticks
+
+
 func elapsed_ticks() -> int:
 	return _elapsed
 

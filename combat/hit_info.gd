@@ -2,7 +2,7 @@ class_name HitInfo
 extends RefCounted
 ## 공격 한 번의 정보 (피격 쪽에 전달)
 
-enum Kind { BULLET, MELEE, REFLECT }
+enum Kind { BULLET, MELEE, REFLECT, EXECUTE }
 
 var damage: int = 0
 var kind: Kind = Kind.BULLET
