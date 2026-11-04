@@ -6,6 +6,10 @@ extends Resource
 @export var sections: Array[TutorialSectionData] = []
 ## 스토리 트리거 발동 거리 (px)
 @export var story_trigger_radius: float = 0.0
+## 출발 전(첫 조작 전) 하단 안내 문구. 가장 먼저 스킬 설정 방법을 알려준다
+@export_multiline var pre_start_hint: String = ""
+## 표지판 글상자가 보이는 거리 (px)
+@export var sign_radius: float = 0.0
 
 
 ## 구간 파일들을 이어 붙인 글자 맵. 맨 왼쪽에 벽 한 줄을 붙인다.

@@ -37,6 +37,7 @@ func start_run() -> void:
 	level = Level.new()
 	level.map_path = setup.map_path
 	level.tutorial = setup.tutorial
+	level.skill = setup.skill
 	level.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(level)
 	Events.run_started.emit()
@@ -44,6 +45,17 @@ func start_run() -> void:
 
 func restart() -> void:
 	start_run()
+
+
+## 출발 전에만 스킬을 바꾼다. 바뀌었으면 true
+func change_skill(data: SkillData) -> bool:
+	if Game.clock_running or data == null:
+		return false
+	setup.skill = data
+	if level and level.player:
+		level.player.set_skill(data)
+	Events.skill_changed.emit(data.id)
+	return true
 
 
 func _physics_process(_delta: float) -> void:

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AbsorbData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://skills/absorb_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "absorb"
+display_name = "흡수 장막"
+tag = "자원"
+description = "2초 동안 앞에 장막을 펼쳐 닿는 적 탄을 탄약으로 바꾼다."
+recommended = false
+cooldown_ticks = 300
+icon = &"absorb"
+duration_ticks = 120
+offset = 12.0
+radius = 11.0
+ammo_per_bullet = 1
+sprite_scale = 1.5

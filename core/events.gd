@@ -9,6 +9,8 @@ extends Node
 signal run_started()
 ## 일시정지 켜짐/꺼짐
 signal pause_changed(paused: bool)
+## 출발: 런 시작 후 첫 조작 입력 (TODO(M7): 타이머 시작). 이후 스킬 변경 불가
+signal clock_started()
 
 # --- 플레이어 ---
 ## 플레이어가 생성됨 (재시작하면 새 플레이어)
@@ -37,6 +39,10 @@ signal stealth_changed(active: bool)
 signal player_hit(hit: HitInfo)
 ## 플레이어 사망
 signal player_died()
+## 스킬 사용 (스킬 id)
+signal skill_used(skill_id: String)
+## 장착 스킬이 바뀜 (출발 전 Tab 설정)
+signal skill_changed(skill_id: String)
 
 # --- 튜토리얼·레벨 ---
 ## 구간 입장 (1~7). 스플릿 지점

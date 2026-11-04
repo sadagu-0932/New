@@ -17,6 +17,7 @@ const SPAWNS := {
 	"x": [preload("res://levels/hazards/spike_trap.gd"), ""],
 	"O": [preload("res://levels/hazards/boulder_spawner.gd"), ""],
 	"Z": [preload("res://bosses/golem/golem_spawn_point.gd"), ""],
+	"I": [preload("res://levels/props/signpost.gd"), ""],
 	"C": [preload("res://enemies/charger.gd"), "charger"],
 	"c": [preload("res://enemies/charger.gd"), "charger_weak"],
 	"S": [preload("res://enemies/shooter.gd"), "shooter"],
@@ -33,6 +34,8 @@ var props: Node2D
 var projectiles: Node2D
 var effects: Node2D
 var director: TutorialDirector
+## 플레이어가 장착할 스킬
+var skill: SkillData
 ## 현재 디버그 구간 (0 = 시작 지점, 1~7 = 구간)
 var current_section: int = 0
 
@@ -64,6 +67,8 @@ func _ready() -> void:
 	player = Player.new()
 	player.position = LevelMap.cell_center(map.spawn_cell)
 	add_child(player)
+	if skill:
+		player.set_skill(skill)
 	var size := map.pixel_size()
 	player.camera.limit_left = 0
 	player.camera.limit_top = 0

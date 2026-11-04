@@ -20,5 +20,7 @@ enum GateRule {
 ## 입장하면 탄약을 0으로 만든다 (근접 구간)
 @export var drain_ammo: bool = false
 @export var gate_rule: GateRule = GateRule.NONE
+## 이 구간 표지판(맵 글자 'I')에 쓸 글
+@export_multiline var sign_text: String = ""
 ## 본편에서 연결할 스토리 트리거 ID
 @export var story_id: String = ""

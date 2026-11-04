@@ -2,7 +2,8 @@ class_name TutorialDirector
 extends Node
 ## 튜토리얼 진행 관리 (레벨의 자식).
 ##  - 구간 입장 판정 (구간 시작 표시 1~7 을 넘으면 입장, 앞으로만) → Events.section_entered (스플릿 지점)
-##  - 하단 안내 문구 표시·자동 숨김 (게임을 멈추지 않음)
+##  - 하단 안내 문구 표시·자동 숨김 (게임을 멈추지 않음). 출발 전엔 스킬 설정(Tab) 안내를 먼저
+##  - 표지판 글 넣기
 ##  - 근접 구간 입장 시 탄약 0
 ##  - 구간 문 열기 (적 전멸 / 수정 스위치)
 ##  - 구간마다 스토리 트리거 자리 배치 (데모에서는 비활성)
@@ -46,8 +47,13 @@ func _ready() -> void:
 			_contents[k]["gates"].append(node)
 		elif node is CrystalSwitch:
 			_contents[k]["switches"].append(node)
+		elif node is Signpost:
+			var sign := node as Signpost
+			sign.radius = data.sign_radius
+			sign.set_text(_section_data(k).sign_text if _section_data(k) else "")
 	Events.enemy_died.connect(func(_e: Node2D) -> void: _check_all_gates())
 	Events.switch_activated.connect(func(_s: Node2D) -> void: _check_all_gates())
+	Events.clock_started.connect(_on_clock_started)
 	_check_all_gates()
 	_enter(1)
 
@@ -90,7 +96,18 @@ func _enter(k: int) -> void:
 		return
 	if sd.drain_ammo and level.player:
 		level.player.ammo.set_current(0)
+	if k == 1 and not Game.clock_running and not data.pre_start_hint.is_empty():
+		# 출발 전: 스킬 설정 안내가 먼저. 출발하면 1구간 문구로 바뀐다
+		_disconnect_hint_signal()
+		_hint_hide_timer = -1
+		Events.hint_changed.emit(data.pre_start_hint)
+		return
 	_show_hint(sd)
+
+
+func _on_clock_started() -> void:
+	if section == 1 and _section_data(1):
+		_show_hint(_section_data(1))
 
 
 func _show_hint(sd: TutorialSectionData) -> void:
@@ -128,7 +145,8 @@ static func _signal_for(action: String) -> Signal:
 			return Events.parried
 		"perfect_dodge":
 			return Events.perfect_dodge
-	# TODO(M5): "skill"
+		"skill":
+			return Events.skill_used
 	return Signal()
 
 

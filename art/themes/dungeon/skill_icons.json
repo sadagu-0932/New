@@ -1,0 +1,36 @@
+{
+  "frame_width": 16,
+  "frame_height": 16,
+  "animations": {
+    "blink": {
+      "row": 0,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "absorb": {
+      "row": 1,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "decoy": {
+      "row": 2,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "shockwave": {
+      "row": 3,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "mark": {
+      "row": 4,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    }
+  }
+}

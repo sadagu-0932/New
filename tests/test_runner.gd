@@ -8,6 +8,7 @@ const SUITES: Array[Script] = [
 	preload("res://tests/test_m2.gd"),
 	preload("res://tests/test_m3.gd"),
 	preload("res://tests/test_m4.gd"),
+	preload("res://tests/test_m5.gd"),
 ]
 
 
@@ -15,6 +16,12 @@ func _ready() -> void:
 	var failures := 0
 	var checks := 0
 	for suite_script in SUITES:
+		if not suite_script.can_instantiate():
+			# 스크립트 오류로 못 불러온 묶음은 실패로 치고 넘어간다 (멈춰서 기다리지 않게)
+			print("  FAIL  테스트 스크립트를 불러오지 못함: ", suite_script.resource_path)
+			failures += 1
+			checks += 1
+			continue
 		var suite: TestBase = suite_script.new()
 		add_child(suite)
 		await suite.run_all()

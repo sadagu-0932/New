@@ -11,6 +11,7 @@ hint_hide_on = "dodge"
 hint_hide_delay_ticks = 90
 drain_ammo = false
 gate_rule = 0
+sign_text = "Tab 스킬 설정\n출발(첫 조작) 전에만 바꿀 수 있다\n쓰러지거나 R 재시작하면 다시 고를 수 있다"
 story_id = "tutorial_section_1"
 
 [sub_resource type="Resource" id="section_2"]
@@ -56,9 +57,9 @@ story_id = "tutorial_section_5"
 [sub_resource type="Resource" id="section_6"]
 script = ExtResource("2")
 map_file = "res://levels/tutorial/sections/section_6.txt"
-hint = "Q 스킬"
-hint_hide_on = ""
-hint_hide_delay_ticks = 0
+hint = "Q 스킬 사용 · 장착한 스킬로 이 방을 뚫어라"
+hint_hide_on = "skill"
+hint_hide_delay_ticks = 120
 drain_ammo = false
 gate_rule = 1
 story_id = "tutorial_section_6"
@@ -77,3 +78,5 @@ story_id = "tutorial_section_7"
 script = ExtResource("1")
 sections = Array[ExtResource("2")]([SubResource("section_1"), SubResource("section_2"), SubResource("section_3"), SubResource("section_4"), SubResource("section_5"), SubResource("section_6"), SubResource("section_7")])
 story_trigger_radius = 24.0
+pre_start_hint = "Tab 스킬 설정 · 움직이면 출발!"
+sign_radius = 40.0

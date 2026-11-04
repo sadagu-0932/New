@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlinkData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://skills/blink_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "blink"
+display_name = "블링크"
+tag = "이동·지름길"
+description = "이동 방향으로 짧게 순간이동한다. 사이에 있는 탄과 구덩이를 지나친다."
+recommended = false
+cooldown_ticks = 90
+icon = &"blink"
+distance = 64.0
+min_distance = 8.0
+invuln_ticks = 6
+search_step = 2.0

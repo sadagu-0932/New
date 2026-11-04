@@ -89,6 +89,41 @@ pause={
 "events": [Object(InputEventKey,"physical_keycode":4194305)
 ]
 }
+skill_menu={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":4194306)
+]
+}
+menu_confirm={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":4194309)
+]
+}
+skill_select_1={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":49)
+]
+}
+skill_select_2={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":50)
+]
+}
+skill_select_3={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":51)
+]
+}
+skill_select_4={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":52)
+]
+}
+skill_select_5={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":53)
+]
+}
 debug_hitboxes={
 "deadzone": 0.2,
 "events": [Object(InputEventKey,"physical_keycode":4194332)

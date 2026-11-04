@@ -11,5 +11,6 @@ run_seed = 20261104
 tutorial = ExtResource("2")
 use_tutorial = true
 start_map_path = "res://levels/test/test_room.txt"
+default_skill_id = "shockwave"
 restart_hold_ticks = 30
 death_restart_delay_ticks = 40

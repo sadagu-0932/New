@@ -3,7 +3,9 @@ extends CharacterBody2D
 ## 적 베이스. 종류별 행동은 하위 클래스의 _tick_ai() 에서 정한다.
 ## 공통 기능:
 ##  - 인식: 시야 거리 안 + 벽에 가리지 않으면 플레이어를 봄
+##  - 미끼 분신이 보이면 플레이어 대신 분신을 노린다
 ##  - 투명한 플레이어는 보지 못하고, 마지막으로 본 위치(target_pos)로 간다
+##  - 표식(스킬)이 걸리면 받는 데미지 증가
 ##  - 체력·피격 넉백·접촉 데미지·사망
 
 const GROUP := &"enemies"
@@ -18,15 +20,19 @@ var sprite: AnimatedSprite2D
 var dead: bool = false
 ## 한 번이라도 플레이어를 봤는지 (안 봤으면 가만히 있음)
 var has_target: bool = false
-## 이번 틱에 플레이어가 보이는지
+## 이번 틱에 노릴 대상(플레이어 또는 미끼 분신)이 보이는지
 var sees_player: bool = false
-## 마지막으로 본 플레이어 위치
+## 마지막으로 본 대상 위치
 var target_pos: Vector2 = Vector2.ZERO
+## 표식 남은 틱·받는 데미지 배율
+var mark_left: int = 0
+var mark_mult: float = 1.0
 
 var _knock: Vector2 = Vector2.ZERO
 var _knock_ticks: int = 0
 var _hurt_flash: int = 0
 var _contact_query := PhysicsShapeQueryParameters2D.new()
+var _mark_sprite: AnimatedSprite2D
 
 
 func _ready() -> void:
@@ -60,6 +66,13 @@ func _ready() -> void:
 	_contact_query.collide_with_bodies = false
 	_contact_query.collision_mask = Layers.PLAYER_HURTBOX
 
+	_mark_sprite = AnimatedSprite2D.new()
+	_mark_sprite.sprite_frames = DB.theme.load_sheet("skill_fx")
+	_mark_sprite.play(&"mark")
+	_mark_sprite.position = Vector2(0, -data.body_radius - 8.0)
+	_mark_sprite.visible = false
+	add_child(_mark_sprite)
+
 	add_child(DebugShapes.new())
 	_on_ready()
 
@@ -73,6 +86,9 @@ func _physics_process(_delta: float) -> void:
 	if dead:
 		return
 	_update_perception()
+	if mark_left > 0:
+		mark_left -= 1
+		_mark_sprite.visible = mark_left > 0
 	if _knock_ticks > 0:
 		_knock_ticks -= 1
 		velocity = _knock
@@ -99,6 +115,16 @@ func get_player() -> Player:
 
 func _update_perception() -> void:
 	sees_player = false
+	# 미끼 분신이 보이면 분신을 노린다 (트리 순서 = 결정론)
+	for node in get_tree().get_nodes_in_group(Decoy.GROUP):
+		var decoy := node as Decoy
+		if decoy and decoy.is_alive() \
+				and global_position.distance_to(decoy.global_position) <= data.sight_range \
+				and _line_of_sight(decoy.global_position):
+			sees_player = true
+			has_target = true
+			target_pos = decoy.global_position
+			return
 	var player := get_player()
 	if player == null or player.is_dead() or player.is_stealthed():
 		return  # 투명이면 놓친다: target_pos 는 마지막으로 본 위치 그대로
@@ -146,7 +172,10 @@ func _contact_damage() -> void:
 func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
 	if dead:
 		return Hurtbox.Result.IGNORED
-	hp -= hit.damage
+	var damage := hit.damage
+	if mark_left > 0:
+		damage = ceili(damage * mark_mult)
+	hp -= damage
 	_hurt_flash = HURT_FLASH_TICKS
 	Events.enemy_damaged.emit(self, hit)
 	# 맞으면 플레이어를 알아챈다 (투명이면 위치는 모름)
@@ -160,6 +189,19 @@ func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
 		_knock = hit.direction.normalized() * data.knockback_speed
 		_knock_ticks = data.knockback_ticks
 	return Hurtbox.Result.HIT
+
+
+## 밀쳐내기 (충격파 등)
+func apply_knockback(knock_velocity: Vector2, ticks: int) -> void:
+	_knock = knock_velocity
+	_knock_ticks = ticks
+
+
+## 표식 걸기 (스킬)
+func apply_mark(ticks: int, mult: float) -> void:
+	mark_left = ticks
+	mark_mult = mult
+	_mark_sprite.visible = true
 
 
 func _die() -> void:

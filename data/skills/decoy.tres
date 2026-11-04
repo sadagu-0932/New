@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DecoyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://skills/decoy_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "decoy"
+display_name = "미끼 분신"
+tag = "시선 끌기"
+description = "제자리에 분신을 남긴다. 적은 분신이 보이면 분신을 노린다."
+recommended = false
+cooldown_ticks = 360
+icon = &"decoy"
+duration_ticks = 240
+hp = 3

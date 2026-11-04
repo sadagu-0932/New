@@ -18,3 +18,5 @@ func use_live_input() -> void:
 
 func _physics_process(_delta: float) -> void:
 	current = source.next_frame()
+	if not Game.clock_running and current.has_any_action():
+		Game.start_clock()

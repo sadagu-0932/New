@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="MarkData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://skills/mark_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "mark"
+display_name = "표식"
+tag = "화력 보조"
+description = "조준점에 가장 가까운 적에게 표식. 표식된 적은 받는 데미지가 늘어난다. 쿨타임이 짧다."
+recommended = false
+cooldown_ticks = 60
+icon = &"mark"
+mark_range = 180.0
+duration_ticks = 300
+damage_mult = 1.5

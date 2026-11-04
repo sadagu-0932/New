@@ -18,6 +18,8 @@ var gun: Gun
 var ammo: Ammo
 var health: Health
 var melee: MeleeAttack
+## 장착 스킬 (없을 수 있음)
+var skill: Skill
 ## 조준 방향 (길이 1)
 var aim_dir: Vector2 = Vector2.RIGHT
 var camera: Camera2D
@@ -95,6 +97,8 @@ func _physics_process(_delta: float) -> void:
 			_tick_normal(input)
 		State.DODGE:
 			_tick_dodge()
+	if skill:
+		skill.tick()
 	var hits := melee.tick()
 	if hits > 0:
 		ammo.add(hits * DB.melee.ammo_on_hit)
@@ -114,6 +118,8 @@ func _tick_normal(input: InputFrame) -> void:
 		Events.player_dodged.emit(self)
 		_tick_dodge()
 		return
+	if input.is_pressed(InputFrame.SKILL) and skill:
+		skill.try_use()
 	if input.is_pressed(InputFrame.MELEE) and melee.can_start():
 		melee.start(aim_dir)
 		Events.melee_started.emit()
@@ -174,7 +180,8 @@ func _update_aim(input: InputFrame) -> void:
 
 ## 지금 무적인지 (회피 무적, 피격 후 무적, 디버그 무적)
 func is_invulnerable() -> bool:
-	return Debug.god_mode or dodge.is_invulnerable() or hurt_invuln_left > 0
+	return Debug.god_mode or dodge.is_invulnerable() or hurt_invuln_left > 0 \
+		or (skill != null and skill.grants_invulnerability())
 
 
 func is_dead() -> bool:
@@ -206,6 +213,24 @@ func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
 	else:
 		hurt_invuln_left = data.hurt_invuln_ticks
 	return Hurtbox.Result.HIT
+
+
+## 스킬 장착 (출발 전 Tab 설정, 런 시작 시)
+func set_skill(data: SkillData) -> void:
+	if skill:
+		skill.cleanup()
+		skill.queue_free()
+		skill = null
+	if data == null:
+		return
+	skill = data.create_skill()
+	skill.player = self
+	add_child(skill)
+
+
+func _exit_tree() -> void:
+	if skill:
+		skill.cleanup()
 
 
 func _die() -> void:

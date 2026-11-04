@@ -22,4 +22,19 @@ var enemies: Dictionary = {
 	"shooter": preload("res://data/enemies/shooter.tres"),
 	"spreader": preload("res://data/enemies/spreader.tres"),
 }
+## 스킬 목록 (스킬 설정 창에 이 순서로 나온다)
+var skills: Array[SkillData] = [
+	preload("res://data/skills/blink.tres"),
+	preload("res://data/skills/absorb.tres"),
+	preload("res://data/skills/decoy.tres"),
+	preload("res://data/skills/shockwave.tres"),
+	preload("res://data/skills/mark.tres"),
+]
 var theme: ThemeData = preload("res://data/theme.tres")
+
+
+func skill_by_id(skill_id: String) -> SkillData:
+	for s in skills:
+		if s.id == skill_id:
+			return s
+	return skills[0] if not skills.is_empty() else null

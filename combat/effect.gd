@@ -5,13 +5,13 @@ extends AnimatedSprite2D
 const GROUP := &"effects"
 
 
-static func spawn(anim: StringName, pos: Vector2, rot: float = 0.0, scale_value: float = 1.0) -> Effect:
+static func spawn(anim: StringName, pos: Vector2, rot: float = 0.0, scale_value: float = 1.0, sheet: String = "effects") -> Effect:
 	var tree := Engine.get_main_loop() as SceneTree
 	var container: Node = tree.get_first_node_in_group(GROUP)
 	if container == null:
 		return null
 	var e := Effect.new()
-	e.sprite_frames = DB.theme.load_sheet("effects")
+	e.sprite_frames = DB.theme.load_sheet(sheet)
 	e.position = pos
 	e.rotation = rot
 	e.scale = Vector2.ONE * scale_value

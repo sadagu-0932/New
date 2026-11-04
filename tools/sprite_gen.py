@@ -647,6 +647,7 @@ def build_props() -> None:
         ("switch_off", [switch_frame(False)], 1.0, False),
         ("switch_on", [switch_frame(True)], 1.0, False),
         ("boulder", [boulder_frame(0), boulder_frame(1)], 8.0, True),
+        ("sign", [Canvas.from_rows(SIGN, {".": None, "o": "outline", "b": "tan", "t": "brown_dark", "B": "brown"})], 1.0, False),
     ])
 
 
@@ -784,6 +785,134 @@ def build_enemy_death() -> list[Canvas]:
     return frames
 
 
+
+# ---------------------------------------------------------------------------
+# 스킬 아이콘 (16x16) · 스킬 이펙트
+# ---------------------------------------------------------------------------
+def icon_frame() -> Canvas:
+    t = Canvas(16, 16)
+    t.fill(c("shadow"))
+    t.line(0, 0, 15, 0, c("outline"))
+    t.line(0, 15, 15, 15, c("outline"))
+    t.line(0, 0, 0, 15, c("outline"))
+    t.line(15, 0, 15, 15, c("outline"))
+    t.line(1, 1, 14, 1, c("stone_dark"))
+    return t
+
+
+def build_skill_icons() -> None:
+    import math
+    # 블링크: 화살표 + 잔상
+    blink = icon_frame()
+    for i, col in enumerate(("stone", "sky", "cyan")):
+        x = 3 + i * 3
+        blink.line(x, 5, x, 10, c(col))
+    blink.line(11, 4, 13, 7, c("white"))
+    blink.line(13, 8, 11, 11, c("white"))
+    blink.line(10, 7, 13, 7, c("white"))
+    blink.line(10, 8, 13, 8, c("white"))
+    # 흡수 장막: 호 + 빨려드는 탄
+    absorb = icon_frame()
+    for x, y in arc_pixels(4, 7.5, 7, -70, 70):
+        absorb.set(x, y, c("cyan"))
+    for x, y in arc_pixels(4, 7.5, 6, -55, 55):
+        absorb.set(x, y, c("sky"))
+    absorb.set(5, 7, c("red"))
+    absorb.set(6, 8, c("red"))
+    absorb.set(3, 8, c("yellow"))
+    # 미끼 분신: 사람 두 개 (하나는 흐림)
+    decoy = icon_frame()
+    for ox, col in ((2, "stone"), (7, "blue")):
+        decoy.line(ox + 2, 3, ox + 4, 3, c(col))
+        for y in range(4, 7):
+            decoy.line(ox + 1, y, ox + 5, y, c(col))
+        for y in range(7, 12):
+            decoy.line(ox + 2, y, ox + 4, y, c(col))
+        decoy.set(ox + 4, 5, c("skin") if col == "blue" else c("pale"))
+    # 충격파: 동심원
+    shock = icon_frame()
+    for r, col in ((2, "white"), (4.5, "yellow"), (6.5, "orange")):
+        for y in range(16):
+            for x in range(16):
+                d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+                if abs(d - r) < 0.55 and 1 <= x <= 14 and 2 <= y <= 14:
+                    shock.set(x, y, c(col))
+    # 표식: 과녁
+    mark = icon_frame()
+    for y in range(16):
+        for x in range(16):
+            d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+            if abs(d - 5.5) < 0.6 or abs(d - 2.5) < 0.6:
+                mark.set(x, y, c("red"))
+    mark.line(7, 2, 7, 4, c("white"))
+    mark.line(8, 11, 8, 13, c("white"))
+    mark.line(2, 8, 4, 8, c("white"))
+    mark.line(11, 7, 13, 7, c("white"))
+    save_sheet("skill_icons", 16, 16, [
+        ("blink", [blink], 1.0, False),
+        ("absorb", [absorb], 1.0, False),
+        ("decoy", [decoy], 1.0, False),
+        ("shockwave", [shock], 1.0, False),
+        ("mark", [mark], 1.0, False),
+    ])
+
+    # 흡수 장막: 오른쪽 기준 큰 호 (게임에서 회전)
+    barrier = []
+    for phase in (0, 1):
+        cv = Canvas(16, 16)
+        for x, y in arc_pixels(2, 7.5, 11, -60, 60, 40):
+            cv.set(x, y, c("cyan"))
+        for x, y in arc_pixels(2, 7.5, 10, -50, 50, 40):
+            cv.set(x, y, c("sky") if (x + y + phase) % 2 == 0 else c("cyan"))
+        barrier.append(cv)
+    # 충격파 고리 (게임에서 크게)
+    wave = []
+    for r in (2.5, 4.5, 6.5, 7.5):
+        cv = Canvas(16, 16)
+        for y in range(16):
+            for x in range(16):
+                d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+                if abs(d - r) < 0.6:
+                    cv.set(x, y, c("yellow") if r < 6 else c("orange"))
+        wave.append(cv)
+    # 표식: 적 머리 위 과녁 (8x8 를 16 칸 가운데에)
+    mk = []
+    for phase in (0, 1):
+        cv = Canvas(16, 16)
+        for y in range(16):
+            for x in range(16):
+                d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+                if abs(d - (3.5 if phase == 0 else 3.0)) < 0.6:
+                    cv.set(x, y, c("red"))
+        cv.set(7, 7, c("white"))
+        cv.set(8, 8, c("white"))
+        mk.append(cv)
+    save_sheet("skill_fx", 16, 16, [
+        ("barrier", barrier, 10.0, True),
+        ("shockwave", wave, 16.0, False),
+        ("mark", mk, 4.0, True),
+    ])
+
+
+SIGN = [
+    "................",
+    "..oooooooooooo..",
+    "..obbbbbbbbbbo..",
+    "..obttttttttbo..",
+    "..obbbbbbbbbbo..",
+    "..obttttttbbbo..",
+    "..obbbbbbbbbbo..",
+    "..oooooooooooo..",
+    "......oBBo......",
+    "......oBBo......",
+    "......oBBo......",
+    "......oBBo......",
+    "......oBBo......",
+    ".....oBBBBo.....",
+    "....oooooooo....",
+    "................",
+]
+
 # ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
@@ -878,6 +1007,7 @@ def main() -> None:
     build_props()
     build_ui_icons()
     build_enemies()
+    build_skill_icons()
     verify_palette()
     print(f"스프라이트 생성 완료: {OUT.relative_to(ROOT)}")
 

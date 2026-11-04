@@ -67,6 +67,12 @@
       "frames": 2,
       "fps": 8.0,
       "loop": true
+    },
+    "sign": {
+      "row": 11,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
     }
   }
 }

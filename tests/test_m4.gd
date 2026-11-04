@@ -97,7 +97,10 @@ func test_map_assembled() -> void:
 func test_sections_and_hints() -> void:
 	var p := await _start()
 	check(level.director.section == 1, "시작하면 1구간")
-	check(_last_hint == _data(1).hint, "1구간 안내 문구 표시")
+	check(_last_hint == DB.game_config.tutorial.pre_start_hint, "출발 전엔 스킬 설정(Tab) 안내가 먼저")
+	input.push(Vector2.RIGHT, 1, 0, 0, p.global_position + Vector2(50, 0))
+	await step(1)
+	check(Game.clock_running and _last_hint == _data(1).hint, "움직이면 출발 → 1구간 안내 문구")
 	for k in range(2, 8):
 		p.teleport(_section_start(k) + Vector2(4, 0))
 		await step(2)
@@ -113,10 +116,10 @@ func test_sections_and_hints() -> void:
 
 func test_hint_hides_after_action() -> void:
 	var p := await _start()
-	check(_last_hint == _data(1).hint, "안내 문구 표시 중")
+	check(_last_hint == DB.game_config.tutorial.pre_start_hint, "출발 전 안내 표시 중")
 	input.push(Vector2.RIGHT, 1, 0, InputFrame.DODGE, p.global_position + Vector2(50, 0))
 	await step(1)
-	check(_last_hint == _data(1).hint, "행동 직후엔 잠깐 유지")
+	check(_last_hint == _data(1).hint, "첫 조작(회피)으로 출발 → 1구간 문구, 행동 직후엔 잠깐 유지")
 	await step(_data(1).hint_hide_delay_ticks + 1)
 	check(_last_hint == "", "회피를 해 보면 안내 문구가 사라짐 (게임은 멈추지 않음)")
 
