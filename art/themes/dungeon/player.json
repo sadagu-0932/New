@@ -1,0 +1,48 @@
+{
+  "frame_width": 16,
+  "frame_height": 16,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 2,
+      "fps": 3.0,
+      "loop": true
+    },
+    "move": {
+      "row": 1,
+      "frames": 4,
+      "fps": 8.0,
+      "loop": true
+    },
+    "shoot": {
+      "row": 2,
+      "frames": 2,
+      "fps": 12.0,
+      "loop": false
+    },
+    "melee": {
+      "row": 3,
+      "frames": 3,
+      "fps": 15.0,
+      "loop": false
+    },
+    "dodge": {
+      "row": 4,
+      "frames": 3,
+      "fps": 15.0,
+      "loop": false
+    },
+    "hurt": {
+      "row": 5,
+      "frames": 2,
+      "fps": 12.0,
+      "loop": false
+    },
+    "death": {
+      "row": 6,
+      "frames": 4,
+      "fps": 6.0,
+      "loop": false
+    }
+  }
+}

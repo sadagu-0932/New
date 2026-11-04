@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="PlayerData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://player/player_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+move_speed = 90.0
+body_radius = 4.0
+body_offset_y = 4.0
+hurtbox_radius = 4.0
+hurtbox_offset_y = 1.0

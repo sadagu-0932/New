@@ -1,0 +1,28 @@
+GIMP Palette
+Name: dungeon
+Columns: 8
+#
+ 14  11  20	outline
+ 42  35  51	shadow
+ 70  60  81	stone_dark
+101  90 110	stone
+139 130 150	stone_light
+194 188 203	pale
+242 239 245	white
+ 90  47  42	brown_dark
+138  82  54	brown
+197 138  85	tan
+240 199 154	skin
+ 59  31  63	plum
+122  43  69	crimson
+196  64  75	red
+240 122  74	orange
+248 200  90	yellow
+ 42  74  58	green_dark
+ 63 122  74	green
+124 193  90	green_light
+ 30  47  85	navy
+ 47  95 154	blue
+ 79 163 216	sky
+159 227 240	cyan
+107  63 160	purple

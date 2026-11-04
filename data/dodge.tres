@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DashDodgeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/dodge/dash_dodge_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+speed = 240.0
+duration_ticks = 10
+invuln_ticks = 8
+cooldown_ticks = 24

@@ -1,0 +1,7 @@
+# Godot 캐시·내보내기 결과
+.godot/
+/export/
+*.tmp
+
+# 파이썬 캐시
+__pycache__/
