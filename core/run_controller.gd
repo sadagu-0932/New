@@ -12,6 +12,10 @@ var _restart_hold: int = 0
 var _restart_armed: bool = true
 ## 사망 후 재시작까지 남은 틱 (-1 = 대기 아님)
 var _death_timer: int = -1
+## 구간별 입장 누적 틱 (인덱스 = 구간-1)
+var _splits: Array[int] = []
+## 기록 화면을 보여주는 중 (재시작 입력 무시)
+var showing_result: bool = false
 
 
 func _init(run_setup: RunSetup) -> void:
@@ -23,6 +27,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	Events.player_died.connect(_on_player_died)
 	Events.demo_finished.connect(_on_demo_finished)
+	Events.section_entered.connect(_on_section_entered)
 	start_run()
 
 
@@ -34,6 +39,8 @@ func start_run() -> void:
 		level.queue_free()
 	_set_paused(false)
 	_death_timer = -1
+	_splits.clear()
+	showing_result = false
 	Game.reset_run(setup.seed_value)
 	level = Level.new()
 	level.map_path = setup.map_path
@@ -60,6 +67,8 @@ func change_skill(data: SkillData) -> bool:
 
 
 func _physics_process(_delta: float) -> void:
+	if showing_result:
+		return
 	if Input.is_action_pressed(&"restart"):
 		if _restart_armed:
 			_restart_hold += 1
@@ -82,9 +91,28 @@ func restart_progress() -> float:
 	return float(_restart_hold) / float(maxi(Game.config.restart_hold_ticks, 1))
 
 
-## 데모 끝 (골렘 컷씬 종료). TODO(M7): 기록 화면·이니셜 입력으로 이동. 지금은 처음부터 다시
+## 구간 입장 = 스플릿 (출발 전 1구간은 0)
+func _on_section_entered(index: int) -> void:
+	while _splits.size() < index:
+		_splits.append(Game.elapsed_ticks())
+	Events.split_recorded.emit(index, _splits[index - 1])
+
+
+## 이번 판의 결과
+func make_result() -> RunResult:
+	var r := RunResult.new()
+	r.total_ticks = Game.elapsed_ticks()
+	r.split_ticks = _splits.duplicate()
+	r.skill_id = setup.skill.id if setup.skill else ""
+	r.cleared = Game.clock_stopped
+	r.seed_value = setup.seed_value
+	return r
+
+
+## 데모 끝 (골렘 컷씬 종료) → 기록 화면 (ResultScreen 이 받아서 끝나면 restart 를 부른다)
 func _on_demo_finished() -> void:
-	restart()
+	showing_result = true
+	Events.run_finished.emit(make_result())
 
 
 func _on_player_died() -> void:
@@ -92,6 +120,8 @@ func _on_player_died() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if showing_result:
+		return
 	if event.is_action_pressed(&"pause"):
 		_set_paused(not paused)
 		get_viewport().set_input_as_handled()

@@ -9,7 +9,7 @@ extends Node
 signal run_started()
 ## 일시정지 켜짐/꺼짐
 signal pause_changed(paused: bool)
-## 출발: 런 시작 후 첫 조작 입력 (TODO(M7): 타이머 시작). 이후 스킬 변경 불가
+## 출발: 런 시작 후 첫 조작 입력 = 타이머 시작. 이후 스킬 변경 불가
 signal clock_started()
 
 # --- 플레이어 ---
@@ -64,8 +64,12 @@ signal boss_hp_changed(current: int, maximum: int)
 signal boss_groggy()
 ## 보스 1페이즈 격파 (타이머 정지)
 signal boss_defeated(boss: Node2D)
-## 데모 끝 (2페이즈 시작 컷씬 종료 → TODO(M7) 기록 화면)
+## 데모 끝 (2페이즈 시작 컷씬 종료) → 기록 화면
 signal demo_finished()
+## 런 결과 확정 (기록 화면이 받아서 보여준다)
+signal run_finished(result: RefCounted)
+## 구간 스플릿 (구간 k 입장 시점의 누적 틱)
+signal split_recorded(section: int, ticks: int)
 
 # --- 적 ---
 ## 적이 맞음

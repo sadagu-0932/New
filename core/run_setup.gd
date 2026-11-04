@@ -1,7 +1,7 @@
 class_name RunSetup
 extends RefCounted
 ## 한 판(런)의 시작 조건. 런은 이것만 받아 독립적으로 돌아간다.
-## TODO(M7): 결과(시간·스플릿·클리어 여부) 돌려주기
+## 결과는 RunController 가 RunResult 로 만들어 Events.run_finished 로 내보낸다
 
 var seed_value: int = 0
 var map_path: String = ""

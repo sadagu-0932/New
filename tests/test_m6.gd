@@ -279,7 +279,7 @@ func test_run_restarts_after_demo() -> void:
 	await step(3)
 	Input.action_release(&"interact")
 	await step(2)
-	check(run.level != first and _ev(&"run_started") == 1, "데모 종료 후 처음부터 다시 (TODO M7: 기록 화면)")
+	check(run.showing_result and run.level == first, "데모 종료 → 기록 화면 대기 (재시작은 기록 화면에서)")
 	level = null
 	run.queue_free()
 	await step(1)

@@ -12,5 +12,6 @@ tutorial = ExtResource("2")
 use_tutorial = true
 start_map_path = "res://levels/test/test_room.txt"
 default_skill_id = "shockwave"
+leaderboard_size = 10
 restart_hold_ticks = 30
 death_restart_delay_ticks = 40

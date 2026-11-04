@@ -5,6 +5,7 @@
 
 [sub_resource type="Resource" id="section_1"]
 script = ExtResource("2")
+title = "이동·회피"
 map_file = "res://levels/tutorial/sections/section_1.txt"
 hint = "WASD 이동 · Space 회피 (회피하는 순간엔 무적)"
 hint_hide_on = "dodge"
@@ -16,6 +17,7 @@ story_id = "tutorial_section_1"
 
 [sub_resource type="Resource" id="section_2"]
 script = ExtResource("2")
+title = "사격"
 map_file = "res://levels/tutorial/sections/section_2.txt"
 hint = "마우스로 조준 · 좌클릭 사격 (누르고 있으면 연사)"
 hint_hide_on = "shoot"
@@ -26,6 +28,7 @@ story_id = "tutorial_section_2"
 
 [sub_resource type="Resource" id="section_3"]
 script = ExtResource("2")
+title = "근접"
 map_file = "res://levels/tutorial/sections/section_3.txt"
 hint = "탄약이 없다! 우클릭 근접 공격 · 적을 베면 탄약 회복"
 hint_hide_on = "melee"
@@ -36,6 +39,7 @@ story_id = "tutorial_section_3"
 
 [sub_resource type="Resource" id="section_4"]
 script = ExtResource("2")
+title = "패링"
 map_file = "res://levels/tutorial/sections/section_4.txt"
 hint = "날아오는 탄에 맞춰 우클릭 → 조준한 쪽으로 튕겨낸다 · 수정을 맞혀라"
 hint_hide_on = "parry"
@@ -46,6 +50,7 @@ story_id = "tutorial_section_4"
 
 [sub_resource type="Resource" id="section_5"]
 script = ExtResource("2")
+title = "완벽 회피"
 map_file = "res://levels/tutorial/sections/section_5.txt"
 hint = "탄에 맞기 직전에 회피하면 잠시 투명해진다"
 hint_hide_on = "perfect_dodge"
@@ -56,6 +61,7 @@ story_id = "tutorial_section_5"
 
 [sub_resource type="Resource" id="section_6"]
 script = ExtResource("2")
+title = "스킬"
 map_file = "res://levels/tutorial/sections/section_6.txt"
 hint = "Q 스킬 사용 · 장착한 스킬로 이 방을 뚫어라"
 hint_hide_on = "skill"
@@ -66,6 +72,7 @@ story_id = "tutorial_section_6"
 
 [sub_resource type="Resource" id="section_7"]
 script = ExtResource("2")
+title = "골렘"
 map_file = "res://levels/tutorial/sections/section_7.txt"
 hint = "골렘은 튕겨낸 탄에만 제대로 맞는다"
 hint_hide_on = "parry"

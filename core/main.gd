@@ -13,5 +13,7 @@ func _ready() -> void:
 	add_child(Crosshair.new())
 	add_child(PauseOverlay.new())
 	add_child(SkillPanel.new(run))
+	add_child(RunTimer.new())
+	add_child(ResultScreen.new(run))
 	if Debug.enabled:
 		add_child(DebugOverlay.new())

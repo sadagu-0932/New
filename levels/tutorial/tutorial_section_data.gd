@@ -9,6 +9,8 @@ enum GateRule {
 	SWITCH,  ## 구간의 수정 스위치를 모두 켜면 열림 (적은 남아 있어도 됨)
 }
 
+## 구간 이름 (기록 화면 스플릿에 표시)
+@export var title: String = ""
 ## 구간 맵 파일 (글자 맵). 모든 구간은 높이가 같아야 하고, 마지막 열이 오른쪽 벽(출구)이다
 @export_file("*.txt") var map_file: String = ""
 ## 화면 하단 안내 문구 (빈 문자열 = 없음)

@@ -15,6 +15,8 @@ extends Resource
 @export_file("*.txt") var start_map_path: String = ""
 ## 처음 장착하는 스킬 id (출발 전 Tab 으로 변경)
 @export var default_skill_id: String = ""
+## 리더보드 인원
+@export var leaderboard_size: int = 0
 ## 즉시 재시작: R 을 이 틱 수만큼 누르고 있어야 함 (실수 방지)
 @export var restart_hold_ticks: int = 0
 ## 사망 후 자동 재시작까지 틱 (사망 모션을 잠깐 보여줌)
