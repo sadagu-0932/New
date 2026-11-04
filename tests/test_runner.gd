@@ -12,6 +12,7 @@ const SUITES: Array[Script] = [
 	preload("res://tests/test_m6.gd"),
 	preload("res://tests/test_m7.gd"),
 	preload("res://tests/test_m8.gd"),
+	preload("res://tests/test_m9.gd"),
 ]
 
 
@@ -31,6 +32,9 @@ func _ready() -> void:
 		failures += suite.failures
 		checks += suite.checks
 		suite.queue_free()
+		# 이전 묶음의 노드(레벨·플레이어)가 완전히 사라진 뒤 다음 묶음 시작
+		await get_tree().physics_frame
+		await get_tree().physics_frame
 	print("")
 	print("결과: %d개 검사 중 %d개 실패" % [checks, failures])
 	PlayerInput.use_live_input()

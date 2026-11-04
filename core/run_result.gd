@@ -9,6 +9,8 @@ var split_ticks: Array[int] = []
 var skill_id: String = ""
 var cleared: bool = false
 var seed_value: int = 0
+## 이 판의 리플레이 (1위면 저장)
+var replay: Replay
 
 
 ## 구간 k(1~7)에 걸린 시간 (틱). 마지막 구간은 격파까지

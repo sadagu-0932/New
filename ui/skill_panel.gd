@@ -113,7 +113,8 @@ func _process(delta: float) -> void:
 
 ## 지금 스킬 창을 열 수 있는지
 func can_open() -> bool:
-	return not Game.clock_running and not run.paused
+	return run != null and run.mode == RunController.Mode.LIVE and not run.showing_result \
+		and not Game.clock_running and not run.paused
 
 
 func open() -> bool:
@@ -165,8 +166,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_echo():
 		return
 	if not is_open:
-		if event.is_action_pressed(&"skill_menu"):
-			if not open() and Game.clock_running:
+		if event.is_action_pressed(&"skill_menu") and run != null:
+			if not open() and Game.clock_running and run.mode == RunController.Mode.LIVE:
 				_notice_left = NOTICE_SECONDS
 				_notice.visible = true
 			get_viewport().set_input_as_handled()

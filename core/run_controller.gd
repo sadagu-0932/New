@@ -3,9 +3,15 @@ extends Node
 ## 한 판(런) 관리: 레벨 생성, 재시작(R 홀드·사망), 일시정지(Esc).
 ## 재시작·일시정지는 메타 조작이라 InputFrame(리플레이 입력)에 넣지 않고 Input 에서 직접 읽는다.
 
+enum Mode { LIVE, REPLAY }
+
 var setup: RunSetup
 var level: Level
 var paused: bool = false
+var mode: Mode = Mode.LIVE
+## 리플레이 모드에서 재생할 기록
+var replay: Replay
+var _replay_done: bool = false
 
 var _restart_hold: int = 0
 ## R 을 뗐다가 다시 눌러야 다음 재시작 (계속 누르고 있어도 연속 재시작 안 됨)
@@ -18,8 +24,15 @@ var _splits: Array[int] = []
 var showing_result: bool = false
 
 
-func _init(run_setup: RunSetup) -> void:
+func _init(run_setup: RunSetup, replay_data: Replay = null) -> void:
 	setup = run_setup
+	if replay_data:
+		mode = Mode.REPLAY
+		replay = replay_data
+		setup.seed_value = replay_data.seed_value
+		var sd := DB.skill_by_id(replay_data.skill_id)
+		if sd:
+			setup.skill = sd
 
 
 func _ready() -> void:
@@ -42,6 +55,11 @@ func start_run() -> void:
 	_splits.clear()
 	showing_result = false
 	Game.reset_run(setup.seed_value)
+	if mode == Mode.REPLAY:
+		PlayerInput.source = replay.make_source()
+		PlayerInput.stop_recording()
+	else:
+		PlayerInput.start_recording()
 	level = Level.new()
 	level.map_path = setup.map_path
 	level.tutorial = setup.tutorial
@@ -57,7 +75,7 @@ func restart() -> void:
 
 ## 출발 전에만 스킬을 바꾼다. 바뀌었으면 true
 func change_skill(data: SkillData) -> bool:
-	if Game.clock_running or data == null:
+	if Game.clock_running or data == null or mode == Mode.REPLAY:
 		return false
 	setup.skill = data
 	if level and level.player:
@@ -68,6 +86,13 @@ func change_skill(data: SkillData) -> bool:
 
 func _physics_process(_delta: float) -> void:
 	if showing_result:
+		return
+	if mode == Mode.REPLAY:
+		# 입력을 다 썼는데 격파 전이면 (기록이 잘렸을 때) 재생 종료
+		var src := PlayerInput.source as ScriptedInputSource
+		if src and src.remaining() == 0 and not Game.clock_stopped and not _replay_done:
+			_replay_done = true
+			Events.replay_finished.emit()
 		return
 	if Input.is_action_pressed(&"restart"):
 		if _restart_armed:
@@ -109,18 +134,37 @@ func make_result() -> RunResult:
 	return r
 
 
+## 이번 판의 리플레이 (실시간 판만)
+func make_replay() -> Replay:
+	var rp := Replay.new()
+	rp.seed_value = setup.seed_value
+	rp.skill_id = setup.skill.id if setup.skill else ""
+	rp.frames = PlayerInput.recording.duplicate()
+	rp.total_ticks = Game.elapsed_ticks()
+	return rp
+
+
 ## 데모 끝 (골렘 컷씬 종료) → 기록 화면 (ResultScreen 이 받아서 끝나면 restart 를 부른다)
 func _on_demo_finished() -> void:
 	showing_result = true
-	Events.run_finished.emit(make_result())
+	if mode == Mode.REPLAY:
+		Events.replay_finished.emit()
+		return
+	PlayerInput.stop_recording()
+	var result := make_result()
+	result.replay = make_replay()
+	Events.run_finished.emit(result)
 
 
 func _on_player_died() -> void:
+	if mode == Mode.REPLAY:
+		Events.replay_finished.emit()
+		return
 	_death_timer = Game.config.death_restart_delay_ticks
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if showing_result:
+	if showing_result or mode == Mode.REPLAY:
 		return
 	if event.is_action_pressed(&"pause"):
 		_set_paused(not paused)

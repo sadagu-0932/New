@@ -23,7 +23,8 @@ func _init(viewport: Viewport) -> void:
 func next_frame() -> InputFrame:
 	var f := InputFrame.new()
 	var move := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
-	f.move = ((move * MOVE_STEPS).round() / MOVE_STEPS).limit_length(1.0)
+	# 127 단계 정수로 맞춘다 → 리플레이로 저장·복원해도 값이 정확히 같다
+	f.move = (move * MOVE_STEPS).round() / MOVE_STEPS
 	var mouse := _viewport.get_canvas_transform().affine_inverse() * _viewport.get_mouse_position()
 	f.aim = mouse.round()
 	for button: int in BUTTON_ACTIONS:

@@ -4,6 +4,9 @@ extends Node
 
 var current: InputFrame = InputFrame.new()
 var source: InputSource
+## 런 동안 쓴 입력 기록 (리플레이)
+var recording: Array[InputFrame] = []
+var is_recording: bool = false
 
 
 func _ready() -> void:
@@ -12,11 +15,25 @@ func _ready() -> void:
 	use_live_input()
 
 
+## 런 시작 때 기록을 새로 시작
+func start_recording() -> void:
+	recording.clear()
+	is_recording = true
+
+
+func stop_recording() -> void:
+	is_recording = false
+
+
 func use_live_input() -> void:
 	source = LiveInputSource.new(get_viewport())
 
 
 func _physics_process(_delta: float) -> void:
 	current = source.next_frame()
+	# 어떤 입력 공급원이든 리플레이에 저장되는 정밀도(1/127)로 맞춘다 → 기록·재생이 항상 똑같다
+	current.move = (current.move * Replay.MOVE_SCALE).round() / Replay.MOVE_SCALE
+	if is_recording:
+		recording.append(current.duplicate_frame())
 	if not Game.clock_running and current.has_any_action():
 		Game.start_clock()

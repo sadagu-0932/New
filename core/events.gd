@@ -71,6 +71,10 @@ signal boss_groggy()
 signal boss_defeated(boss: Node2D)
 ## 데모 끝 (2페이즈 시작 컷씬 종료) → 기록 화면
 signal demo_finished()
+## 리플레이(어트랙트) 재생이 끝남 → 타이틀로
+signal replay_finished()
+## 타이틀로 돌아가기 요청
+signal return_to_title()
 ## 런 결과 확정 (기록 화면이 받아서 보여준다)
 signal run_finished(result: RefCounted)
 ## 구간 스플릿 (구간 k 입장 시점의 누적 틱)
