@@ -13,6 +13,7 @@ const SUITES: Array[Script] = [
 	preload("res://tests/test_m7.gd"),
 	preload("res://tests/test_m8.gd"),
 	preload("res://tests/test_m9.gd"),
+	preload("res://tests/test_m10.gd"),
 ]
 
 

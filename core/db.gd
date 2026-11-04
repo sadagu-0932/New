@@ -32,6 +32,8 @@ var skills: Array[SkillData] = [
 	preload("res://data/skills/shockwave.tres"),
 	preload("res://data/skills/mark.tres"),
 ]
+var audio: AudioData = preload("res://data/audio.tres")
+var feel: FeelData = preload("res://data/feel.tres")
 var theme: ThemeData = preload("res://data/theme.tres")
 
 

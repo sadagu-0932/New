@@ -24,6 +24,7 @@ func _ready() -> void:
 	add_child(DialoguePlayer.new())
 	add_child(Crosshair.new())
 	add_child(PauseOverlay.new())
+	add_child(ScreenFx.new())
 	skill_panel = SkillPanel.new(null)
 	add_child(skill_panel)
 	add_child(RunTimer.new())
@@ -41,7 +42,19 @@ func _ready() -> void:
 	Events.replay_finished.connect(go_title)
 	Events.return_to_title.connect(go_title)
 	Events.skill_changed.connect(func(id: String) -> void: skill_id = id)
+	if DB.game_config.start_fullscreen:
+		set_fullscreen(true)
 	go_title()
+
+
+func set_fullscreen(value: bool) -> void:
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if value else DisplayServer.WINDOW_MODE_WINDOWED)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"toggle_fullscreen"):
+		set_fullscreen(DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_FULLSCREEN)
+		get_viewport().set_input_as_handled()
 
 
 func _build_replay_overlay() -> void:

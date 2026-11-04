@@ -409,6 +409,11 @@ func _update_visual(input: InputFrame) -> void:
 	else:
 		_sprite.modulate = Color.WHITE
 	_update_aura()
+	# 회피·돌진 잔상 (화면 표시)
+	if (state == State.DODGE or state == State.DASH_SLASH) and Game.tick % maxi(DB.feel.afterimage_interval_ticks, 1) == 0:
+		var tint := Color(1.0, 0.8, 0.4) if state == State.DASH_SLASH else Color(0.6, 0.85, 1.0)
+		AfterImage.spawn(_sprite.sprite_frames.get_frame_texture(_sprite.animation, _sprite.frame),
+			global_position, _sprite.flip_h, DB.feel.afterimage_fade_seconds, tint)
 
 
 ## 콤보 단계 이펙트: 단계가 오를수록 크고 진하게 (노랑 → 주황 → 흰빛). 숫자 표시 없음

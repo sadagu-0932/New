@@ -1075,6 +1075,14 @@ def build_ui() -> None:
 # ---------------------------------------------------------------------------
 # 팔레트 파일 (Aseprite·GIMP에서 그대로 불러올 수 있는 .gpl + 1px 견본 PNG)
 # ---------------------------------------------------------------------------
+def build_icon() -> None:
+    """창·exe 아이콘 (64x64): 플레이어를 4배로."""
+    base = Canvas.from_rows(PLAYER_BASE, PLAYER_CMAP)
+    img = Image.new("RGBA", (64, 64), (*PAL_RGB[c("shadow")], 255))
+    img.alpha_composite(base.to_image().resize((64, 64), Image.NEAREST))
+    img.save(ROOT / "art" / "icon.png", optimize=False)
+
+
 def build_palette() -> None:
     lines = ["GIMP Palette", f"Name: {THEME}", "Columns: 8", "#"]
     for (name, _), (r, g, b) in zip(PALETTE, PAL_RGB):
@@ -1111,6 +1119,7 @@ def main() -> None:
     build_enemies()
     build_skill_icons()
     build_golem()
+    build_icon()
     verify_palette()
     print(f"스프라이트 생성 완료: {OUT.relative_to(ROOT)}")
 

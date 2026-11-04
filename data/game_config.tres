@@ -15,5 +15,6 @@ default_skill_id = "shockwave"
 leaderboard_size = 10
 attract_idle_seconds = 30.0
 result_idle_seconds = 60.0
+start_fullscreen = false
 restart_hold_ticks = 30
 death_restart_delay_ticks = 40

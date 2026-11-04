@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="FeelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/feel_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+shake_hit = Vector2(3, 0.2)
+shake_perfect = Vector2(2, 0.15)
+shake_execute = Vector2(4, 0.25)
+shake_groggy = Vector2(3, 0.3)
+shake_enemy_death = Vector2(1, 0.1)
+flash_perfect = Vector2(0.35, 0.12)
+flash_hit = Vector2(0.25, 0.1)
+afterimage_interval_ticks = 2
+afterimage_fade_seconds = 0.2

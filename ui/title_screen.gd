@@ -93,6 +93,8 @@ func _input(event: InputEvent) -> void:
 	# 뗄 때 시작 → 시작 키가 곧바로 게임 입력(회피·사격)으로 이어지지 않게
 	var released := (event is InputEventKey and not event.is_pressed() and not event.is_echo()) \
 		or (event is InputEventMouseButton and not event.is_pressed())
-	if released and not (event is InputEventKey and AdminPanel.is_admin_combo(event as InputEventKey)):
+	var ignored := event.is_action(&"toggle_fullscreen") \
+		or (event is InputEventKey and AdminPanel.is_admin_combo(event as InputEventKey))
+	if released and not ignored:
 		get_viewport().set_input_as_handled()
 		start_requested.emit()

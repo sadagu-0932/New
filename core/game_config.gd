@@ -21,6 +21,8 @@ extends Resource
 @export var attract_idle_seconds: float = 0.0
 ## 기록 화면에서 이 시간(초) 동안 입력이 없으면 타이틀로
 @export var result_idle_seconds: float = 0.0
+## 전체화면으로 시작 (F11 로 전환)
+@export var start_fullscreen: bool = false
 ## 즉시 재시작: R 을 이 틱 수만큼 누르고 있어야 함 (실수 방지)
 @export var restart_hold_ticks: int = 0
 ## 사망 후 자동 재시작까지 틱 (사망 모션을 잠깐 보여줌)
