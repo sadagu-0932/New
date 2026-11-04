@@ -42,7 +42,7 @@ func _ready() -> void:
 	ammo = Ammo.new(DB.gun.magazine_size, DB.gun.start_ammo)
 	health = Health.new(data.max_hp)
 	collision_layer = Layers.PLAYER
-	collision_mask = Layers.WORLD | Layers.ENEMY
+	collision_mask = Layers.WORLD | Layers.ENEMY | Layers.PIT
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	_build_children()
 	Events.player_spawned.emit(self)

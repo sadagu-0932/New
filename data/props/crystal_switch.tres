@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="CrystalSwitchData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://levels/props/crystal_switch_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+body_radius = 5.0
+body_offset_y = 3.0
+hurtbox_radius = 7.0

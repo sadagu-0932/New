@@ -6,6 +6,8 @@ extends Node
 func _ready() -> void:
 	add_child(RunController.new(RunSetup.from_config(DB.game_config)))
 	add_child(Hud.new())
+	add_child(HintDisplay.new())
+	add_child(DialoguePlayer.new())
 	add_child(Crosshair.new())
 	add_child(PauseOverlay.new())
 	if Debug.enabled:

@@ -33,7 +33,7 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	hp = data.max_hp
 	collision_layer = Layers.ENEMY
-	collision_mask = Layers.WORLD | Layers.ENEMY | Layers.PLAYER
+	collision_mask = Layers.WORLD | Layers.ENEMY | Layers.PLAYER | Layers.PIT
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 
 	var body_shape := CollisionShape2D.new()

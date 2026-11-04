@@ -9,3 +9,5 @@ const PLAYER_HURTBOX := 1 << 3
 const ENEMY_HURTBOX := 1 << 4
 const PLAYER_ATTACK := 1 << 5
 const ENEMY_ATTACK := 1 << 6
+## 구덩이: 플레이어·적은 막히고 탄은 지나감
+const PIT := 1 << 7

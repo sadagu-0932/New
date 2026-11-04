@@ -19,6 +19,54 @@
       "frames": 2,
       "fps": 2.0,
       "loop": true
+    },
+    "gate_closed": {
+      "row": 3,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "gate_open": {
+      "row": 4,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "spike_down": {
+      "row": 5,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "spike_warn": {
+      "row": 6,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "spike_up": {
+      "row": 7,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "switch_off": {
+      "row": 8,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "switch_on": {
+      "row": 9,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "boulder": {
+      "row": 10,
+      "frames": 2,
+      "fps": 8.0,
+      "loop": true
     }
   }
 }

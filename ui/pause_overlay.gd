@@ -1,7 +1,6 @@
 class_name PauseOverlay
 extends CanvasLayer
-## 일시정지 화면 (어둡게 + 글자). 한글 픽셀 폰트가 정해지기 전까지 영문 표시.
-## TODO(M4 이후): 한글 문구·메뉴
+## 일시정지 화면 (어둡게 + 글자). TODO: 메뉴(타이틀로 등)
 
 var _root: Control
 
@@ -18,11 +17,9 @@ func _ready() -> void:
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(dim)
-	var label := Label.new()
-	label.text = "PAUSED\nEsc: resume   R(hold): restart"
+	var label := UiText.make_label("일시정지\n\nEsc 계속하기 · R 길게 눌러 처음부터")
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override(&"font_size", 8)
 	label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(label)
 	_root.visible = false

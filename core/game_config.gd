@@ -8,7 +8,10 @@ extends Resource
 @export var demo_mode: bool = true
 ## 런 고정 시드. 랜덤은 전부 이 시드의 RNG 하나로만 뽑는다
 @export var run_seed: int = 0
-## 시작 맵 (M4에서 튜토리얼 맵으로 교체)
+## 튜토리얼 (use_tutorial 이 켜져 있으면 이걸로 시작)
+@export var tutorial: TutorialData
+@export var use_tutorial: bool = true
+## 테스트 방 맵 (use_tutorial 이 꺼져 있을 때)
 @export_file("*.txt") var start_map_path: String = ""
 ## 즉시 재시작: R 을 이 틱 수만큼 누르고 있어야 함 (실수 방지)
 @export var restart_hold_ticks: int = 0

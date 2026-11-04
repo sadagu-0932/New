@@ -1,7 +1,7 @@
 class_name LevelMap
 extends RefCounted
 ## 글자로 그린 맵 파일을 읽는다.
-##   #  벽        .  바닥       (공백) 빈칸
+##   #  벽        .  바닥       ~  구덩이 (탄은 지나감)      (공백) 빈칸
 ##   P  플레이어 시작 (바닥)
 ##   1~7  구간 시작 지점 (바닥, 디버그 구간 이동·스플릿 지점)
 ##   그 밖의 글자  소품·적 (바닥). 무엇이 생기는지는 Level.PROPS 에서 정한다
@@ -44,7 +44,7 @@ static func parse(text: String) -> LevelMap:
 				map.spawn_cell = Vector2i(x, y)
 			elif ch >= "1" and ch <= "7":
 				map.section_cells[int(ch)] = Vector2i(x, y)
-			elif ch != "#" and ch != "." and ch != " ":
+			elif ch != "#" and ch != "." and ch != " " and ch != "~":
 				map.props.append({"char": ch, "cell": Vector2i(x, y)})
 	return map
 
@@ -62,9 +62,13 @@ func is_wall(cell: Vector2i) -> bool:
 	return char_at(cell) == "#"
 
 
+func is_pit(cell: Vector2i) -> bool:
+	return char_at(cell) == "~"
+
+
 func is_floor(cell: Vector2i) -> bool:
 	var ch := char_at(cell)
-	return ch != "#" and ch != " "
+	return ch != "#" and ch != " " and ch != "~"
 
 
 static func cell_center(cell: Vector2i) -> Vector2:

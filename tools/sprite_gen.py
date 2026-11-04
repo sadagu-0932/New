@@ -349,6 +349,18 @@ def tile_wall_face() -> Canvas:
     return t
 
 
+def tile_pit() -> Canvas:
+    """구덩이: 플레이어는 못 건너지만 탄은 지나간다."""
+    t = Canvas(16, 16)
+    t.fill(c("outline"))
+    t.line(0, 0, 15, 0, c("stone_dark"))
+    t.line(0, 1, 15, 1, c("shadow"))
+    t.line(0, 2, 15, 2, c("shadow"))
+    for x in range(0, 16, 5):
+        t.set(x + 2, 3, c("shadow"))
+    return t
+
+
 def build_tiles() -> None:
     rng = random.Random(1001)  # 고정 시드
     tiles = [
@@ -356,6 +368,7 @@ def build_tiles() -> None:
         ("floor_alt", tile_floor(rng, True)),
         ("wall_top", tile_wall_top()),
         ("wall_face", tile_wall_face()),
+        ("pit", tile_pit()),
     ]
     sheet = Image.new("RGBA", (16 * len(tiles), 16), (0, 0, 0, 0))
     meta: dict = {"tile_size": 16, "tiles": {}}
@@ -518,6 +531,101 @@ TURRET = [
 ]
 
 
+def gate_frame(open_: bool) -> Canvas:
+    t = Canvas(16, 16)
+    for x in (0, 15):
+        t.line(x, 0, x, 15, c("outline"))
+    for x in (1, 14):
+        t.line(x, 0, x, 15, c("stone_light"))
+    if open_:
+        t.line(2, 0, 13, 0, c("stone_dark"))
+        t.line(2, 1, 13, 1, c("stone"))
+        return t
+    t.line(2, 0, 13, 0, c("outline"))
+    t.line(2, 15, 13, 15, c("outline"))
+    for x in (3, 6, 9, 12):
+        t.line(x, 1, x, 14, c("stone_light"))
+        t.line(x + 1, 1, x + 1, 14, c("stone_dark"))
+    t.line(2, 7, 13, 7, c("brown"))
+    t.line(2, 8, 13, 8, c("brown_dark"))
+    return t
+
+
+def spike_frame(stage: int) -> Canvas:
+    """0 = 내려감(판과 구멍), 1 = 예고(판 테두리가 주황), 2 = 올라옴(큰 가시)"""
+    t = Canvas(16, 16)
+    rim = c("orange") if stage == 1 else c("shadow")
+    for x in range(1, 15):
+        t.set(x, 1, rim)
+        t.set(x, 14, rim)
+    for y in range(1, 15):
+        t.set(1, y, rim)
+        t.set(14, y, rim)
+    for cx, cy in ((5, 6), (10, 6), (5, 12), (10, 12)):
+        if stage < 2:
+            t.set(cx, cy, c("outline"))
+            t.set(cx + 1, cy, c("outline"))
+            if stage == 1:
+                t.set(cx, cy - 1, c("pale"))
+                t.set(cx + 1, cy - 1, c("pale"))
+        else:
+            # 높이 5, 밑변 4 의 삼각 가시
+            for h in range(5):
+                half = 2 - h // 2
+                for dx in range(-half, half + 1):
+                    x = cx + dx if dx <= 0 else cx + dx
+                    color = c("white") if dx >= 0 else c("pale")
+                    t.set(x, cy - h, color)
+            t.set(cx - 2, cy, c("outline"))
+            t.set(cx + 3, cy, c("outline"))
+    return t
+
+
+def switch_frame(on: bool) -> Canvas:
+    rows = [
+        "......oo........",
+        ".....occo.......",
+        "....occcco......",
+        "...occCccco.....",
+        "...occCcccco....",
+        "..occCCccccco...",
+        "..occCccccccco..",
+        "...occcccccco...",
+        "....occcccco....",
+        ".....occcco.....",
+        "......occo......",
+        ".....oSSSSo.....",
+        "....oSSSSSSo....",
+        "...oSSSSSSSSo...",
+        "...oooooooooo...",
+        "................",
+    ]
+    cmap = {".": None, "o": "outline", "c": "cyan" if on else "blue",
+            "C": "white" if on else "sky", "S": "stone"}
+    cv = Canvas.from_rows(rows, cmap)
+    if on:
+        for x, y in ((12, 1), (13, 3), (2, 2)):
+            cv.set(x, y, c("yellow"))
+    return cv
+
+
+def boulder_frame(phase: int) -> Canvas:
+    t = Canvas(16, 16)
+    for y in range(16):
+        for x in range(16):
+            d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+            if d <= 6.0:
+                t.set(x, y, c("stone"))
+            elif d <= 7.0:
+                t.set(x, y, c("outline"))
+    # 굴러가는 느낌: 금 무늬 위치가 프레임마다 바뀜
+    marks = [((5, 5), (6, 6), (9, 10)), ((9, 4), (10, 5), (5, 10))][phase]
+    for x, y in marks:
+        t.set(x, y, c("stone_dark"))
+    t.set(5 + phase * 3, 4, c("stone_light"))
+    return t
+
+
 def build_props() -> None:
     dmap = {".": None, "o": "outline", "t": "tan", "e": "brown_dark", "b": "brown", "B": "brown_dark"}
     dummy = Canvas.from_rows(DUMMY, dmap)
@@ -531,6 +639,14 @@ def build_props() -> None:
         ("dummy_idle", [dummy], 1.0, True),
         ("dummy_hit", [dummy.recolor({c("outline")}, c("white")), dummy], 12.0, False),
         ("turret_idle", [turret, turret_lit], 2.0, True),
+        ("gate_closed", [gate_frame(False)], 1.0, False),
+        ("gate_open", [gate_frame(True)], 1.0, False),
+        ("spike_down", [spike_frame(0)], 1.0, False),
+        ("spike_warn", [spike_frame(1)], 1.0, False),
+        ("spike_up", [spike_frame(2)], 1.0, False),
+        ("switch_off", [switch_frame(False)], 1.0, False),
+        ("switch_on", [switch_frame(True)], 1.0, False),
+        ("boulder", [boulder_frame(0), boulder_frame(1)], 8.0, True),
     ])
 
 

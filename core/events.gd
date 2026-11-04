@@ -38,6 +38,18 @@ signal player_hit(hit: HitInfo)
 ## 플레이어 사망
 signal player_died()
 
+# --- 튜토리얼·레벨 ---
+## 구간 입장 (1~7). 스플릿 지점
+signal section_entered(index: int)
+## 하단 안내 문구 바뀜 (빈 문자열 = 숨김)
+signal hint_changed(text: String)
+## 구간의 문이 열림
+signal gate_opened(section: int)
+## 수정 스위치가 켜짐
+signal switch_activated(switch: Node2D)
+## 스토리 트리거 발동 (데모에서는 비활성이라 발생하지 않음)
+signal story_triggered(story_id: String)
+
 # --- 적 ---
 ## 적이 맞음
 signal enemy_damaged(enemy: Node2D, hit: HitInfo)

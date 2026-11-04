@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SpikeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://levels/hazards/spike_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+up_ticks = 50
+down_ticks = 50
+warn_ticks = 20
+damage = 1
+hitbox_size = 12.0
+alt_phase_ticks = 50

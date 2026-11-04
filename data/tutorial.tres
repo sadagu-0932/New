@@ -1,0 +1,79 @@
+[gd_resource type="Resource" script_class="TutorialData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://levels/tutorial/tutorial_data.gd" id="1"]
+[ext_resource type="Script" path="res://levels/tutorial/tutorial_section_data.gd" id="2"]
+
+[sub_resource type="Resource" id="section_1"]
+script = ExtResource("2")
+map_file = "res://levels/tutorial/sections/section_1.txt"
+hint = "WASD 이동 · Space 회피 (회피하는 순간엔 무적)"
+hint_hide_on = "dodge"
+hint_hide_delay_ticks = 90
+drain_ammo = false
+gate_rule = 0
+story_id = "tutorial_section_1"
+
+[sub_resource type="Resource" id="section_2"]
+script = ExtResource("2")
+map_file = "res://levels/tutorial/sections/section_2.txt"
+hint = "마우스로 조준 · 좌클릭 사격 (누르고 있으면 연사)"
+hint_hide_on = "shoot"
+hint_hide_delay_ticks = 120
+drain_ammo = false
+gate_rule = 1
+story_id = "tutorial_section_2"
+
+[sub_resource type="Resource" id="section_3"]
+script = ExtResource("2")
+map_file = "res://levels/tutorial/sections/section_3.txt"
+hint = "탄약이 없다! 우클릭 근접 공격 · 적을 베면 탄약 회복"
+hint_hide_on = "melee"
+hint_hide_delay_ticks = 90
+drain_ammo = true
+gate_rule = 1
+story_id = "tutorial_section_3"
+
+[sub_resource type="Resource" id="section_4"]
+script = ExtResource("2")
+map_file = "res://levels/tutorial/sections/section_4.txt"
+hint = "날아오는 탄에 맞춰 우클릭 → 조준한 쪽으로 튕겨낸다 · 수정을 맞혀라"
+hint_hide_on = "parry"
+hint_hide_delay_ticks = 180
+drain_ammo = false
+gate_rule = 2
+story_id = "tutorial_section_4"
+
+[sub_resource type="Resource" id="section_5"]
+script = ExtResource("2")
+map_file = "res://levels/tutorial/sections/section_5.txt"
+hint = "탄에 맞기 직전에 회피하면 잠시 투명해진다"
+hint_hide_on = "perfect_dodge"
+hint_hide_delay_ticks = 120
+drain_ammo = false
+gate_rule = 1
+story_id = "tutorial_section_5"
+
+[sub_resource type="Resource" id="section_6"]
+script = ExtResource("2")
+map_file = "res://levels/tutorial/sections/section_6.txt"
+hint = "Q 스킬"
+hint_hide_on = ""
+hint_hide_delay_ticks = 0
+drain_ammo = false
+gate_rule = 1
+story_id = "tutorial_section_6"
+
+[sub_resource type="Resource" id="section_7"]
+script = ExtResource("2")
+map_file = "res://levels/tutorial/sections/section_7.txt"
+hint = ""
+hint_hide_on = ""
+hint_hide_delay_ticks = 0
+drain_ammo = false
+gate_rule = 0
+story_id = "tutorial_section_7"
+
+[resource]
+script = ExtResource("1")
+sections = Array[ExtResource("2")]([SubResource("section_1"), SubResource("section_2"), SubResource("section_3"), SubResource("section_4"), SubResource("section_5"), SubResource("section_6"), SubResource("section_7")])
+story_trigger_radius = 24.0

@@ -36,6 +36,7 @@ func start_run() -> void:
 	Game.reset_run(setup.seed_value)
 	level = Level.new()
 	level.map_path = setup.map_path
+	level.tutorial = setup.tutorial
 	level.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(level)
 	Events.run_started.emit()

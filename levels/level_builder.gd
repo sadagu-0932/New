@@ -1,7 +1,7 @@
 class_name LevelBuilder
 extends RefCounted
 ## LevelMap → 타일맵 노드. 타일셋도 코드로 만든다 (에디터 없이 수정 가능하게).
-## 바닥 레이어(충돌 없음) + 벽 레이어(충돌 있음) 두 장.
+## 바닥 레이어(충돌 없음) + 벽 레이어(벽: WORLD 충돌, 구덩이: PIT 충돌) 두 장.
 
 const SOURCE_ID := 0
 
@@ -35,6 +35,8 @@ static func build(map: LevelMap, theme: ThemeData) -> Node2D:
 				# 아래가 바닥이면 벽 앞면, 아니면 벽 윗면
 				var face := map.is_floor(cell + Vector2i.DOWN)
 				wall_layer.set_cell(cell, SOURCE_ID, _coords(tiles, "wall_face" if face else "wall_top"))
+			elif map.is_pit(cell):
+				wall_layer.set_cell(cell, SOURCE_ID, _coords(tiles, "pit"))
 	return root
 
 
@@ -50,6 +52,9 @@ static func _build_tile_set(texture: Texture2D, meta: Dictionary) -> TileSet:
 	tile_set.add_physics_layer()
 	tile_set.set_physics_layer_collision_layer(0, Layers.WORLD)
 	tile_set.set_physics_layer_collision_mask(0, 0)
+	tile_set.add_physics_layer()
+	tile_set.set_physics_layer_collision_layer(1, Layers.PIT)
+	tile_set.set_physics_layer_collision_mask(1, 0)
 
 	var source := TileSetAtlasSource.new()
 	source.texture = texture
@@ -64,8 +69,13 @@ static func _build_tile_set(texture: Texture2D, meta: Dictionary) -> TileSet:
 	for tile_name: String in tiles:
 		var coords := _coords(tiles, tile_name)
 		source.create_tile(coords)
+		var physics_layer := -1
 		if tile_name.begins_with("wall"):
+			physics_layer = 0
+		elif tile_name == "pit":
+			physics_layer = 1
+		if physics_layer >= 0:
 			var tile_data := source.get_tile_data(coords, 0)
-			tile_data.add_collision_polygon(0)
-			tile_data.set_collision_polygon_points(0, 0, square)
+			tile_data.add_collision_polygon(physics_layer)
+			tile_data.set_collision_polygon_points(physics_layer, 0, square)
 	return tile_set

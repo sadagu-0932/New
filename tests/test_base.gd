@@ -31,6 +31,22 @@ func new_level(map_path: String) -> Level:
 	return level
 
 
+## 실제 튜토리얼 맵으로 새 레벨을 띄운다
+func new_tutorial_level() -> Level:
+	if level != null:
+		level.queue_free()
+		await get_tree().physics_frame
+	Game.reset_run()
+	Debug.god_mode = false
+	input = ScriptedInputSource.new()
+	PlayerInput.source = input
+	level = Level.new()
+	level.tutorial = DB.game_config.tutorial
+	add_child(level)
+	await get_tree().physics_frame
+	return level
+
+
 ## 레벨 안에 적을 만든다 (key = DB.enemies 의 이름)
 func spawn_enemy(key: String, pos: Vector2) -> Enemy:
 	var script: GDScript = null

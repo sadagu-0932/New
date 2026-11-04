@@ -5,10 +5,14 @@ extends RefCounted
 
 var seed_value: int = 0
 var map_path: String = ""
+## 있으면 튜토리얼로 시작 (map_path 무시)
+var tutorial: TutorialData
 
 
 static func from_config(config: GameConfig) -> RunSetup:
 	var s := RunSetup.new()
 	s.seed_value = config.run_seed
 	s.map_path = config.start_map_path
+	if config.use_tutorial:
+		s.tutorial = config.tutorial
 	return s
