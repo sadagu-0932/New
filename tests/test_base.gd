@@ -37,6 +37,15 @@ func step(n: int) -> void:
 		await get_tree().physics_frame
 
 
+## cond 가 참이 될 때까지 한 틱씩 진행 (최대 max_ticks). 참이 됐으면 true
+func wait_until(cond: Callable, max_ticks: int) -> bool:
+	for i in max_ticks:
+		if cond.call():
+			return true
+		await get_tree().physics_frame
+	return bool(cond.call())
+
+
 func check(cond: bool, label: String) -> void:
 	checks += 1
 	if cond:

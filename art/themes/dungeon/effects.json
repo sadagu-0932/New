@@ -1,0 +1,36 @@
+{
+  "frame_width": 16,
+  "frame_height": 16,
+  "animations": {
+    "slash": {
+      "row": 0,
+      "frames": 3,
+      "fps": 20.0,
+      "loop": false
+    },
+    "parry": {
+      "row": 1,
+      "frames": 3,
+      "fps": 20.0,
+      "loop": false
+    },
+    "perfect": {
+      "row": 2,
+      "frames": 4,
+      "fps": 16.0,
+      "loop": false
+    },
+    "stealth_puff": {
+      "row": 3,
+      "frames": 3,
+      "fps": 12.0,
+      "loop": false
+    },
+    "hit": {
+      "row": 4,
+      "frames": 2,
+      "fps": 20.0,
+      "loop": false
+    }
+  }
+}

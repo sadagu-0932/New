@@ -4,6 +4,7 @@ extends RefCounted
 ##   #  벽        .  바닥       (공백) 빈칸
 ##   P  플레이어 시작 (바닥)
 ##   1~7  구간 시작 지점 (바닥, 디버그 구간 이동·스플릿 지점)
+##   그 밖의 글자  소품·적 (바닥). 무엇이 생기는지는 Level.PROPS 에서 정한다
 
 const TILE_SIZE := 16
 
@@ -13,6 +14,8 @@ var rows: PackedStringArray = []
 var spawn_cell: Vector2i = Vector2i.ZERO
 ## 구간 번호(1~7) → 칸
 var section_cells: Dictionary = {}
+## 소품·적: [{ "char": 글자, "cell": 칸 }] (읽은 순서 = 위→아래, 왼→오른)
+var props: Array[Dictionary] = []
 
 
 static func load_from_file(path: String) -> LevelMap:
@@ -41,6 +44,8 @@ static func parse(text: String) -> LevelMap:
 				map.spawn_cell = Vector2i(x, y)
 			elif ch >= "1" and ch <= "7":
 				map.section_cells[int(ch)] = Vector2i(x, y)
+			elif ch != "#" and ch != "." and ch != " ":
+				map.props.append({"char": ch, "cell": Vector2i(x, y)})
 	return map
 
 

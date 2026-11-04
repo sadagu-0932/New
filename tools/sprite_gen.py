@@ -367,8 +367,196 @@ def build_tiles() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 탄 (8x8). 반사탄은 색으로 확실히 구분 (부스 관객용)
+# ---------------------------------------------------------------------------
+def orb(size: int, r: float, core: str, ring: str, outline: str | None, phase: int) -> Canvas:
+    cv = Canvas(size, size)
+    cx = cy = (size - 1) / 2
+    for y in range(size):
+        for x in range(size):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if d <= r - 1.2:
+                cv.set(x, y, c(core))
+            elif d <= r:
+                cv.set(x, y, c(ring))
+            elif outline and d <= r + 0.9:
+                cv.set(x, y, c(outline))
+    # 반짝임: 프레임마다 하이라이트 위치가 바뀜
+    hx = int(cx - 1 + phase)
+    cv.set(hx, int(cy - 1), c("white"))
+    return cv
+
+
+def build_bullets() -> None:
+    save_sheet("bullets", 8, 8, [
+        ("player", [orb(8, 2.2, "yellow", "orange", "outline", p) for p in (0, 1)], 10.0, True),
+        ("enemy", [orb(8, 2.8, "red", "crimson", "outline", p) for p in (0, 1)], 8.0, True),
+        ("reflect", [orb(8, 2.4, "cyan", "sky", "outline", p) for p in (0, 1)], 12.0, True),
+        ("reflect_perfect", [orb(8, 3.3, "white", "cyan", "sky", p) for p in (0, 1)], 16.0, True),
+    ])
+
+
+# ---------------------------------------------------------------------------
+# 이펙트 (16x16, 오른쪽 기준. 게임에서 회전)
+# ---------------------------------------------------------------------------
+def arc_pixels(cx: float, cy: float, r: float, a0: float, a1: float, steps: int = 24):
+    import math
+    for i in range(steps + 1):
+        a = math.radians(a0 + (a1 - a0) * i / steps)
+        yield round(cx + r * math.cos(a)), round(cy + r * math.sin(a))
+
+
+def build_effects() -> None:
+    import math
+
+    # 근접 베기 호
+    slash = []
+    for a0, a1 in ((-80, -20), (-75, 75), (20, 80)):
+        cv = Canvas(16, 16)
+        for x, y in arc_pixels(4, 7.5, 9, a0, a1):
+            cv.set(x, y, c("white"))
+        for x, y in arc_pixels(4, 7.5, 7.5, a0 + 10, a1 - 10):
+            cv.set(x, y, c("pale"))
+        slash.append(cv)
+
+    # 패링 불꽃: 별 모양이 퍼짐
+    parry = []
+    for r in (2, 4, 6):
+        cv = Canvas(16, 16)
+        for k in range(8):
+            a = math.radians(k * 45)
+            for t in range(max(1, r - 2), r + 1):
+                cv.set(round(7.5 + t * math.cos(a)), round(7.5 + t * math.sin(a)),
+                       c("white") if t == r else c("yellow"))
+        cv.set(7, 7, c("white"))
+        cv.set(8, 8, c("white"))
+        parry.append(cv)
+
+    # 완벽 판정: 커지는 이중 고리 (게임에서 2배로 키워 표시)
+    perfect = []
+    for r in (2.5, 4.5, 6.5, 7.5):
+        cv = Canvas(16, 16)
+        for y in range(16):
+            for x in range(16):
+                d = ((x - 7.5) ** 2 + (y - 7.5) ** 2) ** 0.5
+                if abs(d - r) < 0.6:
+                    cv.set(x, y, c("white"))
+                elif abs(d - (r - 2)) < 0.5 and r < 7.5:
+                    cv.set(x, y, c("cyan"))
+        perfect.append(cv)
+
+    # 투명 진입 연기
+    puff = []
+    rng = random.Random(77)
+    for r in (3, 5, 7):
+        cv = Canvas(16, 16)
+        for _ in range(18):
+            a = rng.uniform(0, math.tau)
+            d = rng.uniform(r - 2, r)
+            cv.set(round(7.5 + d * math.cos(a)), round(7.5 + d * math.sin(a)),
+                   c("pale") if rng.random() < 0.6 else c("cyan"))
+        puff.append(cv)
+
+    # 탄이 벽·대상에 맞음
+    hit = []
+    for r in (1, 3):
+        cv = Canvas(16, 16)
+        for k in range(4):
+            a = math.radians(45 + k * 90)
+            cv.set(round(7.5 + r * math.cos(a)), round(7.5 + r * math.sin(a)), c("yellow"))
+        cv.set(7, 7, c("white"))
+        hit.append(cv)
+
+    save_sheet("effects", 16, 16, [
+        ("slash", slash, 20.0, False),
+        ("parry", parry, 20.0, False),
+        ("perfect", perfect, 16.0, False),
+        ("stealth_puff", puff, 12.0, False),
+        ("hit", hit, 20.0, False),
+    ])
+
+
+# ---------------------------------------------------------------------------
+# 테스트·연습용 소품 (16x16)
+# ---------------------------------------------------------------------------
+DUMMY = [
+    "................",
+    "......oooo......",
+    ".....otttto.....",
+    ".....otetto.....",
+    ".....otttto.....",
+    "......oooo......",
+    "...oooobboooo...",
+    "...obbbbbbbbo...",
+    "...oooobboooo...",
+    "......obbo......",
+    ".....otttto.....",
+    ".....otttto.....",
+    "......obbo......",
+    "......obbo......",
+    "....oooooooo....",
+    "....oBBBBBBo....",
+]
+TURRET = [
+    "................",
+    "................",
+    "....oooooooo....",
+    "...osssssssso...",
+    "..osSSSSSSSSso..",
+    "..oSSowwwoSSSo..",
+    "..oSowrrrwoSSo..",
+    "..oSowrRrwoSSo..",
+    "..oSSowwwoSSSo..",
+    "..osSSSSSSSSso..",
+    "...osssssssso...",
+    "....oSSSSSSo....",
+    "...oSSSSSSSSo...",
+    "...oddddddddo...",
+    "...oooooooooo...",
+    "................",
+]
+
+
+def build_props() -> None:
+    dmap = {".": None, "o": "outline", "t": "tan", "e": "brown_dark", "b": "brown", "B": "brown_dark"}
+    dummy = Canvas.from_rows(DUMMY, dmap)
+    tmap = {".": None, "o": "outline", "s": "stone_light", "S": "stone", "w": "pale",
+            "r": "red", "R": "yellow", "d": "stone_dark"}
+    turret = Canvas.from_rows(TURRET, tmap)
+    turret_lit = turret.copy()
+    for x, y in [(6, 6), (7, 6), (8, 6), (6, 7), (8, 7)]:
+        turret_lit.set(x, y, c("orange"))
+    save_sheet("props", 16, 16, [
+        ("dummy_idle", [dummy], 1.0, True),
+        ("dummy_hit", [dummy.recolor({c("outline")}, c("white")), dummy], 12.0, False),
+        ("turret_idle", [turret, turret_lit], 2.0, True),
+    ])
+
+
+# ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
+AMMO_FULL = [
+    "..oo....",
+    ".oyyo...",
+    ".oyyo...",
+    ".oYYo...",
+    ".oYYo...",
+    ".oBBo...",
+    ".oBBo...",
+    "..oo....",
+]
+
+
+def build_ui_icons() -> None:
+    cmap = {".": None, "o": "outline", "y": "yellow", "Y": "orange", "B": "brown"}
+    full = Canvas.from_rows(AMMO_FULL, cmap)
+    empty = full.recolor({c("outline")}, c("stone_dark"))
+    save_sheet("ui_icons", 8, 8, [
+        ("ammo_full", [full], 1.0, False),
+        ("ammo_empty", [empty], 1.0, False),
+    ])
+
 CROSSHAIR = [
     "....o....",
     "...owo...",
@@ -419,6 +607,10 @@ def main() -> None:
     build_player()
     build_tiles()
     build_ui()
+    build_bullets()
+    build_effects()
+    build_props()
+    build_ui_icons()
     verify_palette()
     print(f"스프라이트 생성 완료: {OUT.relative_to(ROOT)}")
 

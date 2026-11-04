@@ -1,0 +1,30 @@
+{
+  "frame_width": 8,
+  "frame_height": 8,
+  "animations": {
+    "player": {
+      "row": 0,
+      "frames": 2,
+      "fps": 10.0,
+      "loop": true
+    },
+    "enemy": {
+      "row": 1,
+      "frames": 2,
+      "fps": 8.0,
+      "loop": true
+    },
+    "reflect": {
+      "row": 2,
+      "frames": 2,
+      "fps": 12.0,
+      "loop": true
+    },
+    "reflect_perfect": {
+      "row": 3,
+      "frames": 2,
+      "fps": 16.0,
+      "loop": true
+    }
+  }
+}

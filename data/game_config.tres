@@ -7,4 +7,4 @@ script = ExtResource("1")
 tick_rate = 60
 demo_mode = true
 run_seed = 20261104
-start_map_path = "res://levels/test/m1_test_room.txt"
+start_map_path = "res://levels/test/test_room.txt"

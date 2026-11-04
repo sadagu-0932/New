@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MeleeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/melee_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+active_ticks = 12
+recovery_ticks = 8
+offset = 10.0
+radius = 10.0
+damage = 2
+move_speed_mult = 0.5
+ammo_on_hit = 2

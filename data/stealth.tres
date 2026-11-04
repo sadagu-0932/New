@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="StealthData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://combat/stealth_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+perfect_dodge_window_ticks = 6
+stealth_ticks = 90
+perfect_dodge_margin = 6.0

@@ -7,6 +7,7 @@ func _ready() -> void:
 	var level := Level.new()
 	level.map_path = DB.game_config.start_map_path
 	add_child(level)
+	add_child(Hud.new())
 	add_child(Crosshair.new())
 	if Debug.enabled:
 		add_child(DebugOverlay.new())

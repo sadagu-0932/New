@@ -5,6 +5,7 @@ extends Node
 
 const SUITES: Array[Script] = [
 	preload("res://tests/test_m1.gd"),
+	preload("res://tests/test_m2.gd"),
 ]
 
 
