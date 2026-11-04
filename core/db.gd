@@ -12,4 +12,10 @@ var parry: ParryData = preload("res://data/parry.tres")
 var stealth: StealthData = preload("res://data/stealth.tres")
 var target_dummy: TargetDummyData = preload("res://data/props/target_dummy.tres")
 var test_turret: TestTurretData = preload("res://data/props/test_turret.tres")
+## 적 종류 이름 → 데이터 (맵 글자와의 연결은 Level.SPAWNS)
+var enemies: Dictionary = {
+	"charger": preload("res://data/enemies/charger.tres"),
+	"shooter": preload("res://data/enemies/shooter.tres"),
+	"spreader": preload("res://data/enemies/spreader.tres"),
+}
 var theme: ThemeData = preload("res://data/theme.tres")

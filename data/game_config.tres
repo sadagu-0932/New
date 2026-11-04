@@ -8,3 +8,5 @@ tick_rate = 60
 demo_mode = true
 run_seed = 20261104
 start_map_path = "res://levels/test/test_room.txt"
+restart_hold_ticks = 30
+death_restart_delay_ticks = 40

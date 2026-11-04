@@ -4,10 +4,21 @@ extends Node
 
 @warning_ignore_start("unused_signal")
 
+# --- 런 ---
+## 새 런(판) 시작 (처음 시작·재시작 모두)
+signal run_started()
+## 일시정지 켜짐/꺼짐
+signal pause_changed(paused: bool)
+
+# --- 플레이어 ---
+## 플레이어가 생성됨 (재시작하면 새 플레이어)
+signal player_spawned(player: Node2D)
 ## 플레이어가 회피를 시작함
 signal player_dodged(player: Node2D)
 ## 탄약 수가 바뀜
 signal ammo_changed(current: int, maximum: int)
+## 체력이 바뀜
+signal player_hp_changed(current: int, maximum: int)
 ## 플레이어가 쐈음
 signal player_shot()
 ## 탄약이 없는데 사격을 눌렀음
@@ -22,9 +33,18 @@ signal parried(perfect: bool)
 signal perfect_dodge()
 ## 투명 상태 시작/끝
 signal stealth_changed(active: bool)
-## 플레이어가 맞음 (TODO(M3): 체력 감소)
+## 플레이어가 맞음 (데미지가 들어간 경우만)
 signal player_hit(hit: HitInfo)
+## 플레이어 사망
+signal player_died()
 
+# --- 적 ---
+## 적이 맞음
+signal enemy_damaged(enemy: Node2D, hit: HitInfo)
+## 적이 죽음
+signal enemy_died(enemy: Node2D)
+
+# --- 디버그 ---
 ## 디버그: 구간 이동 요청 (delta = -1 이전 구간, +1 다음 구간)
 signal debug_section_step(delta: int)
 ## 디버그: 히트박스 표시·무적 등 플래그가 바뀜

@@ -1,13 +1,12 @@
 extends Node
-## 진입점. 지금(M1)은 테스트 방을 바로 띄운다.
-## TODO(M5·M7): 타이틀 → 스킬 선택 → 런 흐름으로 교체
+## 진입점. 지금은 설정의 시작 맵으로 런을 바로 시작한다.
+## TODO(M5·M7): 타이틀 → 스킬 선택 → 런 → 기록 화면 흐름
 
 
 func _ready() -> void:
-	var level := Level.new()
-	level.map_path = DB.game_config.start_map_path
-	add_child(level)
+	add_child(RunController.new(RunSetup.from_config(DB.game_config)))
 	add_child(Hud.new())
 	add_child(Crosshair.new())
+	add_child(PauseOverlay.new())
 	if Debug.enabled:
 		add_child(DebugOverlay.new())

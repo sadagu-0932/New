@@ -10,3 +10,7 @@ extends Resource
 @export var run_seed: int = 0
 ## 시작 맵 (M4에서 튜토리얼 맵으로 교체)
 @export_file("*.txt") var start_map_path: String = ""
+## 즉시 재시작: R 을 이 틱 수만큼 누르고 있어야 함 (실수 방지)
+@export var restart_hold_ticks: int = 0
+## 사망 후 자동 재시작까지 틱 (사망 모션을 잠깐 보여줌)
+@export var death_restart_delay_ticks: int = 0

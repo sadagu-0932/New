@@ -1,0 +1,30 @@
+{
+  "frame_width": 16,
+  "frame_height": 16,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 2,
+      "fps": 3.0,
+      "loop": true
+    },
+    "move": {
+      "row": 1,
+      "frames": 2,
+      "fps": 6.0,
+      "loop": true
+    },
+    "attack": {
+      "row": 2,
+      "frames": 2,
+      "fps": 10.0,
+      "loop": true
+    },
+    "hurt": {
+      "row": 3,
+      "frames": 2,
+      "fps": 12.0,
+      "loop": false
+    }
+  }
+}

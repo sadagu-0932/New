@@ -31,6 +31,19 @@ func new_level(map_path: String) -> Level:
 	return level
 
 
+## 레벨 안에 적을 만든다 (key = DB.enemies 의 이름)
+func spawn_enemy(key: String, pos: Vector2) -> Enemy:
+	var script: GDScript = null
+	for spawn: Array in Level.SPAWNS.values():
+		if spawn[1] == key:
+			script = spawn[0]
+	var e: Enemy = script.new()
+	e.data = DB.enemies[key]
+	e.position = pos
+	level.get_node("Props").add_child(e)
+	return e
+
+
 ## n 틱 진행
 func step(n: int) -> void:
 	for i in n:

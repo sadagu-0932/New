@@ -10,3 +10,7 @@ extends Resource
 ## 피격 원 반지름·오프셋
 @export var hurtbox_radius: float = 0.0
 @export var hurtbox_offset_y: float = 0.0
+## 체력 (칸)
+@export var max_hp: int = 0
+## 피격 후 무적 틱
+@export var hurt_invuln_ticks: int = 0

@@ -9,3 +9,5 @@ body_radius = 4.0
 body_offset_y = 4.0
 hurtbox_radius = 4.0
 hurtbox_offset_y = 1.0
+max_hp = 5
+hurt_invuln_ticks = 60

@@ -18,10 +18,10 @@ func _ready() -> void:
 	reset_run()
 
 
-## 런을 처음 상태로 되돌린다 (틱·RNG 초기화)
-func reset_run() -> void:
+## 런을 처음 상태로 되돌린다 (틱·RNG 초기화). seed_value < 0 이면 설정의 시드
+func reset_run(seed_value: int = -1) -> void:
 	tick = 0
-	rng.reset(config.run_seed)
+	rng.reset(config.run_seed if seed_value < 0 else seed_value)
 
 
 func is_demo_mode() -> bool:

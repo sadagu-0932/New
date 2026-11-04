@@ -31,6 +31,12 @@
       "frames": 2,
       "fps": 20.0,
       "loop": false
+    },
+    "enemy_death": {
+      "row": 5,
+      "frames": 4,
+      "fps": 12.0,
+      "loop": false
     }
   }
 }

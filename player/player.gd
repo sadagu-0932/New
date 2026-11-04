@@ -3,24 +3,28 @@ extends CharacterBody2D
 ## 플레이어. 자식 노드는 전부 코드로 만든다.
 ## 상태: 일반 / 회피. 사격·근접은 일반 상태 위에서 겹쳐 동작한다.
 ## 전투 루프: 사격 → 탄약 소진 → 근접·패링 → 탄약 회복 (자동 재장전 없음)
-## TODO(M3): 체력·피격 무적·사망
 ## TODO(M8): 회피 중 근접 입력 처리 (현재는 무시)
 
-enum State { NORMAL, DODGE }
+enum State { NORMAL, DODGE, DEAD }
 
 const GROUP := &"player"
+## 피격 모션 표시 틱 (화면 표시 전용)
+const HURT_ANIM_TICKS := 8
 
 var data: PlayerData
 var state: State = State.NORMAL
 var dodge: DodgeAbility
 var gun: Gun
 var ammo: Ammo
+var health: Health
 var melee: MeleeAttack
 ## 조준 방향 (길이 1)
 var aim_dir: Vector2 = Vector2.RIGHT
 var camera: Camera2D
 ## 투명 남은 틱 (0 = 보임)
 var stealth_ticks_left: int = 0
+## 피격 후 무적 남은 틱
+var hurt_invuln_left: int = 0
 
 var _sprite: AnimatedSprite2D
 var _hurtbox: Hurtbox
@@ -36,10 +40,12 @@ func _ready() -> void:
 	dodge = DB.dodge.create_ability()
 	gun = Gun.new(DB.gun)
 	ammo = Ammo.new(DB.gun.magazine_size, DB.gun.start_ammo)
+	health = Health.new(data.max_hp)
 	collision_layer = Layers.PLAYER
 	collision_mask = Layers.WORLD | Layers.ENEMY
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	_build_children()
+	Events.player_spawned.emit(self)
 
 
 func _build_children() -> void:
@@ -74,11 +80,16 @@ func _build_children() -> void:
 
 func _physics_process(_delta: float) -> void:
 	var input := PlayerInput.current
+	if state == State.DEAD:
+		velocity = Vector2.ZERO
+		return
 	_update_aim(input)
 	melee.aim_dir = aim_dir
 	dodge.tick_cooldown()
 	gun.tick_cooldown()
 	_tick_stealth()
+	if hurt_invuln_left > 0:
+		hurt_invuln_left -= 1
 	match state:
 		State.NORMAL:
 			_tick_normal(input)
@@ -161,9 +172,13 @@ func _update_aim(input: InputFrame) -> void:
 		aim_dir = to_aim.normalized()
 
 
-## 지금 무적인지 (회피 무적, 디버그 무적)
+## 지금 무적인지 (회피 무적, 피격 후 무적, 디버그 무적)
 func is_invulnerable() -> bool:
-	return Debug.god_mode or dodge.is_invulnerable()
+	return Debug.god_mode or dodge.is_invulnerable() or hurt_invuln_left > 0
+
+
+func is_dead() -> bool:
+	return state == State.DEAD
 
 
 ## 투명 상태인지 (적이 플레이어를 놓친다)
@@ -173,6 +188,8 @@ func is_stealthed() -> bool:
 
 ## 피격 처리. 회피 시작 직후(판정창 안)에 맞을 뻔하면 완벽 회피 → 투명
 func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
+	if state == State.DEAD:
+		return Hurtbox.Result.IGNORED
 	if state == State.DODGE and dodge.is_active() \
 			and dodge.elapsed_ticks() <= DB.stealth.perfect_dodge_window_ticks:
 		if not _perfect_dodge_this_dodge:
@@ -181,8 +198,24 @@ func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
 		return Hurtbox.Result.IGNORED
 	if is_invulnerable():
 		return Hurtbox.Result.IGNORED
+	health.damage(hit.damage)
 	Events.player_hit.emit(hit)
+	Events.player_hp_changed.emit(health.current, health.maximum)
+	if health.is_dead():
+		_die()
+	else:
+		hurt_invuln_left = data.hurt_invuln_ticks
 	return Hurtbox.Result.HIT
+
+
+func _die() -> void:
+	state = State.DEAD
+	velocity = Vector2.ZERO
+	melee.cancel()
+	stealth_ticks_left = 0
+	_sprite.modulate = Color.WHITE
+	_sprite.play(&"death")
+	Events.player_died.emit()
 
 
 func _start_stealth() -> void:
@@ -219,7 +252,9 @@ func _update_visual(input: InputFrame) -> void:
 		_sprite.flip_h = dodge.direction().x < 0.0
 	else:
 		_sprite.flip_h = aim_dir.x < 0.0
-		if melee.is_active():
+		if hurt_invuln_left > data.hurt_invuln_ticks - HURT_ANIM_TICKS:
+			anim = &"hurt"
+		elif melee.is_active():
 			anim = &"melee"
 		elif _shoot_anim_ticks > 0:
 			anim = &"shoot"
@@ -227,11 +262,13 @@ func _update_visual(input: InputFrame) -> void:
 			anim = &"move"
 	if _sprite.animation != anim:
 		_sprite.play(anim)
-	# 투명: 푸르스름하게 거의 안 보이게 깜빡임 / 회피 무적: 반투명
+	# 투명: 푸르스름하게 거의 안 보이게 깜빡임 / 회피 무적: 반투명 / 피격 후 무적: 깜빡임
 	if is_stealthed():
 		var flicker := 0.25 + 0.1 * float((Game.tick / 4) % 2)
 		_sprite.modulate = Color(0.6, 0.9, 1.0, flicker)
 	elif dodge.is_invulnerable():
 		_sprite.modulate = Color(1, 1, 1, 0.6)
+	elif hurt_invuln_left > 0:
+		_sprite.modulate = Color(1, 1, 1, 0.3 if (Game.tick / 3) % 2 == 0 else 1.0)
 	else:
 		_sprite.modulate = Color.WHITE

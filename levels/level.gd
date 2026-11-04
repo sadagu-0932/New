@@ -1,16 +1,19 @@
 class_name Level
 extends Node2D
-## 맵 하나 (타일 + 소품 + 플레이어 + 탄 + 이펙트). 맵 파일 경로를 받아 코드로 구성한다.
-## 자식 순서 = 매 틱 처리 순서: 타일 → 소품 → 플레이어 → 탄 → 이펙트
+## 맵 하나 (타일 + 소품·적 + 플레이어 + 탄 + 이펙트). 맵 파일 경로를 받아 코드로 구성한다.
+## 자식 순서 = 매 틱 처리 순서: 타일 → 소품·적 → 플레이어 → 탄 → 이펙트
 ## (플레이어가 근접 판정을 켠 뒤 같은 틱에 탄이 패링 판정을 본다)
 ## TODO(M4): 튜토리얼 7구간, 적 배치, StoryTrigger
 
 const GROUP_PROJECTILES := &"projectiles"
 
-## 맵 글자 → 소품 스크립트
-const PROPS := {
-	"D": preload("res://levels/props/target_dummy.gd"),
-	"T": preload("res://levels/props/test_turret.gd"),
+## 맵 글자 → [스크립트, 적 데이터 이름(DB.enemies 키, 소품은 "")]
+const SPAWNS := {
+	"D": [preload("res://levels/props/target_dummy.gd"), ""],
+	"T": [preload("res://levels/props/test_turret.gd"), ""],
+	"C": [preload("res://enemies/charger.gd"), "charger"],
+	"S": [preload("res://enemies/shooter.gd"), "shooter"],
+	"B": [preload("res://enemies/spreader.gd"), "spreader"],
 }
 
 var map_path: String = ""
@@ -30,12 +33,15 @@ func _ready() -> void:
 	props.name = "Props"
 	add_child(props)
 	for entry: Dictionary in map.props:
-		var script: GDScript = PROPS.get(entry["char"])
-		if script == null:
+		var spawn: Array = SPAWNS.get(entry["char"], [])
+		if spawn.is_empty():
+			push_warning("맵에 모르는 글자: %s" % entry["char"])
 			continue
-		var prop: Node2D = script.new()
-		prop.position = LevelMap.cell_center(entry["cell"])
-		props.add_child(prop)
+		var node: Node2D = (spawn[0] as GDScript).new()
+		if node is Enemy:
+			(node as Enemy).data = DB.enemies[spawn[1]]
+		node.position = LevelMap.cell_center(entry["cell"])
+		props.add_child(node)
 
 	player = Player.new()
 	player.position = LevelMap.cell_center(map.spawn_cell)

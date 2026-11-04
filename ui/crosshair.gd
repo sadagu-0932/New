@@ -7,6 +7,7 @@ var _sprite: Sprite2D
 
 func _ready() -> void:
 	layer = 90
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_sprite = Sprite2D.new()
 	_sprite.texture = DB.theme.load_texture("crosshair")
 	add_child(_sprite)

@@ -473,6 +473,7 @@ def build_effects() -> None:
         ("perfect", perfect, 16.0, False),
         ("stealth_puff", puff, 12.0, False),
         ("hit", hit, 20.0, False),
+        ("enemy_death", build_enemy_death(), 12.0, False),
     ])
 
 
@@ -534,8 +535,152 @@ def build_props() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 적 (16x16, 오른쪽 기준). 애니메이션: idle / move / attack / hurt
+# 사망은 이펙트(enemy_death)로 표현
+# ---------------------------------------------------------------------------
+CHARGER = [
+    "................",
+    "................",
+    "................",
+    "...........ww...",
+    ".....ooooooowo..",
+    "....obbbbbbbbo..",
+    "...obBBbbbbbeboo",
+    "..obBBBbbbbbbbbo",
+    "..obBBBbbbbbbbo.",
+    "..obbBBbbbbbbbo.",
+    "...obbbbbbbbbo..",
+    "....oooooooooo..",
+    "....oBo....oBo..",
+    "....oBo....oBo..",
+    "....ooo....ooo..",
+    "................",
+]
+SHOOTER = [
+    "................",
+    "......oooo......",
+    ".....oppppo.....",
+    "....oppppppo....",
+    "....oppkkkpo....",
+    "....opkekeko....",
+    "....oppkkkpo.Y..",
+    "...oppppppppoYo.",
+    "...oPpppppPpogo.",
+    "...oPPppppPPo.g.",
+    "...oPPPpppPPo.g.",
+    "...oPPPPPPPPo.g.",
+    "....oPPPPPPo..g.",
+    "....oooooooo..g.",
+    "..............g.",
+    "................",
+]
+
+
+def spreader_frame(spin: int, pulse: int) -> Canvas:
+    """탄막형: 떠 있는 가시 수정 눈. spin 으로 가시 회전, pulse 로 눈 깜빡임."""
+    import math
+    cv = Canvas(16, 16)
+    cx = cy = 7.5
+    for y in range(16):
+        for x in range(16):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if d <= 3.6:
+                cv.set(x, y, c("green_light") if d <= 2.2 else c("green"))
+            elif d <= 4.6:
+                cv.set(x, y, c("outline"))
+    for k in range(6):
+        a = math.radians(k * 60 + spin * 15)
+        for t in (5, 6, 7):
+            cv.set(round(cx + t * math.cos(a)), round(cy + t * math.sin(a)),
+                   c("purple") if t < 7 else c("outline"))
+    cv.set(7, 7, c("white"))
+    cv.set(8, 7, c("white"))
+    cv.set(7 + pulse, 8, c("outline"))
+    return cv
+
+
+def legs_swap(base: Canvas, rows: list[str], cmap: dict, top: int) -> Canvas:
+    cv = base.copy()
+    part = Canvas.from_rows(rows, cmap)
+    for i in range(len(rows)):
+        cv.px[top + i] = part.px[i][:]
+    return cv
+
+
+def build_enemies() -> None:
+    outline = {c("outline")}
+
+    cmap = {".": None, "o": "outline", "b": "brown", "B": "brown_dark", "e": "red", "w": "pale"}
+    ch = Canvas.from_rows(CHARGER, cmap)
+    ch_step = legs_swap(ch, [
+        "...oBo......oBo.",
+        "...oBo......oBo.",
+        "...ooo......ooo.",
+    ], cmap, 12)
+    ch_wind = ch.shift_rows(0, 11, 1)  # 웅크림 (돌진 준비)
+    ch_wind.set(12, 6, c("yellow"))
+    save_sheet("enemy_charger", 16, 16, [
+        ("idle", [ch, ch.shift_rows(0, 11, 1)], 3.0, True),
+        ("move", [ch, ch_step], 8.0, True),
+        ("attack", [ch_wind, ch_step.moved(1, 0)], 10.0, True),
+        ("hurt", [ch.recolor(outline, c("white")), ch], 12.0, False),
+    ])
+
+    smap = {".": None, "o": "outline", "p": "purple", "P": "plum", "k": "outline",
+            "e": "yellow", "Y": "yellow", "g": "brown"}
+    sh = Canvas.from_rows(SHOOTER, smap)
+    sh_bob = sh.shift_rows(0, 12, 1)
+    sh_cast = sh.copy()
+    for x, y in [(12, 5), (14, 5), (13, 4), (12, 7), (14, 7)]:
+        sh_cast.set(x, y, c("orange"))
+    save_sheet("enemy_shooter", 16, 16, [
+        ("idle", [sh, sh_bob], 3.0, True),
+        ("move", [sh, sh_bob], 6.0, True),
+        ("attack", [sh_cast, sh], 10.0, True),
+        ("hurt", [sh.recolor(outline, c("white")), sh], 12.0, False),
+    ])
+
+    sp = [spreader_frame(i, i % 2) for i in range(4)]
+    sp_att = [f.recolor({c("outline"), c("white")}, c("orange")) for f in sp[:2]]
+    save_sheet("enemy_spreader", 16, 16, [
+        ("idle", sp, 6.0, True),
+        ("move", sp, 8.0, True),
+        ("attack", [sp_att[0], sp[1]], 10.0, True),
+        ("hurt", [sp[0].recolor(outline, c("white")), sp[0]], 12.0, False),
+    ])
+
+
+def build_enemy_death() -> list[Canvas]:
+    import math
+    frames = []
+    rng = random.Random(4242)
+    pieces = [(rng.uniform(0, math.tau), rng.uniform(0.6, 1.0)) for _ in range(10)]
+    for step in (2, 4, 6, 7):
+        cv = Canvas(16, 16)
+        for a, sp in pieces:
+            r = step * sp
+            cv.set(round(7.5 + r * math.cos(a)), round(7.5 + r * math.sin(a)),
+                   c("crimson") if step < 6 else c("stone"))
+        if step == 2:
+            for x, y in [(7, 7), (8, 7), (7, 8), (8, 8)]:
+                cv.set(x, y, c("white"))
+        frames.append(cv)
+    return frames
+
+
+# ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
+HEART = [
+    ".oo.oo..",
+    "owrorro.",
+    "orrrrro.",
+    "orrrrro.",
+    ".orrro..",
+    "..oro...",
+    "...o....",
+    "........",
+]
 AMMO_FULL = [
     "..oo....",
     ".oyyo...",
@@ -552,9 +697,14 @@ def build_ui_icons() -> None:
     cmap = {".": None, "o": "outline", "y": "yellow", "Y": "orange", "B": "brown"}
     full = Canvas.from_rows(AMMO_FULL, cmap)
     empty = full.recolor({c("outline")}, c("stone_dark"))
+    hmap = {".": None, "o": "outline", "r": "red", "w": "white"}
+    heart = Canvas.from_rows(HEART, hmap)
+    heart_empty = heart.recolor({c("outline")}, c("stone_dark"))
     save_sheet("ui_icons", 8, 8, [
         ("ammo_full", [full], 1.0, False),
         ("ammo_empty", [empty], 1.0, False),
+        ("heart_full", [heart], 1.0, False),
+        ("heart_empty", [heart_empty], 1.0, False),
     ])
 
 CROSSHAIR = [
@@ -611,6 +761,7 @@ def main() -> None:
     build_effects()
     build_props()
     build_ui_icons()
+    build_enemies()
     verify_palette()
     print(f"스프라이트 생성 완료: {OUT.relative_to(ROOT)}")
 

@@ -13,6 +13,18 @@
       "frames": 1,
       "fps": 1.0,
       "loop": false
+    },
+    "heart_full": {
+      "row": 2,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "heart_empty": {
+      "row": 3,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
     }
   }
 }

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ShooterData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://enemies/shooter_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/projectiles/enemy_slow.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+max_hp = 3
+move_speed = 35.0
+body_radius = 5.0
+hurtbox_radius = 6.0
+contact_damage = 1
+sight_range = 160.0
+arrive_distance = 3.0
+knockback_speed = 120.0
+knockback_ticks = 6
+sheet = "enemy_shooter"
+projectile = ExtResource("2")
+fire_interval_ticks = 90
+first_shot_delay_ticks = 45
+telegraph_ticks = 20
+keep_min = 60.0
+keep_max = 110.0
+muzzle_offset = 8.0
