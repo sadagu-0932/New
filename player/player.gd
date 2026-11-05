@@ -44,6 +44,10 @@ var _dash_dir: Vector2 = Vector2.RIGHT
 var _dash_speed: float = 0.0
 ## 콤보 단계 표시 (캐릭터 주변 이펙트, 숫자 없음)
 var _aura: AnimatedSprite2D
+## 등 뒤 망토 층: 움직임을 스프링으로 따라가며 휘날림 (화면 표시 전용)
+var _cloak: AnimatedSprite2D
+var _cloak_lean: float = 0.0
+var _cloak_vel: float = 0.0
 
 
 func _ready() -> void:
@@ -68,6 +72,12 @@ func _build_children() -> void:
 	body_shape.shape = circle
 	body_shape.position = Vector2(0, data.body_offset_y)
 	add_child(body_shape)
+
+	# 망토는 몸보다 먼저 추가 → 몸 뒤에 그려진다
+	_cloak = AnimatedSprite2D.new()
+	_cloak.sprite_frames = DB.theme.load_sheet("player_cloak")
+	_cloak.play(&"cloak_hang")
+	add_child(_cloak)
 
 	_sprite = AnimatedSprite2D.new()
 	_sprite.sprite_frames = DB.theme.load_sheet("player")
@@ -104,12 +114,14 @@ func _physics_process(_delta: float) -> void:
 	var input := PlayerInput.current
 	if state == State.DEAD:
 		velocity = Vector2.ZERO
+		_update_cloak()
 		return
 	if cutscene_lock:
 		velocity = Vector2.ZERO
 		if _sprite.animation != &"idle":
 			_sprite.play(&"idle")
 		_sprite.modulate = Color.WHITE
+		_update_cloak()
 		return
 	_update_aim(input)
 	melee.aim_dir = aim_dir
@@ -410,11 +422,61 @@ func _update_visual(input: InputFrame) -> void:
 	else:
 		_sprite.modulate = Color.WHITE
 	_update_aura()
+	_update_cloak()
 	# 회피·돌진 잔상 (화면 표시)
 	if (state == State.DODGE or state == State.DASH_SLASH) and Game.tick % maxi(DB.feel.afterimage_interval_ticks, 1) == 0:
 		var tint := Color(1.0, 0.8, 0.4) if state == State.DASH_SLASH else Color(0.6, 0.85, 1.0)
+		AfterImage.spawn(_cloak.sprite_frames.get_frame_texture(_cloak.animation, _cloak.frame),
+			global_position + _cloak.offset, _cloak.flip_h, DB.feel.afterimage_fade_seconds, tint)
 		AfterImage.spawn(_sprite.sprite_frames.get_frame_texture(_sprite.animation, _sprite.frame),
 			global_position + _sprite.offset, _sprite.flip_h, DB.feel.afterimage_fade_seconds, tint)
+
+
+## 망토 기울기 단계 (-1 앞으로 쏠림 ~ 3 펄럭) → 애니메이션 이름
+const CLOAK_ANIMS: Array[StringName] = [&"cloak_fwd", &"cloak_hang", &"cloak_trail1", &"cloak_trail2", &"cloak_billow"]
+
+
+## 망토: 이동 속도·방향을 스프링으로 따라간다. 멈추면 한 번 앞으로 출렁였다가 늘어짐 (화면 표시 전용)
+func _update_cloak() -> void:
+	var f := DB.feel
+	var facing := -1.0 if _sprite.flip_h else 1.0
+	var target := 0.0
+	if state == State.DODGE or state == State.DASH_SLASH:
+		target = f.cloak_dodge_lean
+	elif state != State.DEAD and not cutscene_lock:
+		var run := maxf(data.move_speed, 1.0)
+		var along := velocity.x * facing / run      # +: 보는 쪽으로 달림 → 뒤로 날림
+		var vertical := absf(velocity.y) / run
+		if along >= 0.0:
+			target = along * f.cloak_run_lean
+		else:
+			target = -along * f.cloak_backpedal_lean
+		target += vertical * f.cloak_vertical_factor * f.cloak_run_lean
+	_cloak_vel += (target - _cloak_lean) * f.cloak_stiffness
+	_cloak_vel *= 1.0 - f.cloak_damping
+	_cloak_lean += _cloak_vel
+	var idx := clampi(roundi(_cloak_lean) + 1, 0, CLOAK_ANIMS.size() - 1)
+	if _cloak.animation != CLOAK_ANIMS[idx]:
+		_cloak.play(CLOAK_ANIMS[idx])
+	# 몸 기준 위치에 붙인다 (망토 그림은 뒤쪽으로 8px 넓음)
+	var half_extra := (_cloak.sprite_frames.get_frame_texture(_cloak.animation, 0).get_width() - 16) * 0.5
+	_cloak.flip_h = _sprite.flip_h
+	_cloak.offset = Vector2(-half_extra * facing, _sprite.offset.y + _crouch_y())
+	_cloak.modulate = _sprite.modulate
+	if _sprite.animation == &"hurt":
+		_cloak.modulate = Color(1, 0.55, 0.55) if _sprite.frame == 1 else Color(1.6, 1.6, 1.6)
+	# 쓰러져 누우면 망토는 누운 그림에 포함되어 있으므로 숨김
+	_cloak.visible = not (_sprite.animation == &"death" and _sprite.frame >= 2)
+
+
+## 몸 그림이 웅크린 정도 (망토도 같이 내려간다)
+func _crouch_y() -> float:
+	match _sprite.animation:
+		&"dodge":
+			return 4.0 if _sprite.frame == 1 else 2.0
+		&"death":
+			return 2.0 if _sprite.frame == 0 else 4.0
+	return 0.0
 
 
 ## 콤보 단계 이펙트: 단계가 오를수록 크고 진하게 (노랑 → 주황 → 흰빛). 숫자 표시 없음

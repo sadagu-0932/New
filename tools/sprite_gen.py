@@ -265,7 +265,9 @@ PLAYER_H = 24
 # 상체(머리~엉덩이) 마지막 줄, 총구 높이
 PLAYER_BODY_LAST = 17
 PLAYER_GUN_Y = 12
-# 등 뒤 망토 밑단 (x 0~4, 21~23행): 찢어진 자락 펄럭임
+# 이 줄부터 아래의 등 뒤 망토는 별도 층으로 그린다
+CLOAK_FROM_ROW = 11
+# (예전) 등 뒤 망토 밑단 — 지금은 쓰지 않음, 망토 층(build_player_cloak) 참고
 PLAYER_HEMS = [
     ("oPoPl", ".o.Po", "..o.o"),
     ("oPPoP", "o.oPo", ".o..o"),
@@ -288,9 +290,12 @@ def _put(cv: Canvas, x0: int, y: int, part: str) -> None:
 
 
 def hem(cv: Canvas, pose: int) -> Canvas:
+    """몸 그림에서 등 뒤 망토(어깨 아래 x 0~4)를 떼어낸다. 망토는 별도 층(player_cloak)이 움직임에 따라 그린다.
+    pose 는 예전 호환용 (쓰지 않음)."""
     out = cv.copy()
-    for i, row in enumerate(PLAYER_HEMS[pose % len(PLAYER_HEMS)]):
-        _put(out, 0, PLAYER_H - 3 + i, row)
+    for y in range(CLOAK_FROM_ROW, PLAYER_H):
+        for x in range(0, 5):
+            out.set(x, y, None)
     return out
 
 
@@ -299,6 +304,106 @@ def legs(cv: Canvas, key: str) -> Canvas:
     for i, row in enumerate(PLAYER_LEGS[key]):
         _put(out, 5, PLAYER_H - 6 + i, row)
     return out
+
+
+# ---------------------------------------------------------------------------
+# 플레이어 망토 층 (24x24, 몸 그림 뒤에 그림). 몸 기준 x 가 8 만큼 오른쪽 → 뒤로 8px 까지 휘날릴 수 있다.
+# 기울기 5단계: 앞으로 쏠림 / 늘어짐 / 살짝 날림 / 크게 날림 / 펄럭 (회피·돌진). 각 2프레임 펄럭임.
+# 게임에서 이동 속도·방향을 스프링으로 따라가며 단계를 고른다 (Player._update_cloak).
+# ---------------------------------------------------------------------------
+CLOAK_W = 24
+CLOAK_BODY_X = 8
+# 단계 이름 → (등 쪽 밑단 끝 x, y, 앞쪽 밑단 y)  (망토 층 좌표)
+CLOAK_LEANS = {
+    "fwd": (10, 22, 22),
+    "hang": (8, 23, 22),
+    "trail1": (5, 21, 21),
+    "trail2": (2, 18, 20),
+    "billow": (0, 14, 18),
+}
+
+
+def _in_poly(px: float, py: float, poly: list[tuple[float, float]]) -> bool:
+    inside = False
+    n = len(poly)
+    for i in range(n):
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % n]
+        if (y1 > py) != (y2 > py):
+            xi = x1 + (py - y1) * (x2 - x1) / (y2 - y1)
+            if px < xi:
+                inside = not inside
+    return inside
+
+
+def cloak_frame(lean: str, flutter: int) -> Canvas:
+    bx, by, hy = CLOAK_LEANS[lean]
+    # 펄럭임: 날리는 단계일수록 밑단 끝이 위아래로 흔들림
+    wave = {"fwd": 0, "hang": 0, "trail1": 1, "trail2": 1, "billow": 2}[lean]
+    by += wave if flutter else 0
+    top_y = CLOAK_FROM_ROW - 1
+    front_x = CLOAK_BODY_X + 6
+    poly = [(CLOAK_BODY_X + 1.0, top_y), (front_x + 1.0, top_y), (front_x + 1.0, hy + 1.0),
+            (bx, by + 1.0), (CLOAK_BODY_X + 0.5, top_y + 2.0)]
+    shape = [[_in_poly(x + 0.5, y + 0.5, poly) for x in range(CLOAK_W)] for y in range(PLAYER_H)]
+    # 찢어진 밑단: 열마다 아래쪽을 0~2칸 뜯어낸다 (프레임마다 무늬가 바뀜)
+    for x in range(CLOAK_W):
+        ys = [y for y in range(PLAYER_H) if shape[y][x]]
+        if not ys or max(ys) < top_y + 4:
+            continue
+        cut = (x + flutter * 2) % 3
+        for k in range(cut):
+            shape[max(ys) - k][x] = False
+    t = Canvas(CLOAK_W, PLAYER_H)
+    for y in range(PLAYER_H):
+        for x in range(CLOAK_W):
+            if not shape[y][x]:
+                continue
+            left_open = x == 0 or not shape[y][x - 1]
+            t.set(x, y, c("white") if left_open else c("pale"))
+    # 주름 두 줄 (어깨 → 밑단 쪽으로)
+    mid = ((bx + front_x) // 2, (by + hy) // 2)
+    for x0, y0, x1, y1 in ((CLOAK_BODY_X + 3, top_y + 2, mid[0], mid[1] - 1),
+                           (CLOAK_BODY_X + 5, top_y + 3, (mid[0] + front_x) // 2, hy - 2)):
+        for x, y in _line_points(x0, y0, x1, y1):
+            if 0 <= y < PLAYER_H and 0 <= x < CLOAK_W and shape[y][x] and not (x == 0 or not shape[y][x - 1]):
+                t.set(x, y, c("stone_light"))
+    # 바깥 테두리
+    for y in range(PLAYER_H):
+        for x in range(CLOAK_W):
+            if shape[y][x]:
+                continue
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < CLOAK_W and 0 <= ny < PLAYER_H and shape[ny][nx]:
+                    t.set(x, y, c("outline"))
+                    break
+    return t
+
+
+def _line_points(x0: int, y0: int, x1: int, y1: int):
+    dx, dy = abs(x1 - x0), -abs(y1 - y0)
+    sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
+    err = dx + dy
+    while True:
+        yield x0, y0
+        if x0 == x1 and y0 == y1:
+            return
+        e2 = 2 * err
+        if e2 >= dy:
+            err += dy
+            x0 += sx
+        if e2 <= dx:
+            err += dx
+            y0 += sy
+
+
+def build_player_cloak() -> None:
+    fps = {"fwd": 4.0, "hang": 4.0, "trail1": 8.0, "trail2": 10.0, "billow": 14.0}
+    save_sheet("player_cloak", CLOAK_W, PLAYER_H, [
+        ("cloak_" + lean, [cloak_frame(lean, 0), cloak_frame(lean, 1)], fps[lean], True)
+        for lean in CLOAK_LEANS
+    ])
 
 
 def build_player() -> None:
@@ -1335,6 +1440,7 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     build_palette()
     build_player()
+    build_player_cloak()
     build_tiles()
     build_ui()
     build_bullets()

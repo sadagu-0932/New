@@ -16,6 +16,12 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	hp = data.hp
 	_left = data.duration_ticks
+	var cloak := AnimatedSprite2D.new()
+	cloak.sprite_frames = DB.theme.load_sheet("player_cloak")
+	cloak.play(&"cloak_hang")
+	cloak.offset = Vector2(-4, SpriteSheet.foot_offset(DB.theme.load_sheet("player")).y)
+	cloak.modulate = Color(0.7, 0.8, 1.0, 0.75)
+	add_child(cloak)
 	_sprite = AnimatedSprite2D.new()
 	_sprite.sprite_frames = DB.theme.load_sheet("player")
 	_sprite.offset = SpriteSheet.foot_offset(_sprite.sprite_frames)

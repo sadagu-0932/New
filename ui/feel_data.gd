@@ -14,6 +14,20 @@ extends Resource
 @export var flash_perfect: Vector2 = Vector2.ZERO
 @export var flash_hit: Vector2 = Vector2.ZERO
 
+@export_group("망토 (움직임에 따라 휘날림, 화면 표시만)")
+## 스프링 세기: 클수록 빨리 따라감
+@export var cloak_stiffness: float = 0.0
+## 감쇠: 클수록 덜 출렁임 (0~1)
+@export var cloak_damping: float = 0.0
+## 이동 속도(달리기 = 1)일 때 목표 기울기 (0 늘어짐 ~ 3 펄럭)
+@export var cloak_run_lean: float = 0.0
+## 위아래로 움직일 때 반영 비율
+@export var cloak_vertical_factor: float = 0.0
+## 회피·돌진 중 목표 기울기
+@export var cloak_dodge_lean: float = 0.0
+## 뒤로 걸을 때(조준 반대 방향) 몸 쪽으로 눌리는 정도
+@export var cloak_backpedal_lean: float = 0.0
+
 @export_group("잔상 (회피·돌진 중)")
 ## 몇 틱마다 잔상을 남길지
 @export var afterimage_interval_ticks: int = 0

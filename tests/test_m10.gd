@@ -13,6 +13,7 @@ func run_all() -> void:
 	test_title_ignores_fullscreen_key()
 	test_export_preset()
 	await test_tall_player_feet()
+	await test_cloak_follows_motion()
 	if level != null:
 		level.queue_free()
 		level = null
@@ -106,3 +107,32 @@ func test_tall_player_feet() -> void:
 	var bottom := sprite.offset.y + h * 0.5
 	check(is_equal_approx(bottom, LevelMap.TILE_SIZE * 0.5), "발 위치 그대로 (아래끝 %.1f)" % bottom)
 	check(DB.player.hurtbox_radius == 4.0 and DB.player.body_radius == 4.0, "판정 크기는 그대로")
+
+
+## 망토가 움직임에 따라 휘날린다 (화면 표시 전용)
+func test_cloak_follows_motion() -> void:
+	await new_level("res://tests/maps/m3_test.txt")
+	var p := level.player
+	var aim_right := p.global_position + Vector2(200, 0)
+	input.push(Vector2.ZERO, 20, 0, 0, aim_right)
+	await step(20)
+	check(p._cloak.animation == &"cloak_hang", "가만히 있으면 늘어짐 (%s)" % p._cloak.animation)
+	input.push(Vector2.RIGHT, 40, 0, 0, aim_right + Vector2(100, 0))
+	await step(40)
+	check(p._cloak.animation == &"cloak_trail2", "달리면 뒤로 크게 날림 (%s)" % p._cloak.animation)
+	var seen_fwd := false
+	input.push(Vector2.ZERO, 40, 0, 0, aim_right)
+	for i in 40:
+		await step(1)
+		if p._cloak.animation == &"cloak_fwd" or p._cloak.animation == &"cloak_hang":
+			seen_fwd = seen_fwd or p._cloak_lean < 0.0
+	check(seen_fwd or p._cloak_lean < 0.5, "멈추면 출렁이다 늘어짐 (기울기 %.2f)" % p._cloak_lean)
+	check(p._cloak.animation == &"cloak_hang", "다시 늘어짐")
+	input.push(Vector2.RIGHT, 1, 0, InputFrame.DODGE, aim_right)
+	await step(5)
+	check(p._cloak.animation == &"cloak_billow" or p._cloak.animation == &"cloak_trail2", "회피하면 펄럭 (%s)" % p._cloak.animation)
+	await step(30)
+	input.push(Vector2.LEFT, 40, 0, 0, p.global_position + Vector2(200, 0))
+	await step(40)
+	check(p._cloak.animation == &"cloak_fwd", "조준 반대로 뒷걸음질하면 몸 쪽으로 눌림 (%s)" % p._cloak.animation)
+	check(p._cloak.flip_h == p._sprite.flip_h, "망토는 몸과 같은 쪽을 봄")
