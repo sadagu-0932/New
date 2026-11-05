@@ -303,58 +303,79 @@ PLAYER_LEG_POSES = {
 }
 # 옆모습 걷기 (17~23행을 손으로 찍음). L·K = 가까운 다리, N·k = 먼 다리.
 # 디딤(앞다리 앞으로) → 내려앉음(뒷발 듦) → 지나감(뒷다리가 무릎 굽혀 앞으로) → 반대쪽은 색만 바꿔 반복
+# 걷기 8프레임: 다리마다 (무릎, 발목, 발 모양). 가까운 다리 기준이며 먼 다리는 4프레임 늦게 같은 동작.
+#   발 모양: heel 뒤꿈치 착지(발끝 들림) / flat 디딤 / toe 발끝으로 밀기(뒤꿈치 들림) / hang 공중에서 늘어짐
+# 디딤 → 체중 실음 → 몸 아래 → 뒤로 밂 → 발끝 떼기 → 무릎 굽혀 앞으로 → 지나감 → 앞으로 뻗음
 SIDE_WALK_LEGS = [
-    [
-        "....oNNLLLo.....",
-        "....oNNoLLo.....",
-        "...oNNo.oLLo....",
-        "...oNNo.oLLo....",
-        "...oNNo..oLLo...",
-        "..okkko..oKKKo..",
-        "..oooo...ooooo..",
-    ],
-    [
-        "....oNNLLLo.....",
-        "....oNNoLLo.....",
-        "...oNNo.oLLo....",
-        "...oNNo.oLLo....",
-        "..okkko.oLLo....",
-        "..oooo..oKKKo...",
-        "........ooooo...",
-    ],
-    [
-        "....oLLNNNo.....",
-        "....oLLoNNo.....",
-        "....oLLoNNo.....",
-        "....oLLokkko....",
-        "....oLLoooo.....",
-        "....oKKKo.......",
-        "....ooooo.......",
-    ],
+    ((9, 19), (10, 21), "heel"),
+    ((9, 19), (8, 21), "flat"),
+    ((7, 19), (7, 21), "flat"),
+    ((6, 19), (5, 21), "flat"),
+    ((5, 19), (3, 21), "toe"),
+    ((7, 19), (4, 20), "hang"),
+    ((9, 19), (7, 20), "hang"),
+    ((10, 19), (11, 20), "hang"),
 ]
-# 걷기 6프레임의 상체 내려앉음 (0 = 상체 고정. 흔들면 뒤뚱거려 보여서 뺌)
-SIDE_WALK_BOB = [0, 0, 0, 0, 0, 0]
+SIDE_WALK_BOB = [0] * len(SIDE_WALK_LEGS)
+SIDE_HIP = {"near": (7, 17), "far": (5, 17)}
+# 발 모양: 발목 기준 (dx, dy) 칸들
+SIDE_FEET = {
+    "flat": [(0, 0), (1, 0), (0, 1), (1, 1), (2, 1)],
+    "heel": [(0, 0), (1, 0), (2, -1), (0, 1), (1, 1)],
+    "toe": [(0, 0), (1, 0), (1, 1), (2, 1)],
+    "hang": [(0, 0), (1, 0), (1, 1)],
+}
+
+
+def _thick_line(x0: int, y0: int, x1: int, y1: int) -> set[tuple[int, int]]:
+    cells = set()
+    for x, y in _line_points(x0, y0, x1, y1):
+        cells.add((x, y))
+        cells.add((x + 1, y))
+    return cells
 
 
 def side_walk_frames(base: Canvas) -> list[Canvas]:
-    swap = str.maketrans("LNKk", "NLkK")
+    """옆모습 걷기: 허벅지·정강이가 무릎에서 꺾이고, 발이 뒤꿈치 착지 → 디딤 → 발끝 밀기 → 늘어짐으로 바뀐다."""
+    n = len(SIDE_WALK_LEGS)
     frames = []
-    for i, dy in enumerate(SIDE_WALK_BOB):
-        rows = SIDE_WALK_LEGS[i % 3]
-        if i >= 3:
-            rows = [r.translate(swap) for r in rows]
-        body = base.copy()
+    for i in range(n):
+        out = base.copy()
         for y in range(PLAYER_BODY_LAST, PLAYER_H):
-            body.px[y] = [None] * body.w
-        if dy:
-            body = body.shift_rows(0, PLAYER_BODY_LAST - 1, dy)
-        part = Canvas.from_rows(rows, PLAYER_CMAP)
-        for j in range(len(rows)):
-            for x in range(16):
-                v = part.px[j][x]
-                if v is not None:
-                    body.px[PLAYER_BODY_LAST + j][x] = v
-        frames.append(body)
+            out.px[y] = [None] * out.w
+        leg_cells = {}
+        for side, phase, pants, boot in (("far", (i + n // 2) % n, "navy", "brown_dark"), ("near", i, "blue", "brown")):
+            knee, ankle, foot = SIDE_WALK_LEGS[phase]
+            hip = SIDE_HIP[side]
+            if side == "far":
+                knee, ankle = (knee[0] - 1, knee[1]), (ankle[0] - 1, ankle[1])
+            cells = {}
+            for p in _thick_line(hip[0], hip[1], knee[0], knee[1]) | _thick_line(knee[0], knee[1], ankle[0], ankle[1]):
+                cells[p] = pants
+            for dx, dy in SIDE_FEET[foot]:
+                cells[(ankle[0] + dx, ankle[1] + dy)] = boot
+            leg_cells[side] = cells
+        # 엉덩이 줄
+        for x in range(5, 10):
+            out.set(x, PLAYER_BODY_LAST, c("navy"))
+        far, near = leg_cells["far"], leg_cells["near"]
+        for (x, y), col in far.items():
+            out.set(x, y, c(col))
+        # 먼 다리와 가까운 다리 사이 경계선 (가까운 다리 바로 뒤쪽 칸)
+        for (x, y) in near:
+            if (x - 1, y) in far and (x - 1, y) not in near and y > PLAYER_BODY_LAST:
+                out.set(x - 1, y, c("outline"))
+        for (x, y), col in near.items():
+            out.set(x, y, c(col))
+        allc = set(far) | set(near) | {(x, PLAYER_BODY_LAST) for x in range(5, 10)}
+        for (x, y) in list(allc):
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if (nx, ny) in allc or ny < PLAYER_BODY_LAST or not (0 <= nx < 16 and ny < PLAYER_H):
+                    continue
+                if out.px[ny][nx] is None:
+                    out.set(nx, ny, c("outline"))
+        frames.append(out)
     return frames
 
 
@@ -822,7 +843,7 @@ def build_player() -> None:
 
     save_sheet("player", 16, PLAYER_H, [
         ("idle", idle, 4.0, True),
-        ("move", move, 12.0, True),
+        ("move", move, 14.0, True),
         ("shoot", shoot, 12.0, False),
         ("melee", melee, 15.0, False),
         ("dodge", dodge, 15.0, False),
