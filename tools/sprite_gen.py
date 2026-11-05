@@ -943,65 +943,93 @@ def build_props() -> None:
 # 적 (16x16, 오른쪽 기준). 애니메이션: idle / move / attack / hurt
 # 사망은 이펙트(enemy_death)로 표현
 # ---------------------------------------------------------------------------
+# 돌진형: 등에 털 갈기가 선 멧돼지. 하얀 엄니, 빨간 눈, 밝은 배. 발밑 그림자
+CHARGER_MAP = {".": None, "o": "outline", "B": "brown_dark", "b": "brown", "t": "tan", "e": "red",
+               "W": "white", "h": "stone_dark", "S": "shadow"}
 CHARGER = [
     "................",
     "................",
-    "................",
-    "...........ww...",
-    ".....ooooooowo..",
-    "....obbbbbbbbo..",
-    "...obBBbbbbbeboo",
-    "..obBBBbbbbbbbbo",
-    "..obBBBbbbbbbbo.",
-    "..obbBBbbbbbbbo.",
-    "...obbbbbbbbbo..",
-    "....oooooooooo..",
-    "....oBo....oBo..",
-    "....oBo....oBo..",
-    "....ooo....ooo..",
+    "....o.o.o.......",
+    "...oBoBoBoo.....",
+    "..oBBBBBBBbbo...",
+    ".obBBBBBbbbbbo..",
+    ".obbbbbbbbbbbbo.",
+    "obbbbbbbbbbebbbo",
+    "obtbbbbbbbbbbbWo",
+    "obttbbbbbbbbbWWo",
+    ".ottttbbbtttoo..",
+    ".ootttoooottoo..",
+    "..oBBo..oBBo....",
+    "..oBBo..oBBo....",
+    ".SSSSSSSSSSSSS..",
     "................",
 ]
+CHARGER_LEGS = {
+    "stand": ("..oBBo..oBBo....", "..oBBo..oBBo...."),
+    "step_a": ("..oBBo...oBBo...", ".oBBo.....oBBo.."),
+    "step_b": ("...oBBooBBo.....", "...oBBooBBo....."),
+    "charge": (".oBBo.....oBBo..", "oBBo.......oBBo."),
+}
+# 원거리형: 해골 마법사. 맨 해골 머리(눈구멍에 주황 불빛), 보라 누더기 로브, 주황 구슬 지팡이
+SHOOTER_MAP = {".": None, "o": "outline", "W": "pale", "w": "white", "g": "orange", "P": "purple", "p": "plum",
+               "Y": "yellow", "y": "orange", "b": "brown", "h": "pale", "S": "shadow"}
 SHOOTER = [
     "................",
-    "......oooo......",
-    ".....oppppo.....",
-    "....oppppppo....",
-    "....oppkkkpo....",
-    "....opkekeko....",
-    "....oppkkkpo.Y..",
-    "...oppppppppoYo.",
-    "...oPpppppPpogo.",
-    "...oPPppppPPo.g.",
-    "...oPPPpppPPo.g.",
-    "...oPPPPPPPPo.g.",
-    "....oPPPPPPo..g.",
-    "....oooooooo..g.",
-    "..............g.",
+    "......ooo....oo.",
+    ".....owWWo..oYyo",
+    ".....oWWWWo.oyYo",
+    ".....ogWgWo..oo.",
+    ".....oWWWo....b.",
+    "......oWo.....b.",
+    "....ooPPPoo...b.",
+    "...oPPPpPPPo..b.",
+    "...oPpPpPPPhhhb.",
+    "...oPpPpPPPo..b.",
+    "...oPpPPpPPo..b.",
+    "....oPPPpPPo..b.",
+    "....oPoPoPo...b.",
+    "...SSSSSSSSS.SS.",
     "................",
 ]
 
 
-def spreader_frame(spin: int, pulse: int) -> Canvas:
-    """탄막형: 떠 있는 가시 수정 눈. spin 으로 가시 회전, pulse 로 눈 깜빡임."""
+def spreader_frame(spin: int, glow: bool = False, bob: int = 0, flash: bool = False) -> Canvas:
+    """탄막형: 초록 수정 껍질 속 큰 눈(세로 동공) + 둘레를 도는 보라 수정 가시. 바닥 그림자와 떨어져 떠 있다."""
     import math
-    cv = Canvas(16, 16)
-    cx = cy = 7.5
+    t = Canvas(16, 16)
+    cx, cy = 7.5, 6.5 + bob
     for y in range(16):
         for x in range(16):
             d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-            if d <= 3.6:
-                cv.set(x, y, c("green_light") if d <= 2.2 else c("green"))
-            elif d <= 4.6:
-                cv.set(x, y, c("outline"))
+            if d <= 3.0:
+                t.set(x, y, c("pale"))
+            elif d <= 4.2:
+                lit = (x - cx) + (y - cy) < 0
+                t.set(x, y, c("green_light") if lit else c("green"))
+            elif d <= 5.0:
+                t.set(x, y, c("outline"))
     for k in range(6):
         a = math.radians(k * 60 + spin * 15)
-        for t in (5, 6, 7):
-            cv.set(round(cx + t * math.cos(a)), round(cy + t * math.sin(a)),
-                   c("purple") if t < 7 else c("outline"))
-    cv.set(7, 7, c("white"))
-    cv.set(8, 7, c("white"))
-    cv.set(7 + pulse, 8, c("outline"))
-    return cv
+        for r, w in ((5.3, 1.0), (6.2, 0.5), (7.0, 0.0)):
+            x, y = cx + r * math.cos(a), cy + r * math.sin(a)
+            col = c("orange") if (glow and r < 6.5) else (c("purple") if r < 6.5 else c("outline"))
+            t.set(round(x), round(y), col)
+            if w:
+                nx, ny = -math.sin(a), math.cos(a)
+                t.set(round(x + nx * w), round(y + ny * w), c("plum"))
+    iris = c("orange") if glow else c("green_dark")
+    for x, y in ((7, 5), (8, 5), (6, 6), (7, 6), (8, 6), (9, 6), (6, 7), (7, 7), (8, 7), (9, 7), (7, 8), (8, 8)):
+        t.set(x, y + bob, iris)
+    for y in (5, 6, 7, 8):
+        t.set(8 if y < 7 else 7, y + bob, c("outline"))
+    t.set(6, 5 + bob, c("white"))
+    for x in range(5, 11):
+        t.set(x, 14, c("shadow"))
+    for x in range(6, 10):
+        t.set(x, 15, c("shadow"))
+    if flash:
+        t = t.recolor({c("outline"), c("shadow")}, c("white"))
+    return t
 
 
 def legs_swap(base: Canvas, rows: list[str], cmap: dict, top: int) -> Canvas:
@@ -1013,45 +1041,72 @@ def legs_swap(base: Canvas, rows: list[str], cmap: dict, top: int) -> Canvas:
 
 
 def build_enemies() -> None:
-    outline = {c("outline")}
+    keep = {c("outline"), c("shadow")}
 
-    cmap = {".": None, "o": "outline", "b": "brown", "B": "brown_dark", "e": "red", "w": "pale"}
-    ch = Canvas.from_rows(CHARGER, cmap)
-    ch_step = legs_swap(ch, [
-        "...oBo......oBo.",
-        "...oBo......oBo.",
-        "...ooo......ooo.",
-    ], cmap, 12)
-    ch_wind = ch.shift_rows(0, 11, 1)  # 웅크림 (돌진 준비)
-    ch_wind.set(12, 6, c("yellow"))
+    # --- 돌진형 ---
+    ch = Canvas.from_rows(CHARGER, CHARGER_MAP)
+
+    def ch_legs(body: Canvas, key: str) -> Canvas:
+        return legs_swap(body, list(CHARGER_LEGS[key]), CHARGER_MAP, 12)
+
+    ch_bob = ch.shift_rows(0, 11, 1)
+    idle = [ch_legs(ch, "stand"), ch_legs(ch_bob, "stand")]
+    move = [ch_legs(ch, "step_a"), ch_legs(ch_bob, "step_b"), ch_legs(ch, "step_a").moved(0, 0), ch_legs(ch_bob, "step_b")]
+    # 돌진 준비: 웅크리고 눈이 노랗게, 콧김 / 돌진: 앞으로 쏠리고 뒤에 흙먼지
+    windup = ch_legs(ch.shift_rows(0, 11, 2), "stand")
+    windup.set(11, 9, c("yellow"))
+    for x, y in ((15, 8), (15, 10), (14, 11)):
+        windup.set(x, y, c("pale"))
+    charge = ch_legs(ch.shift_rows(0, 11, 1), "charge")
+    charge = Canvas.from_rows(["." * 16] * 16, CHARGER_MAP).copy()
+    base_charge = ch_legs(ch.shift_rows(0, 11, 1), "charge")
+    for y in range(16):
+        for x in range(16):
+            v = base_charge.px[y][x]
+            if v is not None:
+                charge.set(x + (1 if y <= 11 else 0), y, v)
+    for x, y in ((0, 12), (1, 11), (0, 10)):
+        charge.set(x, y, c("stone_light"))
     save_sheet("enemy_charger", 16, 16, [
-        ("idle", [ch, ch.shift_rows(0, 11, 1)], 3.0, True),
-        ("move", [ch, ch_step], 8.0, True),
-        ("attack", [ch_wind, ch_step.moved(1, 0)], 10.0, True),
-        ("hurt", [ch.recolor(outline, c("white")), ch], 12.0, False),
+        ("idle", idle, 3.0, True),
+        ("move", move, 8.0, True),
+        ("attack", [windup, charge], 10.0, True),
+        ("hurt", [ch.recolor(keep, c("white")), ch], 12.0, False),
     ])
 
-    smap = {".": None, "o": "outline", "p": "purple", "P": "plum", "k": "outline",
-            "e": "yellow", "Y": "yellow", "g": "brown"}
-    sh = Canvas.from_rows(SHOOTER, smap)
-    sh_bob = sh.shift_rows(0, 12, 1)
-    sh_cast = sh.copy()
-    for x, y in [(12, 5), (14, 5), (13, 4), (12, 7), (14, 7)]:
-        sh_cast.set(x, y, c("orange"))
+    # --- 원거리형 (해골 마법사) ---
+    sh = Canvas.from_rows(SHOOTER, SHOOTER_MAP)
+    sh_bob = sh.shift_rows(0, 13, 1)
+    sh_sway = sh.copy()
+    for x, ch_ in zip(range(4, 12), "oPoPoPo."):
+        sh_sway.set(x + 1, 13, None if ch_ == "." else c(SHOOTER_MAP[ch_]))
+    sh_sway.set(4, 13, None)
+    flick = sh.copy()
+    flick.set(13, 2, c("orange"))
+    flick.set(14, 3, c("yellow"))
+    cast_a = sh.moved(0, 0)
+    for x, y in ((12, 1), (15, 1), (13, 0), (15, 4)):
+        cast_a.set(x, y, c("yellow"))
+    cast_b = sh.copy()
+    for x, y in ((12, 0), (15, 0), (11, 2)):
+        cast_b.set(x, y, c("orange"))
+    cast_b.set(5, 4, c("yellow"))
+    cast_b.set(7, 4, c("yellow"))
     save_sheet("enemy_shooter", 16, 16, [
-        ("idle", [sh, sh_bob], 3.0, True),
-        ("move", [sh, sh_bob], 6.0, True),
-        ("attack", [sh_cast, sh], 10.0, True),
-        ("hurt", [sh.recolor(outline, c("white")), sh], 12.0, False),
+        ("idle", [sh, flick, sh_bob, flick.shift_rows(0, 13, 1)], 4.0, True),
+        ("move", [sh, sh_sway, sh_bob, sh_sway], 6.0, True),
+        ("attack", [cast_a, cast_b], 10.0, True),
+        ("hurt", [sh.recolor(keep, c("white")), sh], 12.0, False),
     ])
 
-    sp = [spreader_frame(i, i % 2) for i in range(4)]
-    sp_att = [f.recolor({c("outline"), c("white")}, c("orange")) for f in sp[:2]]
+    # --- 탄막형 (떠 있는 눈) ---
+    bobs = (0, 0, 1, 1)
+    sp = [spreader_frame(i, bob=bobs[i]) for i in range(4)]
     save_sheet("enemy_spreader", 16, 16, [
         ("idle", sp, 6.0, True),
         ("move", sp, 8.0, True),
-        ("attack", [sp_att[0], sp[1]], 10.0, True),
-        ("hurt", [sp[0].recolor(outline, c("white")), sp[0]], 12.0, False),
+        ("attack", [spreader_frame(0, glow=True), spreader_frame(1, glow=True, bob=1)], 10.0, True),
+        ("hurt", [spreader_frame(0, flash=True), sp[0]], 12.0, False),
     ])
 
 

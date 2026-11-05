@@ -10,7 +10,7 @@
     },
     "move": {
       "row": 1,
-      "frames": 2,
+      "frames": 4,
       "fps": 8.0,
       "loop": true
     },

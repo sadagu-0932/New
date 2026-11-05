@@ -4,13 +4,13 @@
   "animations": {
     "idle": {
       "row": 0,
-      "frames": 2,
-      "fps": 3.0,
+      "frames": 4,
+      "fps": 4.0,
       "loop": true
     },
     "move": {
       "row": 1,
-      "frames": 2,
+      "frames": 4,
       "fps": 6.0,
       "loop": true
     },
