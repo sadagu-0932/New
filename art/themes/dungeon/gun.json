@@ -1,5 +1,5 @@
 {
-  "frame_width": 20,
+  "frame_width": 16,
   "frame_height": 10,
   "animations": {
     "idle": {
@@ -7,16 +7,14 @@
       "frames": 1,
       "fps": 1.0,
       "loop": true
-    },
-    "shoot": {
-      "row": 1,
-      "frames": 3,
-      "fps": 15.0,
-      "loop": false
     }
   },
   "pivot": [
     0.0,
     4.5
+  ],
+  "muzzle": [
+    15.0,
+    3.5
   ]
 }

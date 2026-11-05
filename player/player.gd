@@ -63,6 +63,10 @@ var view: View = View.SIDE
 var _gun: AnimatedSprite2D
 ## 총이 어깨에서 마우스 쪽을 향하는 방향 (사격 방향과 같음)
 var _shot_dir: Vector2 = Vector2.RIGHT
+## 총구 불꽃 (총에 붙어 같이 돈다) / 반동으로 뒤로 밀린 거리 (px)
+var _muzzle_flash: AnimatedSprite2D
+var _muzzle: Vector2 = Vector2.ZERO
+var _gun_kick: float = 0.0
 ## 방향별 [몸 SpriteFrames, 망토 SpriteFrames, body_offsets]
 var _view_res: Dictionary = {}
 
@@ -115,8 +119,18 @@ func _build_children() -> void:
 	var pivot: Array = DB.theme.load_json("gun").get("pivot", [0.0, 0.0])
 	_gun.offset = -Vector2(float(pivot[0]), float(pivot[1]))
 	_gun.play(&"idle")
-	_gun.animation_finished.connect(func() -> void: _gun.play(&"idle"))
 	add_child(_gun)
+	var gun_meta := DB.theme.load_json("gun")
+	var muzzle: Array = gun_meta.get("muzzle", [0.0, 0.0])
+	_muzzle = Vector2(float(muzzle[0]), float(muzzle[1])) - Vector2(float(pivot[0]), float(pivot[1]))
+	_muzzle_flash = AnimatedSprite2D.new()
+	_muzzle_flash.sprite_frames = DB.theme.load_sheet("muzzle_flash")
+	_muzzle_flash.centered = false
+	var origin: Array = DB.theme.load_json("muzzle_flash").get("origin", [0.0, 0.0])
+	_muzzle_flash.offset = -Vector2(float(origin[0]), float(origin[1]))
+	_muzzle_flash.visible = false
+	_muzzle_flash.animation_finished.connect(func() -> void: _muzzle_flash.visible = false)
+	_gun.add_child(_muzzle_flash)
 
 	_hurtbox = Hurtbox.new()
 	_hurtbox.collision_layer = Layers.PLAYER_HURTBOX
@@ -219,8 +233,10 @@ func _try_shoot(input: InputFrame) -> void:
 	# 어깨 높이에서 마우스 쪽으로 쏜다 (총구에서 탄이 나가 보이게)
 	if gun.try_fire(ammo, container, _shot_origin(), _shot_dir, combo.damage_mult()):
 		_shoot_anim_ticks = DB.gun.fire_interval_ticks
-		_gun.play(&"shoot")
-		_gun.frame = 0
+		_gun_kick = DB.feel.gun_recoil_px
+		_muzzle_flash.visible = true
+		_muzzle_flash.play(&"flash")
+		_muzzle_flash.frame = 0
 		Events.player_shot.emit()
 
 
@@ -544,11 +560,14 @@ func _update_gun() -> void:
 	var facing := -1.0 if (view == View.SIDE and _sprite.flip_h) else 1.0
 	var w := float(_sprite.sprite_frames.get_frame_texture(_sprite.animation, 0).get_width())
 	var h := float(_sprite.sprite_frames.get_frame_texture(_sprite.animation, 0).get_height())
+	# 총 그림은 하나: 위치·회전만 바꾼다 (반동도 총구 반대쪽으로 밀리는 위치로)
 	_gun.position = Vector2((shoulder.x - w * 0.5) * facing + body.x * facing,
-		shoulder.y - h * 0.5 + _sprite.offset.y + body.y)
+		shoulder.y - h * 0.5 + _sprite.offset.y + body.y) - _shot_dir * _gun_kick
+	_gun_kick *= DB.feel.gun_recoil_return
 	_gun.rotation = _shot_dir.angle()
 	_gun.flip_v = _shot_dir.x < 0.0
 	_gun.modulate = _sprite.modulate
+	_muzzle_flash.position = Vector2(_muzzle.x, -_muzzle.y if _gun.flip_v else _muzzle.y)
 
 
 ## 그림이 향한 방향 (망토가 뒤로 날리는 기준)

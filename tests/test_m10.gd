@@ -212,7 +212,8 @@ func test_gun_follows_aim() -> void:
 	if shot:
 		var dir := shot.velocity.normalized()
 		check(dir.dot((target - origin).normalized()) > 0.999, "탄은 어깨에서 마우스 쪽으로")
-	check(p._gun.animation == &"shoot", "쏘면 총 반동 그림")
+	check(p._muzzle_flash.visible, "쏘면 총구 불꽃")
+	check(p._gun.sprite_frames.get_animation_names().size() == 1, "총 그림은 하나 (돌리기만 함)")
 	input.push(Vector2.ZERO, 3, 0, 0, pos + Vector2(-60, 10))
 	await step(3)
 	check(p._gun.flip_v, "왼쪽을 겨누면 총을 뒤집어 위아래가 맞게")

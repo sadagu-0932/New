@@ -1,0 +1,16 @@
+{
+  "frame_width": 8,
+  "frame_height": 8,
+  "animations": {
+    "flash": {
+      "row": 0,
+      "frames": 3,
+      "fps": 20.0,
+      "loop": false
+    }
+  },
+  "origin": [
+    0.0,
+    3.5
+  ]
+}

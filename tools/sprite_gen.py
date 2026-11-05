@@ -741,7 +741,7 @@ GUN_CMAP = {
     "D": "stone_dark", "y": "yellow", "q": "cyan", "t": "brown", "T": "tan", "h": "tan",
     "c": "blue", "C": "navy", "d": "brown_dark",
 }
-GUN_W, GUN_H = 20, 10
+GUN_W, GUN_H = 16, 10
 GUN_ROWS = [
     "................",
     "....ooo.........",
@@ -754,39 +754,34 @@ GUN_ROWS = [
     "...otdo.........",
     "...ooo..........",
 ]
-def gun_frame(shift: int = 0, flash: int = 0) -> Canvas:
-    base = Canvas.from_rows([r + "...." for r in GUN_ROWS], GUN_CMAP)
-    out = Canvas(GUN_W, GUN_H)
-    for y in range(GUN_H):
-        for x in range(GUN_W):
-            v = base.px[y][x]
-            if v is None:
-                continue
-            # 반동: 총·장갑은 뒤로 밀리고 소매(어깨 쪽 3칸)는 제자리
-            nx = x if x < 2 else x - shift
-            out.set(nx, y, v)
-    if shift:
-        for y in (4, 5):
-            out.set(2 - shift, y, c("outline"))
-    mx = 15 - shift
-    if flash == 1:
-        # 총구 불꽃: 흰 심 + 노랑 + 주황 끝
-        for x, y, col in ((mx, 3, "white"), (mx, 4, "white"), (mx + 1, 3, "white"), (mx + 1, 4, "yellow"),
-                          (mx + 2, 3, "yellow"), (mx + 2, 4, "orange"), (mx + 3, 4, "orange"),
-                          (mx + 1, 2, "yellow"), (mx + 1, 5, "yellow"), (mx + 2, 1, "orange"), (mx + 2, 6, "orange")):
-            out.set(x, y, c(col))
-    elif flash == 2:
-        # 연기 한 점
-        out.set(mx + 1, 3, c("pale"))
-        out.set(mx + 2, 2, c("stone_light"))
-    return out
+def gun_frame() -> Canvas:
+    return Canvas.from_rows([r + "." * (GUN_W - len(r)) for r in GUN_ROWS], GUN_CMAP)
+
+
+def muzzle_flash_frame(kind: int) -> Canvas:
+    """총구 불꽃 (8x8, 왼쪽 가운데가 총구). 0 큰 불꽃 / 1 작은 불꽃 / 2 연기"""
+    t = Canvas(8, 8)
+    if kind == 0:
+        for x, y, col in ((0, 3, "white"), (0, 4, "white"), (1, 3, "white"), (1, 4, "white"), (2, 3, "yellow"),
+                          (2, 4, "yellow"), (1, 2, "yellow"), (1, 5, "yellow"), (3, 3, "orange"), (3, 4, "yellow"),
+                          (4, 4, "orange"), (2, 1, "orange"), (2, 6, "orange"), (5, 3, "orange")):
+            t.set(x, y, c(col))
+    elif kind == 1:
+        for x, y, col in ((0, 3, "yellow"), (0, 4, "white"), (1, 3, "orange"), (1, 4, "yellow"), (2, 4, "orange")):
+            t.set(x, y, c(col))
+    else:
+        for x, y, col in ((1, 3, "pale"), (2, 2, "stone_light"), (3, 2, "stone_light")):
+            t.set(x, y, c(col))
+    return t
 
 
 def build_gun() -> None:
-    save_sheet("gun", GUN_W, GUN_H, [
-        ("idle", [gun_frame()], 1.0, True),
-        ("shoot", [gun_frame(0, 1), gun_frame(2, 2), gun_frame(1, 0)], 15.0, False),
-    ], extra={"pivot": [0.0, 4.5]})
+    # 총 그림은 하나만 (게임에서 통째로 돌린다). 반동은 위치로, 불꽃은 따로 그린 그림으로
+    save_sheet("gun", GUN_W, GUN_H, [("idle", [gun_frame()], 1.0, True)],
+               extra={"pivot": [0.0, 4.5], "muzzle": [15.0, 3.5]})
+    save_sheet("muzzle_flash", 8, 8, [
+        ("flash", [muzzle_flash_frame(0), muzzle_flash_frame(1), muzzle_flash_frame(2)], 20.0, False),
+    ], extra={"origin": [0.0, 3.5]})
 
 
 def build_player_views() -> None:

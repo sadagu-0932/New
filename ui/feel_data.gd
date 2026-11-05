@@ -34,6 +34,12 @@ extends Resource
 ## 방향이 바뀌는 경계에서 지금 그림을 유지하는 여유 (0.2 = 20%)
 @export var view_hysteresis: float = 0.0
 
+@export_group("총 (화면 표시만)")
+## 쏠 때 총이 뒤로 밀리는 거리 (px)
+@export var gun_recoil_px: float = 0.0
+## 반동이 돌아오는 비율 (매 틱 곱함, 작을수록 빨리 돌아옴)
+@export var gun_recoil_return: float = 0.0
+
 @export_group("탄 꼬리")
 ## 탄 꼬리 잔상이 사라지는 시간 (초)
 @export var bullet_trail_fade_seconds: float = 0.0
