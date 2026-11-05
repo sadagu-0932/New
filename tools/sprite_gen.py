@@ -354,6 +354,31 @@ def _back_arm(cv: Canvas, shoulder: tuple[int, int], hand: tuple[int, int]) -> N
                 cv.set(nx, ny, c("outline"))
 
 
+# 가까운 팔이 쉬는 자리 (서 있을 때)
+SIDE_NEAR_HAND_REST = (8, 16)
+
+
+def _near_arm(cv: Canvas, shoulder: tuple[int, int], hand: tuple[int, int]) -> None:
+    """몸 앞에 있는 팔: 몸통 위에 덧그리고 테두리로 몸통과 구분한다 (소매 파랑 + 장갑)."""
+    cells = _thick_line(shoulder[0], shoulder[1], hand[0], hand[1] - 1)
+    hand_cells = {(hand[0], hand[1]), (hand[0] + 1, hand[1])}
+    arm = {p for p in cells | hand_cells if 0 <= p[0] < cv.w and p[1] < PLAYER_BODY_LAST}
+    for (x, y) in arm:
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if (nx, ny) in arm or ny <= shoulder[1] or not (0 <= nx < cv.w and ny < PLAYER_BODY_LAST):
+                continue
+            cv.set(nx, ny, c("outline"))
+    for (x, y) in arm:
+        cv.set(x, y, c("tan") if (x, y) in hand_cells else c("blue"))
+
+
+def with_near_arm(base: Canvas) -> Canvas:
+    out = base.copy()
+    _near_arm(out, SIDE_ARM_SHOULDER, SIDE_NEAR_HAND_REST)
+    return out
+
+
 def side_walk_frames(base: Canvas) -> list[Canvas]:
     """옆모습 걷기: 허벅지·정강이가 무릎에서 꺾이고, 발이 뒤꿈치 착지 → 디딤 → 발끝 밀기 → 늘어짐으로 바뀐다."""
     n = len(SIDE_WALK_LEGS)
@@ -363,6 +388,9 @@ def side_walk_frames(base: Canvas) -> list[Canvas]:
         for y in range(PLAYER_BODY_LAST, PLAYER_H):
             out.px[y] = [None] * out.w
         _back_arm(out, SIDE_ARM_SHOULDER, SIDE_ARM_HANDS[i])
+        # 가까운 팔은 먼 팔과 반대로 흔든다 (앞뒤 폭은 조금 좁게)
+        hx, hy = SIDE_ARM_HANDS[(i + n // 2) % n]
+        _near_arm(out, SIDE_ARM_SHOULDER, (max(4, min(10, hx)), hy))
         if SIDE_WALK_BOB[i]:
             out = out.shift_rows(0, PLAYER_BODY_LAST - 1, SIDE_WALK_BOB[i])
         leg_cells = {}
@@ -595,7 +623,7 @@ PLAYER_FRONT = [
     "..oWPlPPPlPPlo..",
     ".occcccPlcccoco.",
     ".occcccPlcccoco.",
-    ".ocooccccCccoho.",
+    ".ohooccccCccoho.",
     ".oooTTTTyTTTooo.",
     "...occccCccco...",
     "..o.occcCccco...",
@@ -620,7 +648,7 @@ PLAYER_BACK = [
     "..oWPPPPPPPPlo..",
     ".ooWPPlPPlPPloo.",
     ".occcccccccccco.",
-    ".ohoccccccccoco.",
+    ".ohoccccccccoho.",
     ".oooTTTTTTTTooo.",
     "...occcccccco...",
     "...occcccccco...",
@@ -683,10 +711,9 @@ def build_player_view(name: str, rows: list[str], back: bool) -> None:
 
     idle = [fb_legs(body(), "stand"), fb_legs(body(), "stand"), fb_legs(body(1), "stand"), fb_legs(body(1), "stand")]
     # 달리기 6프레임: 다리를 번갈아 들고, 몸이 튀어 오르고, 팔을 흔든다
-    # 걷기 6프레임: 왼발 살짝 듦(2프레임) → 디딤(상체 1px 내려앉음) → 오른발 반복. 빈손 팔은 다리와 엇갈려 흔든다
-    free = 1 if back else 0   # 빈손: 정면은 화면 오른쪽 팔, 뒷모습은 화면 왼쪽 팔
+    # 걷기 6프레임: 왼발 살짝 듦(2프레임) → 디딤(상체 1px 내려앉음) → 오른발 반복. 양팔은 엇갈려 흔든다
     def arms(d: int) -> tuple[int, int]:
-        return (d, 0) if free else (0, d)
+        return (d, -d)   # 양팔을 엇갈려 흔든다 (총은 손에 들지 않고 떠 있음)
     run_plan = [("half_l", 0, *arms(1)), ("half_l", 0, *arms(1)), ("stand", 1, *arms(0)),
                 ("half_r", 0, *arms(-1)), ("half_r", 0, *arms(-1)), ("stand", 1, *arms(0))]
     move = [fb_legs(fb_arms(body(dy), al, ar), leg) for leg, dy, al, ar in run_plan]
@@ -734,25 +761,25 @@ def fb_cloak_frame(back: bool, lean: str, flutter: int) -> Canvas:
     return scarf_tails((4 + 3, 9), lean, flutter)
 
 
-# 총 (따로 그려 게임에서 어깨에 붙이고 마우스 쪽으로 돌린다). 오른쪽을 겨눈 기준, 회전축 = 어깨 (0, 4.5)
-#   소매(파랑) → 장갑 → 룬 권총: 밝은 총신 윗면, 놋쇠 총구 고리, 몸체의 청록 룬, 나무 손잡이, 방아쇠울
+# 총 (손 없이 총만. 게임에서 캐릭터 주위에 떠서 마우스 쪽으로 돈다). 오른쪽을 겨눈 기준, 회전축 = 몸체 가운데
+#   룬 권총: 밝은 총신 윗면, 놋쇠 총구 고리, 몸체의 청록 룬, 나무 손잡이, 방아쇠울
 GUN_CMAP = {
     ".": None, "o": "outline", "W": "white", "P": "pale", "l": "stone_light", "n": "stone",
     "D": "stone_dark", "y": "yellow", "q": "cyan", "t": "brown", "T": "tan", "h": "tan",
     "c": "blue", "C": "navy", "d": "brown_dark",
 }
-GUN_W, GUN_H = 16, 10
+GUN_W, GUN_H = 14, 10
 GUN_ROWS = [
-    "................",
-    "....ooo.........",
-    "...oDDloooooooo.",
-    "oo.oDnnlWllllyo.",
-    "ccohhDqnnnnnnyo.",
-    "CCohhhDDDoooooo.",
-    "oo.ohhtoDo......",
-    "...ottdo........",
-    "...otdo.........",
-    "...ooo..........",
+    "..............",
+    "..ooo.........",
+    ".oDDloooooooo.",
+    ".oDnnlWllllyo.",
+    ".oDDqnnnnnnyo.",
+    ".otDDDoooooo..",
+    ".oTtoDo.......",
+    ".ottdo........",
+    ".otdo.........",
+    ".ooo..........",
 ]
 def gun_frame() -> Canvas:
     return Canvas.from_rows([r + "." * (GUN_W - len(r)) for r in GUN_ROWS], GUN_CMAP)
@@ -778,7 +805,7 @@ def muzzle_flash_frame(kind: int) -> Canvas:
 def build_gun() -> None:
     # 총 그림은 하나만 (게임에서 통째로 돌린다). 반동은 위치로, 불꽃은 따로 그린 그림으로
     save_sheet("gun", GUN_W, GUN_H, [("idle", [gun_frame()], 1.0, True)],
-               extra={"pivot": [0.0, 4.5], "muzzle": [15.0, 3.5]})
+               extra={"pivot": [5.0, 5.0], "muzzle": [13.0, 3.5]})
     save_sheet("muzzle_flash", 8, 8, [
         ("flash", [muzzle_flash_frame(0), muzzle_flash_frame(1), muzzle_flash_frame(2)], 20.0, False),
     ], extra={"origin": [0.0, 3.5]})
@@ -853,6 +880,7 @@ def build_player() -> None:
     #   총 든 팔은 걸음에 맞춰 위아래로 흔들리고, 다리는 보폭을 크게 (공중 프레임엔 두 발 다 뜸)
     # 걷기 6프레임: 손으로 찍은 다리 + 내려앉을 때 상체 1px
     move = side_walk_frames(base)
+    base = with_near_arm(base)   # 걷기 말고는 가까운 팔이 옆에 늘어져 있다
 
     # 사격: 몸은 서 있는 그대로 (총구 불꽃·반동은 따로 그린 총이 맡는다)
     shoot = [pose(base, 0, "stand"), pose(base, 0, "stand")]

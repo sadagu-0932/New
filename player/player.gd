@@ -59,7 +59,7 @@ const VIEW_SHEETS := {
 	View.BACK: ["player_back", "player_cloak_back"],
 }
 var view: View = View.SIDE
-## 손에 든 총 (따로 그린 그림, 어깨에 붙어 조준 방향으로 돈다). 화면 표시 전용
+## 떠 있는 총 (손 없이 총만, 캐릭터 둘레에서 조준 방향으로 돈다). 화면 표시 전용
 var _gun: AnimatedSprite2D
 ## 총이 어깨에서 마우스 쪽을 향하는 방향 (사격 방향과 같음)
 var _shot_dir: Vector2 = Vector2.RIGHT
@@ -548,21 +548,17 @@ func _apply_draw_order() -> void:
 		move_child(order[i] as Node, first + i)
 
 
-## 총: 어깨에 붙이고 사격 방향으로 돌린다. 회피·근접·사망 중에는 숨김 (화면 표시 전용)
+## 총: 캐릭터 둘레에 떠서 사격 방향으로 돈다 (그림 하나를 통째로 돌림). 회피·근접·사망 중에는 숨김 (화면 표시 전용)
 func _update_gun() -> void:
 	var hidden_now := state == State.DODGE or state == State.DASH_SLASH or state == State.DEAD \
 		or melee.is_active() or _sprite.animation == &"death"
 	_gun.visible = not hidden_now
 	if hidden_now:
 		return
-	var shoulder: Vector2 = _view_res[view][3]
-	var body := _body_offset()
-	var facing := -1.0 if (view == View.SIDE and _sprite.flip_h) else 1.0
-	var w := float(_sprite.sprite_frames.get_frame_texture(_sprite.animation, 0).get_width())
-	var h := float(_sprite.sprite_frames.get_frame_texture(_sprite.animation, 0).get_height())
-	# 총 그림은 하나: 위치·회전만 바꾼다 (반동도 총구 반대쪽으로 밀리는 위치로)
-	_gun.position = Vector2((shoulder.x - w * 0.5) * facing + body.x * facing,
-		shoulder.y - h * 0.5 + _sprite.offset.y + body.y) - _shot_dir * _gun_kick
+	# 총은 손에 들지 않고 가슴 높이 둘레에 떠서 조준 방향에 머문다. 살짝 위아래로 떠다님
+	var f := DB.feel
+	var hover := sin(TAU * float(Game.tick) / maxf(f.gun_hover_period_ticks, 1.0)) * f.gun_hover_px
+	_gun.position = Vector2(0.0, -DB.gun.muzzle_height + hover) + _shot_dir * (f.gun_orbit_radius - _gun_kick)
 	_gun_kick *= DB.feel.gun_recoil_return
 	_gun.rotation = _shot_dir.angle()
 	_gun.flip_v = _shot_dir.x < 0.0

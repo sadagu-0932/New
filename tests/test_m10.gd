@@ -201,7 +201,7 @@ func test_gun_follows_aim() -> void:
 	check(p._gun.visible, "평소엔 총이 보임")
 	check(is_equal_approx(p._gun.rotation, (target - origin).angle()), "총구가 마우스 쪽을 향함")
 	check(not p._gun.flip_v, "오른쪽을 겨누면 총을 뒤집지 않음")
-	check(p._gun.position.y < -2.0, "총은 어깨 높이에 붙음 (%.1f)" % p._gun.position.y)
+	check(p._gun.position.y < -2.0, "총은 가슴 높이 둘레에 떠 있음 (%.1f)" % p._gun.position.y)
 	input.push(Vector2.ZERO, 1, InputFrame.SHOOT, 0, target)
 	await step(2)
 	var shot: Projectile = null

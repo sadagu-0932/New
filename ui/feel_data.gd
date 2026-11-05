@@ -35,6 +35,11 @@ extends Resource
 @export var view_hysteresis: float = 0.0
 
 @export_group("총 (화면 표시만)")
+## 총이 떠 있는 거리 (가슴 높이 중심에서 px)
+@export var gun_orbit_radius: float = 0.0
+## 떠다니며 위아래로 움직이는 폭 (px) / 한 번 오르내리는 시간 (틱)
+@export var gun_hover_px: float = 0.0
+@export var gun_hover_period_ticks: float = 0.0
 ## 쏠 때 총이 뒤로 밀리는 거리 (px)
 @export var gun_recoil_px: float = 0.0
 ## 반동이 돌아오는 비율 (매 틱 곱함, 작을수록 빨리 돌아옴)
