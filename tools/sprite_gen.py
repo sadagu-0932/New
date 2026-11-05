@@ -932,88 +932,247 @@ SIGN = [
 
 # ---------------------------------------------------------------------------
 # 탄막 골렘 (48x48). 가슴의 코어가 약점 (반사탄으로만 제대로 맞음)
+# 돌덩이 부위를 뒤 → 앞 순서로 쌓아 그린다. 부위마다 테두리 + 왼쪽 위 빛 명암 + 돌 얼룩.
 # ---------------------------------------------------------------------------
-def golem_frame(core: str = "cyan", eye: str = "yellow", arms_up: int = 0, bob: int = 0,
-                slump: int = 0, glow_cracks: bool = False, stars: bool = False) -> Canvas:
-    t = Canvas(48, 48)
+## 이 높이 이상 들면 주먹을 머리 위로 치켜든 자세로 그린다
+RAISED_ARM = 10
 
-    def rect(x0, y0, x1, y1, col):
-        for y in range(y0, y1 + 1):
-            for x in range(x0, x1 + 1):
-                t.set(x, y, c(col))
 
-    def outline_rect(x0, y0, x1, y1, fill, edge="outline"):
-        rect(x0, y0, x1, y1, edge)
-        rect(x0 + 1, y0 + 1, x1 - 1, y1 - 1, fill)
+class GolemPose:
+    """한 프레임의 자세·색. 기본값 = 평소 대기."""
 
-    oy = bob + slump
-    # 다리
-    outline_rect(13, 38, 21, 47, "stone_dark")
-    outline_rect(27, 38, 35, 47, "stone_dark")
-    # 몸통
-    outline_rect(9, 14 + oy, 39, 41, "stone")
-    rect(10, 15 + oy, 38, 17 + oy, "stone_light")
-    rect(10, 38, 38, 40, "stone_dark")
-    # 머리
-    hy = 3 + oy + slump
-    outline_rect(17, hy, 31, hy + 11, "stone")
-    rect(18, hy + 1, 30, hy + 2, "stone_light")
-    rect(19, hy + 5, 21, hy + 6, eye)
-    rect(27, hy + 5, 29, hy + 6, eye)
-    # 팔 (arms_up 만큼 들어올림)
-    ay = 16 + oy - arms_up
-    outline_rect(2, ay, 9, ay + 20, "stone")
-    outline_rect(39, ay, 46, ay + 20, "stone")
-    rect(3, ay + 1, 8, ay + 2, "stone_light")
-    rect(40, ay + 1, 45, ay + 2, "stone_light")
-    # 금
-    crack = "orange" if glow_cracks else "shadow"
-    t.line(12, 22 + oy, 16, 30 + oy, c(crack))
-    t.line(34, 20 + oy, 31, 27 + oy, c(crack))
-    t.line(20, 33, 24, 37, c(crack))
-    # 코어
-    cx, cy = 24, 25 + oy
-    for y in range(cy - 6, cy + 7):
-        for x in range(cx - 6, cx + 7):
-            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-            if d <= 4.2:
-                t.set(x, y, c(core))
-            elif d <= 5.4:
+    def __init__(self, **kw):
+        self.bob = 0            # 몸통·머리·팔이 내려가는 정도 (숨쉬기)
+        self.arm_l = 0          # 왼팔 들어올림 (px)
+        self.arm_r = 0          # 오른팔 들어올림
+        self.step = 0           # 걸음: -1 왼발 듦 / 1 오른발 듦
+        self.slump = 0          # 그로기: 머리·팔 처짐
+        self.core = "cyan"      # 코어 색
+        self.core_hi = "white"  # 코어 하이라이트
+        self.core_glow = False  # 코어 주변 빛 번짐
+        self.eye = "yellow"
+        self.rune = "blue"      # 어깨 룬 (평소 흐림, 공격 시 밝게)
+        self.crack = "shadow"   # 금 색 (각성 시 주황)
+        self.stars = -1         # 그로기 별 회전 위치 (-1 = 없음)
+        self.sparks = 0         # 각성·필살기 파편 (0 = 없음, 1~ = 프레임)
+        for k, v in kw.items():
+            setattr(self, k, v)
+
+
+def _stone_part(t: Canvas, inside, x0: int, y0: int, x1: int, y1: int, seed: int,
+                base: str = "stone", hi: str = "stone_light", lo: str = "stone_dark") -> None:
+    """inside(x, y) 로 정의된 돌덩이 하나: 테두리(outline) + 위·왼쪽 밝게 + 아래·오른쪽 어둡게 + 얼룩."""
+    rng = random.Random(seed)
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
+            if not inside(x, y):
+                continue
+            edge = not (inside(x - 1, y) and inside(x + 1, y) and inside(x, y - 1) and inside(x, y + 1))
+            if edge:
                 t.set(x, y, c("outline"))
-    t.set(cx - 1, cy - 2, c("white"))
-    t.set(cx - 2, cy - 1, c("white"))
-    if stars:
-        for sx, sy in ((14, 1), (24, 0), (34, 1)):
-            t.set(sx, sy, c("yellow"))
-            t.set(sx - 1, sy + 1, c("yellow"))
-            t.set(sx + 1, sy + 1, c("yellow"))
-            t.set(sx, sy + 2, c("yellow"))
+                continue
+            top = not inside(x, y - 2)
+            left = not inside(x - 2, y)
+            bottom = not inside(x, y + 2)
+            right = not inside(x + 2, y)
+            if top or (left and not bottom):
+                col = hi
+            elif bottom or right:
+                col = lo
+            else:
+                col = base
+            # 돌 얼룩 (같은 시드 = 매번 같은 무늬)
+            r = rng.random()
+            if col == base and r < 0.07:
+                col = lo
+            elif col == base and r < 0.10:
+                col = hi
+            t.set(x, y, c(col))
+
+
+def _rrect(x0: int, y0: int, x1: int, y1: int, r: int):
+    """모서리가 둥근 사각형 안쪽 판정 함수."""
+    def inside(x, y):
+        if x < x0 or x > x1 or y < y0 or y > y1:
+            return False
+        cx = min(max(x, x0 + r), x1 - r)
+        cy = min(max(y, y0 + r), y1 - r)
+        return (x - cx) ** 2 + (y - cy) ** 2 <= r * r + 0.5
+    return inside
+
+
+def _trapezoid(x0_top: int, x1_top: int, x0_bot: int, x1_bot: int, y0: int, y1: int, r: int = 2):
+    """위가 넓고 아래가 좁은 몸통."""
+    def inside(x, y):
+        if y < y0 or y > y1:
+            return False
+        f = (y - y0) / max(y1 - y0, 1)
+        left = x0_top + (x0_bot - x0_top) * f
+        right = x1_top + (x1_bot - x1_top) * f
+        if x < left - 0.01 or x > right + 0.01:
+            return False
+        # 위쪽 모서리 둥글게
+        if y < y0 + r:
+            if x < x0_top + r and (x - (x0_top + r)) ** 2 + (y - (y0 + r)) ** 2 > r * r + 0.5:
+                return False
+            if x > x1_top - r and (x - (x1_top - r)) ** 2 + (y - (y0 + r)) ** 2 > r * r + 0.5:
+                return False
+        return True
+    return inside
+
+
+def golem_frame(p: GolemPose) -> Canvas:
+    t = Canvas(48, 48)
+    b = p.bob
+    s = p.slump
+
+    # --- 다리·발 (맨 뒤) ---
+    for lx, lift in ((12, p.step == -1), (28, p.step == 1)):
+        dy = -1 if lift else 0
+        _stone_part(t, _rrect(lx + 1, 36 + dy, lx + 7, 44 + dy, 1), lx + 1, 36 + dy, lx + 7, 44 + dy, 11 + lx,
+                    base="stone_dark", hi="stone", lo="shadow")
+        _stone_part(t, _rrect(lx, 42 + dy, lx + 8, 47 + dy, 2), lx, 42 + dy, lx + 8, 47 + dy, 13 + lx)
+
+    # --- 허리 ---
+    _stone_part(t, _rrect(14, 31 + b, 33, 39 + b, 2), 14, 31 + b, 33, 39 + b, 21,
+                base="stone_dark", hi="stone", lo="shadow")
+
+    # --- 몸통 (넓은 가슴) ---
+    torso = _trapezoid(8, 39, 13, 34, 12 + b, 35 + b, 3)
+    _stone_part(t, torso, 8, 12 + b, 39, 35 + b, 31)
+    # 가슴 판 이음새
+    t.line(15, 30 + b, 32, 30 + b, c("stone_dark"))
+    t.line(23, 31 + b, 23, 34 + b, c("stone_dark"))
+    # 금
+    t.line(12, 16 + b, 15, 22 + b, c(p.crack))
+    t.line(15, 22 + b, 14, 26 + b, c(p.crack))
+    t.line(36, 15 + b, 33, 20 + b, c(p.crack))
+    t.line(30, 31 + b, 33, 34 + b, c(p.crack))
+
+    # --- 코어 (가슴 가운데): 홈 → 코어 → 하이라이트 ---
+    cx, cy = 24, 22 + b
+    for y in range(cy - 8, cy + 9):
+        for x in range(cx - 8, cx + 9):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if d <= 6.6 and d > 5.5:
+                t.set(x, y, c("shadow"))          # 홈 테두리
+            elif d <= 5.5 and d > 4.6:
+                t.set(x, y, c("outline"))
+            elif d <= 4.6:
+                # 아래·오른쪽은 진하게
+                dark = (x - cx) + (y - cy) > 2.5
+                t.set(x, y, c(p.core) if not dark else c({"cyan": "sky", "sky": "blue", "orange": "red",
+                                                            "yellow": "orange", "red": "crimson",
+                                                            "white": "cyan"}.get(p.core, p.core)))
+            elif p.core_glow and d <= 7.6 and (x + y) % 2 == 0:
+                t.set(x, y, c(p.core))            # 빛 번짐 (점점이)
+    t.set(cx - 2, cy - 2, c(p.core_hi))
+    t.set(cx - 1, cy - 3, c(p.core_hi))
+    t.set(cx - 3, cy - 1, c(p.core_hi))
+
+    # --- 팔 (어깨 아래로 늘어뜨림) + 주먹. 높이 들면(필살기) 머리 위로 올라가므로 나중에 그림 ---
+    for side in (-1, 1):
+        lift = p.arm_l if side < 0 else p.arm_r
+        if lift >= RAISED_ARM:
+            continue
+        ax0 = 2 if side < 0 else 37
+        ay0 = 18 + b + s - lift
+        _stone_part(t, _rrect(ax0 + 1, ay0, ax0 + 8, ay0 + 14, 2), ax0 + 1, ay0, ax0 + 8, ay0 + 14, 41 + side)
+        fx0 = 0 if side < 0 else 36
+        fy0 = ay0 + 12
+        _stone_part(t, _rrect(fx0, fy0, fx0 + 11, fy0 + 9, 3), fx0, fy0, fx0 + 11, fy0 + 9, 43 + side)
+        # 손가락 마디
+        for k in range(3):
+            t.set(fx0 + 3 + k * 3, fy0 + 7, c("stone_dark"))
+
+    # --- 어깨 바위 (팔 위를 덮음) + 룬 + 이끼 ---
+    for side in (-1, 1):
+        sx0 = 1 if side < 0 else 33
+        sy0 = 9 + b + s // 2 - (min(p.arm_l if side < 0 else p.arm_r, 6) // 2)
+        _stone_part(t, _rrect(sx0, sy0, sx0 + 13, sy0 + 11, 4), sx0, sy0, sx0 + 13, sy0 + 11, 51 + side)
+        # 룬: 작은 ㅅ 모양 문양
+        rx, ry = sx0 + 6, sy0 + 5
+        for dx, dy in ((0, 0), (-1, 1), (1, 1), (0, -1), (-2, 2), (2, 2)):
+            t.set(rx + dx, ry + dy, c(p.rune))
+        # 이끼 (어깨 윗면)
+        for dx in (2, 3, 5, 9, 10):
+            t.set(sx0 + dx, sy0 + 1, c("green") if dx % 2 else c("green_dark"))
+        t.set(sx0 + 3, sy0 + 2, c("green_dark"))
+
+    # --- 머리 (어깨 사이에 박힘) ---
+    hy = 3 + b + s
+    _stone_part(t, _rrect(17, hy, 30, hy + 11, 3), 17, hy, 30, hy + 11, 61)
+    # 이마 튀어나온 부분
+    t.line(18, hy + 4, 29, hy + 4, c("stone_dark"))
+    t.line(19, hy + 3, 28, hy + 3, c("stone_light"))
+    # 눈 (빛나는 틈)
+    for ex in (20, 25):
+        t.line(ex, hy + 6, ex + 2, hy + 6, c(p.eye))
+        t.set(ex + 1, hy + 7, c(p.eye))
+    t.line(20, hy + 9, 27, hy + 9, c("stone_dark"))  # 입
+    t.set(19, hy + 1, c("green"))
+    t.set(20, hy + 1, c("green_dark"))
+
+    # --- 머리 위로 치켜든 팔·주먹 (어깨·머리보다 앞) ---
+    for side in (-1, 1):
+        lift = p.arm_l if side < 0 else p.arm_r
+        if lift < RAISED_ARM:
+            continue
+        top = max(0, 14 - lift)                 # 높이 들수록 위로
+        ax0 = 6 if side < 0 else 33
+        _stone_part(t, _rrect(ax0, top + 6, ax0 + 8, 18 + b, 2), ax0, top + 6, ax0 + 8, 18 + b, 71 + side)
+        fx0 = ax0 - 2 + (1 if side < 0 else 0)
+        _stone_part(t, _rrect(fx0, top, fx0 + 11, top + 9, 3), fx0, top, fx0 + 11, top + 9, 73 + side)
+        for k in range(3):
+            t.set(fx0 + 3 + k * 3, top + 2, c("stone_dark"))
+
+    # --- 그로기 별 (머리 위를 도는) ---
+    if p.stars >= 0:
+        import math
+        for k in range(3):
+            a = math.radians(p.stars * 40 + k * 120)
+            sx, sy = round(24 + 9 * math.cos(a)), round(hy - 2 + 2.5 * math.sin(a))
+            for dx, dy in ((0, 0), (-1, 0), (1, 0), (0, -1), (0, 1)):
+                t.set(sx + dx, sy + dy, c("yellow") if (dx, dy) != (0, 0) else c("white"))
+
+    # --- 파편 (각성·필살기) ---
+    if p.sparks:
+        rng = random.Random(900 + p.sparks)
+        for _ in range(10):
+            x, y = rng.randrange(2, 46), rng.randrange(1, 30)
+            if t.px[y][x] is None:
+                t.set(x, y, c("orange") if rng.random() < 0.5 else c("yellow"))
     return t
 
 
 def build_golem() -> None:
     outline = {c("outline")}
-    idle = [golem_frame(), golem_frame(bob=1)]
-    attack = [golem_frame(core="orange", arms_up=4), golem_frame(core="yellow", arms_up=6)]
-    hurt = [golem_frame().recolor(outline, c("white")), golem_frame()]
-    core_hit = [golem_frame(core="white"), golem_frame(core="cyan")]
-    groggy = [golem_frame(core="sky", eye="stone_dark", slump=3, stars=True),
-              golem_frame(core="sky", eye="stone_dark", slump=4, stars=True)]
-    awaken = [golem_frame(core="red", eye="red", glow_cracks=True),
-              golem_frame(core="red", eye="orange", glow_cracks=True, bob=1),
-              golem_frame(core="white", eye="red", glow_cracks=True, arms_up=3)]
-    special = [golem_frame(core="white", eye="red", glow_cracks=True, arms_up=10),
-               golem_frame(core="red", eye="white", glow_cracks=True, arms_up=12)]
+    P = GolemPose
+    idle = [P(), P(bob=0), P(bob=1, core="sky"), P(bob=1, core="sky")]
+    move = [P(step=-1), P(bob=1), P(step=1), P(bob=1)]
+    attack = [P(arm_l=4, arm_r=4, core="orange", rune="cyan", core_glow=True),
+              P(arm_l=7, arm_r=7, core="yellow", rune="cyan", core_glow=True),
+              P(arm_l=5, arm_r=5, core="orange", rune="sky", core_glow=True)]
+    base_flash = golem_frame(P())
+    hurt = [base_flash.recolor(outline, c("white")), golem_frame(P())]
+    core_hit = [golem_frame(P(core="white", core_hi="white", core_glow=True)), golem_frame(P(core="cyan", core_glow=True))]
+    groggy = [P(slump=3, core="blue", core_hi="sky", eye="stone_dark", rune="navy", stars=i) for i in range(3)]
+    awaken = [P(core="red", eye="red", rune="red", crack="orange", core_glow=True, sparks=1),
+              P(bob=1, core="red", eye="orange", rune="orange", crack="orange", core_glow=True, sparks=2),
+              P(arm_l=3, arm_r=3, core="white", core_hi="yellow", eye="red", rune="red", crack="orange", core_glow=True, sparks=3)]
+    special = [P(arm_l=12, arm_r=12, core="white", core_hi="yellow", eye="red", rune="orange", crack="orange", core_glow=True, sparks=4),
+               P(arm_l=14, arm_r=14, core="red", core_hi="white", eye="white", rune="red", crack="orange", core_glow=True, sparks=5)]
     save_sheet("golem", 48, 48, [
-        ("idle", idle, 3.0, True),
-        ("move", idle, 3.0, True),
-        ("attack", attack, 8.0, True),
+        ("idle", [golem_frame(p) for p in idle], 4.0, True),
+        ("move", [golem_frame(p) for p in move], 6.0, True),
+        ("attack", [golem_frame(p) for p in attack], 8.0, True),
         ("hurt", hurt, 12.0, False),
         ("core_hit", core_hit, 12.0, False),
-        ("groggy", groggy, 3.0, True),
-        ("awaken", awaken, 6.0, True),
-        ("special", special, 8.0, True),
+        ("groggy", [golem_frame(p) for p in groggy], 6.0, True),
+        ("awaken", [golem_frame(p) for p in awaken], 6.0, True),
+        ("special", [golem_frame(p) for p in special], 8.0, True),
     ])
+
 
 # ---------------------------------------------------------------------------
 # UI
