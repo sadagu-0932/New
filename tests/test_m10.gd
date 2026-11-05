@@ -171,6 +171,21 @@ func test_player_views() -> void:
 	await step(40)
 	check(p.view == Player.View.BACK, "위를 보며 뒷걸음질")
 	check(p._cloak.animation == &"cloak_fwd", "뒷걸음질하면 망토가 눌림 (%s)" % p._cloak.animation)
+	# 미끼 분신은 만들 때 보던 방향 그대로
+	for v: Player.View in [Player.View.SIDE, Player.View.FRONT, Player.View.BACK]:
+		var d := Decoy.new()
+		d.data = DB.skill_by_id("decoy") as DecoyData
+		d.view = v
+		d.flip = v == Player.View.SIDE
+		level.add_child(d)
+		var sheet: String = Player.VIEW_SHEETS[v][0]
+		check(d._sprite.sprite_frames == DB.theme.load_sheet(sheet), "분신 그림 = %s" % sheet)
+		var cloak_i := -1
+		for c in d.get_children():
+			if c is AnimatedSprite2D and c != d._sprite:
+				cloak_i = c.get_index()
+		check((cloak_i > d._sprite.get_index()) == (v == Player.View.BACK), "분신 망토 순서 (%s)" % sheet)
+		d.vanish()
 
 
 ## 적마다 어울리는 탄 그림, 진행 방향 회전, 꼬리 (화면 표시 전용)

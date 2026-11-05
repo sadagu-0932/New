@@ -16,6 +16,9 @@ func _activate() -> bool:
 	_decoy = Decoy.new()
 	_decoy.data = _dd()
 	_decoy.position = player.global_position
+	# 분신은 쓰는 순간 플레이어가 보던 방향 그대로 (옆/정면/뒷모습)
+	_decoy.view = player.view
+	_decoy.flip = player.view == Player.View.SIDE and player._sprite.flip_h
 	# 소품·적보다 먼저 처리되도록 레벨의 소품 노드 안에 둔다
 	var props: Node = level.get_node_or_null("Props")
 	(props if props else level).add_child(_decoy)
