@@ -185,36 +185,39 @@ def write_json(path: Path, data: dict) -> None:
 PLAYER_CMAP: dict[str, str | None] = {
     ".": None,
     "o": "outline",
-    "K": "shadow",       # 검은 후드·망토
-    "k": "stone_dark",   # 주름·밝은 면
-    "L": "stone",        # 빛 테두리 (어두운 바닥에서도 실루엣이 보이게)
-    "g": "stone_light",  # 후드 꼭대기 하이라이트 · 총
-    "V": "outline",      # 후드 속 어둠 (얼굴이 안 보임)
-    "e": "cyan",         # 어둠 속 눈빛
-    "R": "crimson",      # 망토 안감
-    "h": "stone_dark",   # 장갑 낀 손
-    "G": "stone_dark",   # 총 손잡이
-    "B": "brown_dark",   # 장화 끝
+    "W": "white",        # 망토 빛 받는 테두리
+    "P": "pale",         # 밝은 후드·망토
+    "l": "stone_light",  # 주름 그늘
+    "n": "stone",        # 후드 안쪽 그늘
+    "t": "brown",        # 앞머리
+    "s": "skin",
+    "e": "outline",      # 눈
+    "y": "yellow",       # 망토 고정 장식
+    "b": "sky",          # 망토 안감
+    "h": "tan",          # 장갑
+    "g": "stone_light",  # 총
+    "G": "stone_dark",
+    "k": "brown_dark",   # 장화
 }
-# 검은 후드를 푹 뒤집어쓴 모습 (오른쪽을 봄). 얼굴은 챙 아래 어둠 속, 눈빛만 살짝.
-# 후드가 목에서 조이지 않고 발목까지 긴 망토로 이어진다. 밑단은 해져 있다.
+# 밝은 흰 후드 망토 (오른쪽을 봄). 후드 아래로 앞머리와 얼굴이 보인다.
+# 후드가 목에서 조이지 않고 발목까지 긴 망토로 이어지며, 밑단은 찢어져 너덜너덜하다.
 PLAYER_BASE = [
     "....oo..........",
-    "...oLgoo........",
-    "...oLkkgoo......",
-    "..oLKKkkkgo.....",
-    "..oLKKKkkkgo....",
-    "..oLKKKkVVVVo...",
-    "..oLKKkVVVeVo...",
-    "..oLKKkVVVVo....",
-    ".oLKKKKkVVo.....",
-    ".oLKKKKKkkoooo..",
-    "oLKKKKKKhhhgggo.",
-    "oLKKKKKKKRoGGo..",
-    "oLKKKKKKKRo.....",
-    "oLKKKKKKKKRo....",
-    "okKKoKKKoKKo....",
-    ".oo.oBo.oBoo....",
+    "...oWWoo........",
+    "...oWPPWoo......",
+    "..oWPPPPPWo.....",
+    "..oWPPPPPPWo....",
+    "..oWPPPlnttto...",
+    "..oWPPlntssso...",
+    "..oWPPlnsseso...",
+    ".oWPPPPlnsso....",
+    ".oWPPPPPlyloooo.",
+    "oWPPPPPPPhhgggo.",
+    "oWPPPPPPPboGGo..",
+    "oWPPlPPPPbo.....",
+    "oWPPlPPPPPbo....",
+    "oPoPPoPlo.Po....",
+    ".o.oPo.okokoo...",
 ]
 # 쓰러져 누운 모습 (머리 왼쪽, 발 오른쪽)
 PLAYER_LYING = [
@@ -228,18 +231,26 @@ PLAYER_LYING = [
     "................",
     "................",
     "..oooo..........",
-    ".oLggko.oooooo..",
-    "oLkkVVooKKKKKKoo",
-    "oLkVeVoKKKKRKKBo",
-    "okkVVVoKKKKKKKBo",
-    ".okkoo.oKkKkKoo.",
+    ".oWWPo.oooooo...",
+    "oWPtssooPPPPPPoo",
+    "oWPseso.PPPbPPko",
+    "oPPsssoPPPPPPPko",
+    ".oPPoo.oPlPlPoo.",
     "..oo....oooooo..",
 ]
-# 망토 밑단 (펄럭임 2가지)
+# 찢어진 밑단 (펄럭임 2가지)
 PLAYER_HEMS = [
-    "okKKoKKKoKKo....",
-    "okKoKKKoKKKo....",
+    "oPoPPoPlo.Po....",
+    "oPPoPoPPoPo.....",
 ]
+# 밑단 아래 장화·늘어진 천 조각 (마지막 줄)
+PLAYER_FEET = {
+    "stand": ".o.oPo.okokoo...",
+    "step_a": "...oko.Po.okoo..",
+    "step_b": ".....okookoo....",
+    "spread": "..okoo....okoo..",
+    "tuck": "..oooooooooo....",
+}
 
 
 def player_legs(base: Canvas, rows: list[str]) -> Canvas:
@@ -253,6 +264,7 @@ def player_legs(base: Canvas, rows: list[str]) -> Canvas:
 
 def player_row(cv: Canvas, y: int, row: str) -> Canvas:
     """한 줄을 바꾼 프레임 (밑단·장화 등)."""
+    assert len(row) == 16, f"줄 길이 16 아님: {row!r}"
     out = cv.copy()
     part = Canvas.from_rows([row], PLAYER_CMAP)
     out.px[y] = part.px[0][:]
@@ -273,11 +285,9 @@ def build_player() -> None:
 
     idle = [hem(base, 0), hem(base, 1), hem(bob, 1), hem(bob, 0)]
 
-    # 이동: 망토 밑으로 장화 끝이 번갈아 나오고 밑단이 펄럭임
-    step_a = ".oo.oBo...oBo.."
-    step_b = ".ooo.oBooBo....."
-    move = [boots(hem(base, 0), step_a + "."), boots(hem(bob, 1), step_b),
-            boots(hem(base, 1), "..o.oBo..oBo...."[:16]), boots(hem(bob, 0), step_b)]
+    # 이동: 찢어진 밑단 아래로 장화가 번갈아 나오고 밑단이 펄럭임
+    move = [boots(hem(base, 0), PLAYER_FEET["step_a"]), boots(hem(bob, 1), PLAYER_FEET["step_b"]),
+            boots(hem(base, 1), PLAYER_FEET["stand"]), boots(hem(bob, 0), PLAYER_FEET["step_b"])]
 
     # 사격: 총구 불꽃 → 반동
     flash = hem(base, 0)
@@ -306,9 +316,9 @@ def build_player() -> None:
     melee = [m0, m1, m2]
 
     # 회피: 몸을 낮추고 망토가 뒤로 쏠림 + 잔상 선
-    squash = boots(hem(bob, 1), ".o.oBo....oBo...")
+    squash = boots(hem(bob, 1), PLAYER_FEET["spread"])
     ball = base.shift_rows(0, 13, 2)
-    ball = boots(hem(ball, 0), "..oooooooooo....")
+    ball = boots(hem(ball, 0), PLAYER_FEET["tuck"])
     for y in (5, 9, 13):
         ball.line(0, y, 1, y, c("pale"))
     dodge = [squash, ball, squash]
