@@ -687,13 +687,70 @@ def orb(size: int, r: float, core: str, ring: str, outline: str | None, phase: i
     return cv
 
 
+BULLET_MAP = {".": None, "o": "outline", "W": "white", "Y": "yellow", "y": "orange", "r": "red", "R": "crimson",
+              "C": "cyan", "c": "sky", "b": "blue", "P": "purple", "p": "plum", "L": "pale", "g": "green_light",
+              "S": "stone", "s": "stone_dark", "l": "stone_light"}
+# 오른쪽으로 날아가는 기준 (게임에서 진행 방향으로 회전하는 탄)
+# 내 탄: 노랑·흰 예광탄
+TRACER = [
+    ["........", "........", "..ooooo.", ".oyYYWWo", ".oyYYWWo", "..ooooo.", "........", "........"],
+    ["........", "........", ".oooooo.", "oyyYYWWo", "oyyYYWWo", ".oooooo.", "........", "........"],
+]
+# 원거리형(해골 마법사): 주황 불덩이, 뒤로 불꽃 꼬리
+FIREBALL = [
+    ["........", "..r.oo..", ".ryoyYo.", "ryyYYWYo", "oyyYWWYo", ".oyoYYo.", "..o.oo..", "........"],
+    ["........", ".r..oo..", "..ryoYo.", "oryYYWYo", "ryyYWWYo", ".ryoYYo.", "...ooo..", "........"],
+    ["........", "...ooo..", ".roryYo.", "oyyYYWYo", "ryyYWWYo", "..ryYYo.", "..r.oo..", "........"],
+]
+# 반사탄: 하늘색 에너지 볼트
+BOLT = [
+    ["........", "........", "..ooooo.", ".obcCWWo", ".obcCWWo", "..ooooo.", "........", "........"],
+    ["........", "........", ".oooooo.", "obbcCWWo", "obbcCWWo", ".oooooo.", "........", "........"],
+]
+# 완벽 반사탄: 크고 흰 혜성
+COMET = [
+    ["........", "...oooo.", ".ocCWWWo", "occCWWWo", "occCWWWo", ".ocCWWWo", "...oooo.", "........"],
+    ["...oo...", "..oCooo.", ".occWWWo", "ocCWWWWo", "ocCWWWWo", ".occWWWo", "..oCooo.", "...oo..."],
+]
+
+
+def shard_frame(k: int) -> Canvas:
+    """탄막형: 보라 수정 조각 (회전하며 날아감, 4프레임)"""
+    shapes = [
+        ["...oo...", "..oWLo..", "..oLPo..", ".oLPPPo.", ".oPPPPo.", "..oPPo..", "..oPPo..", "...oo..."],
+        ["........", "......o.", "....ooWo", "..ooLLPo", ".oLPPPo.", "oPPPPo..", ".oooo...", "........"],
+        ["........", "..oooo..", ".oWLLLo.", "oLPPPPPo", "oPPPPPo.", ".oPPoo..", "..oo....", "........"],
+        ["........", ".o......", "oWoo....", "oLLLoo..", ".oPPPPo.", "..ooPPPo", "....ooo.", "........"],
+    ]
+    return Canvas.from_rows(shapes[k], BULLET_MAP)
+
+
+def golem_bullet_frame(k: int) -> Canvas:
+    """골렘: 돌덩이 속에서 코어처럼 하늘색으로 빛나는 탄 (맥동 2프레임)"""
+    rows = [
+        ["..ooo...", ".olSSo..", "olScCSo.", "oScWCso.", "oSCCcso.", ".osssso.", "..oooo..", "........"],
+        ["..ooo...", ".olSSo..", "olSCCSo.", "oSCWWCo.", "oSCCCso.", ".osccso.", "..oooo..", "........"],
+    ]
+    return Canvas.from_rows(rows[k], BULLET_MAP)
+
+
 def build_bullets() -> None:
+    def frames(rows_list):
+        return [Canvas.from_rows(r, BULLET_MAP) for r in rows_list]
     save_sheet("bullets", 8, 8, [
-        ("player", [orb(8, 2.2, "yellow", "orange", "outline", p) for p in (0, 1)], 10.0, True),
+        ("player", frames(TRACER), 12.0, True),
         ("enemy", [orb(8, 2.8, "red", "crimson", "outline", p) for p in (0, 1)], 8.0, True),
-        ("reflect", [orb(8, 2.4, "cyan", "sky", "outline", p) for p in (0, 1)], 12.0, True),
-        ("reflect_perfect", [orb(8, 3.3, "white", "cyan", "sky", p) for p in (0, 1)], 16.0, True),
-    ])
+        ("fireball", frames(FIREBALL), 12.0, True),
+        ("shard", [shard_frame(k) for k in range(4)], 12.0, True),
+        ("golem", [golem_bullet_frame(k) for k in range(2)], 6.0, True),
+        ("reflect", frames(BOLT), 12.0, True),
+        ("reflect_perfect", frames(COMET), 14.0, True),
+    ], extra={
+        # 진행 방향으로 돌려 그릴 탄 (그림은 오른쪽 기준)
+        "rotate": ["player", "fireball", "reflect", "reflect_perfect"],
+        # 꼬리 잔상: 애니메이션 → 몇 틱마다 남길지
+        "trail": {"fireball": 3, "golem": 4, "reflect": 2, "reflect_perfect": 2},
+    })
 
 
 # ---------------------------------------------------------------------------

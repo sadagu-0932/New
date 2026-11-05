@@ -8,4 +8,4 @@ speed = 75.0
 damage = 1
 radius = 3.0
 lifetime_ticks = 360
-anim = &"enemy"
+anim = &"golem"

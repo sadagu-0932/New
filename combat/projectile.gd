@@ -26,6 +26,11 @@ var alive: bool = true
 var _shape := CircleShape2D.new()
 var _query := PhysicsShapeQueryParameters2D.new()
 var _sprite: AnimatedSprite2D
+## 진행 방향으로 돌려 그리는지 / 꼬리 잔상 간격 (bullets.json 의 rotate·trail, 화면 표시 전용)
+var _rotate: bool = false
+var _trail_every: int = 0
+var _age: int = 0
+static var _bullet_meta: Dictionary = {}
 ## 이미 처리한 피격 영역 (관통 탄이 같은 대상을 여러 번 때리지 않게)
 var _done: Dictionary = {}
 
@@ -58,6 +63,11 @@ func _set_anim(anim: StringName) -> void:
 		_sprite.sprite_frames = DB.theme.load_sheet("bullets")
 		add_child(_sprite)
 	_sprite.play(anim)
+	if _bullet_meta.is_empty():
+		_bullet_meta = DB.theme.load_json("bullets")
+	_rotate = (_bullet_meta.get("rotate", []) as Array).has(String(anim))
+	_trail_every = int((_bullet_meta.get("trail", {}) as Dictionary).get(String(anim), 0))
+	_update_sprite_rotation()
 
 
 func _update_group() -> void:
@@ -73,6 +83,10 @@ func _physics_process(_delta: float) -> void:
 	if not alive:
 		return
 	position += velocity / float(Game.config.tick_rate)
+	_age += 1
+	_update_sprite_rotation()
+	if _trail_every > 0 and _age % _trail_every == 0:
+		_leave_trail()
 	lifetime -= 1
 	if lifetime <= 0:
 		destroy(false)
@@ -154,6 +168,19 @@ func rechain(dir: Vector2, tech: AdvancedTechData) -> void:
 	if _sprite:
 		_sprite.scale = Vector2.ONE * (1.0 + 0.25 * (reflect_count - 1))
 	Effect.spawn(&"perfect", global_position, 0.0, 1.0 + 0.5 * reflect_count)
+
+
+## 그림을 진행 방향으로 돌린다 (회전하는 탄만)
+func _update_sprite_rotation() -> void:
+	if _sprite and _rotate and velocity != Vector2.ZERO:
+		_sprite.rotation = velocity.angle()
+
+
+## 꼬리 잔상 (화면 표시 전용)
+func _leave_trail() -> void:
+	var tex := _sprite.sprite_frames.get_frame_texture(_sprite.animation, _sprite.frame)
+	AfterImage.spawn(tex, global_position, false, DB.feel.bullet_trail_fade_seconds, Color(1, 1, 1, 0.8),
+		_sprite.rotation, _sprite.scale * 0.8)
 
 
 ## 없앤다 (show_effect: 맞은 자리 이펙트)

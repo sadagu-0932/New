@@ -28,6 +28,10 @@ extends Resource
 ## 뒤로 걸을 때(조준 반대 방향) 몸 쪽으로 눌리는 정도
 @export var cloak_backpedal_lean: float = 0.0
 
+@export_group("탄 꼬리")
+## 탄 꼬리 잔상이 사라지는 시간 (초)
+@export var bullet_trail_fade_seconds: float = 0.0
+
 @export_group("잔상 (회피·돌진 중)")
 ## 몇 틱마다 잔상을 남길지
 @export var afterimage_interval_ticks: int = 0

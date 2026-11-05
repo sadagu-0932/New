@@ -5,7 +5,7 @@
     "player": {
       "row": 0,
       "frames": 2,
-      "fps": 10.0,
+      "fps": 12.0,
       "loop": true
     },
     "enemy": {
@@ -14,17 +14,47 @@
       "fps": 8.0,
       "loop": true
     },
-    "reflect": {
+    "fireball": {
       "row": 2,
+      "frames": 3,
+      "fps": 12.0,
+      "loop": true
+    },
+    "shard": {
+      "row": 3,
+      "frames": 4,
+      "fps": 12.0,
+      "loop": true
+    },
+    "golem": {
+      "row": 4,
+      "frames": 2,
+      "fps": 6.0,
+      "loop": true
+    },
+    "reflect": {
+      "row": 5,
       "frames": 2,
       "fps": 12.0,
       "loop": true
     },
     "reflect_perfect": {
-      "row": 3,
+      "row": 6,
       "frames": 2,
-      "fps": 16.0,
+      "fps": 14.0,
       "loop": true
     }
+  },
+  "rotate": [
+    "player",
+    "fireball",
+    "reflect",
+    "reflect_perfect"
+  ],
+  "trail": {
+    "fireball": 3,
+    "golem": 4,
+    "reflect": 2,
+    "reflect_perfect": 2
   }
 }

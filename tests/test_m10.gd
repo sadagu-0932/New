@@ -14,6 +14,7 @@ func run_all() -> void:
 	test_export_preset()
 	await test_tall_player_feet()
 	await test_cloak_follows_motion()
+	await test_bullet_looks()
 	if level != null:
 		level.queue_free()
 		level = null
@@ -136,3 +137,27 @@ func test_cloak_follows_motion() -> void:
 	await step(40)
 	check(p._cloak.animation == &"cloak_fwd", "조준 반대로 뒷걸음질하면 몸 쪽으로 눌림 (%s)" % p._cloak.animation)
 	check(p._cloak.flip_h == p._sprite.flip_h, "망토는 몸과 같은 쪽을 봄")
+
+
+## 적마다 어울리는 탄 그림, 진행 방향 회전, 꼬리 (화면 표시 전용)
+func test_bullet_looks() -> void:
+	check(DB.enemies["shooter"].projectile.anim == &"fireball", "원거리형 = 불덩이")
+	check(DB.enemies["spreader"].projectile.anim == &"shard", "탄막형 = 수정 조각")
+	check(DB.enemies["golem"].projectile.anim == &"golem", "골렘 = 빛나는 돌 탄")
+	check(DB.gun.projectile.anim == &"player", "내 탄 = 예광탄")
+	await new_level(MAP)
+	var dir := Vector2(1, -1).normalized()
+	var fb := Projectile.spawn(level.projectiles, Team.ENEMY, Vector2(100, 60), dir, DB.enemies["shooter"].projectile)
+	await step(4)
+	check(is_equal_approx(fb._sprite.rotation, dir.angle()), "불덩이는 날아가는 방향으로 돌아감")
+	var trails := 0
+	for n in level.effects.get_children():
+		if n is AfterImage:
+			trails += 1
+	check(trails > 0, "불덩이 꼬리 잔상 (%d)" % trails)
+	fb.reflect(Vector2.LEFT, false, DB.parry)
+	await step(1)
+	check(fb._sprite.animation == &"reflect" and is_equal_approx(absf(fb._sprite.rotation), PI), "반사되면 하늘색 볼트로 바뀌고 반대 방향으로 돌아감")
+	var sh := Projectile.spawn(level.projectiles, Team.ENEMY, Vector2(100, 60), dir, DB.enemies["spreader"].projectile)
+	await step(2)
+	check(sh._sprite.rotation == 0.0, "수정 조각은 방향 대신 제자리에서 빙글빙글 (프레임 회전)")

@@ -17,5 +17,6 @@ cloak_run_lean = 2.2
 cloak_vertical_factor = 0.5
 cloak_dodge_lean = 3.2
 cloak_backpedal_lean = -1.0
+bullet_trail_fade_seconds = 0.15
 afterimage_interval_ticks = 2
 afterimage_fade_seconds = 0.2

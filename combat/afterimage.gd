@@ -6,7 +6,8 @@ var _fade: float = 0.0
 var _left: float = 0.0
 
 
-static func spawn(texture_value: Texture2D, pos: Vector2, flip: bool, fade_seconds: float, tint: Color) -> void:
+static func spawn(texture_value: Texture2D, pos: Vector2, flip: bool, fade_seconds: float, tint: Color,
+		rot: float = 0.0, scale_value: Vector2 = Vector2.ONE) -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	var container: Node = tree.get_first_node_in_group(Effect.GROUP)
 	if container == null or texture_value == null:
@@ -15,6 +16,8 @@ static func spawn(texture_value: Texture2D, pos: Vector2, flip: bool, fade_secon
 	a.texture = texture_value
 	a.position = pos
 	a.flip_h = flip
+	a.rotation = rot
+	a.scale = scale_value
 	a.modulate = tint
 	a._fade = fade_seconds
 	a._left = fade_seconds
