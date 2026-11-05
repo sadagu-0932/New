@@ -187,20 +187,24 @@ PLAYER_CMAP: dict[str, str | None] = {
     "o": "outline",
     "W": "white",        # 망토 빛 받는 테두리
     "P": "pale",         # 밝은 후드·망토
-    "l": "stone_light",  # 주름 그늘
+    "l": "stone_light",  # 망토 주름 그늘
     "n": "stone",        # 후드 안쪽 그늘
     "t": "brown",        # 앞머리
     "s": "skin",
     "e": "outline",      # 눈
     "y": "yellow",       # 망토 고정 장식
-    "b": "sky",          # 망토 안감
+    "b": "sky",          # 옷깃
+    "c": "blue",         # 튜닉
+    "C": "navy",         # 튜닉 그늘
+    "T": "brown",        # 허리띠
+    "N": "navy",         # 바지
     "h": "tan",          # 장갑
     "g": "stone_light",  # 총
     "G": "stone_dark",
     "k": "brown_dark",   # 장화
 }
-# 밝은 흰 후드 망토 (오른쪽을 봄). 후드 아래로 앞머리와 얼굴이 보인다.
-# 후드가 목에서 조이지 않고 발목까지 긴 망토로 이어지며, 밑단은 찢어져 너덜너덜하다.
+# 밝은 흰 후드 + 등 뒤로 늘어진 긴 망토 (오른쪽을 봄). 앞은 열려 있어 튜닉·허리띠·다리가 보인다.
+# 후드 아래로 앞머리와 얼굴이 보이고, 망토 밑단은 찢어져 너덜너덜하다.
 PLAYER_BASE = [
     "....oo..........",
     "...oWWoo........",
@@ -210,16 +214,16 @@ PLAYER_BASE = [
     "..oWPPPlnttto...",
     "..oWPPlntssso...",
     "..oWPPlnsseso...",
-    ".oWPPPPlnsso....",
-    ".oWPPPPPlyloooo.",
-    "oWPPPPPPPhhgggo.",
-    "oWPPPPPPPboGGo..",
-    "oWPPlPPPPbo.....",
-    "oWPPlPPPPPbo....",
-    "oPoPPoPlo.Po....",
-    ".o.oPo.okokoo...",
+    ".oWPPPloosso....",
+    ".oWPPloybcoooo..",
+    "oWPPPocccchhggo.",
+    "oWPPlocccCoGGo..",
+    "oWPlPoTTTTo.....",
+    "oPPlPocCcCo.....",
+    "oPoPloNo.No.....",
+    ".o.oo.ko.ko.....",
 ]
-# 쓰러져 누운 모습 (머리 왼쪽, 발 오른쪽)
+# 쓰러져 누운 모습 (머리 왼쪽, 발 오른쪽, 망토가 몸 아래 깔림)
 PLAYER_LYING = [
     "................",
     "................",
@@ -232,94 +236,89 @@ PLAYER_LYING = [
     "................",
     "..oooo..........",
     ".oWWPo.oooooo...",
-    "oWPtssooPPPPPPoo",
-    "oWPseso.PPPbPPko",
-    "oPPsssoPPPPPPPko",
+    "oWPtssocccTNNoo.",
+    "oWPsesocccTNNkko",
+    "oPPsssoPPPPPPPoo",
     ".oPPoo.oPlPlPoo.",
     "..oo....oooooo..",
 ]
-# 찢어진 밑단 (펄럭임 2가지)
+# 등 뒤 망토 밑단 (x 0~4, 14~15행): 찢어진 자락 펄럭임
 PLAYER_HEMS = [
-    "oPoPPoPlo.Po....",
-    "oPPoPoPPoPo.....",
+    ("oPoPl", ".o.oo"),
+    ("oPPoP", "o.oo."),
+    ("ooPPl", ".oo.o"),
 ]
-# 밑단 아래 장화·늘어진 천 조각 (마지막 줄)
-PLAYER_FEET = {
-    "stand": ".o.oPo.okokoo...",
-    "step_a": "...oko.Po.okoo..",
-    "step_b": ".....okookoo....",
-    "spread": "..okoo....okoo..",
-    "tuck": "..oooooooooo....",
+# 다리 (x 5~11, 13~15행)
+PLAYER_LEGS = {
+    "stand": ("ocCcCo.", "oNo.No.", ".ko.ko."),
+    "step_a": ("ocCcCo.", "No..oNo", "ko...ko"),
+    "step_b": ("ocCcCo.", ".oNNo..", ".okko.."),
+    "spread": ("ocCcCo.", "No...No", "ko...ko"),
+    "tuck": (".oCCo..", ".oNNo..", "..oo..."),
 }
 
 
-def player_legs(base: Canvas, rows: list[str]) -> Canvas:
-    """다리(13~15행)만 바꾼 프레임."""
-    cv = base.copy()
-    legs = Canvas.from_rows(rows, PLAYER_CMAP)
-    for i in range(3):
-        cv.px[13 + i] = legs.px[i][:]
-    return cv
-
-
-def player_row(cv: Canvas, y: int, row: str) -> Canvas:
-    """한 줄을 바꾼 프레임 (밑단·장화 등)."""
-    assert len(row) == 16, f"줄 길이 16 아님: {row!r}"
-    out = cv.copy()
-    part = Canvas.from_rows([row], PLAYER_CMAP)
-    out.px[y] = part.px[0][:]
-    return out
+def _put(cv: Canvas, x0: int, y: int, part: str) -> None:
+    for i, ch in enumerate(part):
+        name = PLAYER_CMAP[ch]
+        cv.set(x0 + i, y, None if name is None else c(name))
 
 
 def hem(cv: Canvas, pose: int) -> Canvas:
-    return player_row(cv, 14, PLAYER_HEMS[pose % len(PLAYER_HEMS)])
+    out = cv.copy()
+    r14, r15 = PLAYER_HEMS[pose % len(PLAYER_HEMS)]
+    _put(out, 0, 14, r14)
+    _put(out, 0, 15, r15)
+    return out
 
 
-def boots(cv: Canvas, row: str) -> Canvas:
-    return player_row(cv, 15, row)
+def legs(cv: Canvas, key: str) -> Canvas:
+    out = cv.copy()
+    for i, row in enumerate(PLAYER_LEGS[key]):
+        _put(out, 5, 13 + i, row)
+    return out
 
 
 def build_player() -> None:
     base = Canvas.from_rows(PLAYER_BASE, PLAYER_CMAP)
-    bob = base.shift_rows(0, 13, 1)  # 망토째 1px 내려앉음 (숨쉬기)
+    bob = base.shift_rows(0, 12, 1)  # 상체 1px 내려앉음 (숨쉬기). 다리는 그대로
 
-    idle = [hem(base, 0), hem(base, 1), hem(bob, 1), hem(bob, 0)]
+    def pose(body: Canvas, h: int, leg: str) -> Canvas:
+        return legs(hem(body, h), leg)
 
-    # 이동: 찢어진 밑단 아래로 장화가 번갈아 나오고 밑단이 펄럭임
-    move = [boots(hem(base, 0), PLAYER_FEET["step_a"]), boots(hem(bob, 1), PLAYER_FEET["step_b"]),
-            boots(hem(base, 1), PLAYER_FEET["stand"]), boots(hem(bob, 0), PLAYER_FEET["step_b"])]
+    idle = [pose(base, 0, "stand"), pose(base, 1, "stand"), pose(bob, 1, "stand"), pose(bob, 0, "stand")]
+    move = [pose(base, 2, "step_a"), pose(bob, 0, "step_b"), pose(base, 1, "spread"), pose(bob, 0, "step_b")]
 
     # 사격: 총구 불꽃 → 반동
-    flash = hem(base, 0)
+    flash = pose(base, 0, "stand")
     flash.set(15, 10, c("white"))
     flash.set(15, 9, c("yellow"))
     flash.set(15, 11, c("yellow"))
     flash.set(14, 8, c("orange"))
     flash.set(14, 12, c("orange"))
-    recoil = hem(base, 1).moved(-1, 0)
+    recoil = pose(base, 1, "stand").moved(-1, 0)
     recoil.set(14, 10, c("yellow"))
     shoot = [flash, recoil]
 
-    # 근접: 망토 속 단검 (위 → 앞 → 아래)
+    # 근접: 단검 (위 → 앞 → 아래)
     blade, tip = c("pale"), c("white")
-    m0 = hem(base, 1)
+    m0 = pose(base, 2, "spread")
     m0.line(11, 9, 14, 4, blade)
     m0.set(15, 3, tip)
-    m1 = hem(base, 0)
+    m1 = pose(base, 0, "spread")
     for x, y in [(12, 4), (13, 5), (14, 7), (15, 9), (14, 11), (13, 13)]:
         m1.set(x, y, tip)
     for x, y in [(12, 5), (13, 7), (14, 9), (13, 11), (12, 12)]:
         m1.set(x, y, blade)
-    m2 = hem(base, 1)
+    m2 = pose(base, 1, "spread")
     m2.line(11, 11, 14, 14, blade)
     m2.set(15, 15, tip)
     melee = [m0, m1, m2]
 
     # 회피: 몸을 낮추고 망토가 뒤로 쏠림 + 잔상 선
-    squash = boots(hem(bob, 1), PLAYER_FEET["spread"])
-    ball = base.shift_rows(0, 13, 2)
-    ball = boots(hem(ball, 0), PLAYER_FEET["tuck"])
-    for y in (5, 9, 13):
+    squash = pose(bob, 2, "spread")
+    ball = pose(base.shift_rows(0, 12, 2), 2, "tuck")
+    for y in (5, 9, 12):
         ball.line(0, y, 1, y, c("pale"))
     dodge = [squash, ball, squash]
 
@@ -328,7 +327,8 @@ def build_player() -> None:
 
     # 쓰러짐: 무릎 꿇기 → 옆으로 쓰러져 누움 (따로 그린 프레임)
     lying = Canvas.from_rows(PLAYER_LYING, PLAYER_CMAP)
-    death = [hem(base.shift_rows(0, 13, 1), 1), hem(base.shift_rows(0, 13, 3), 0), lying.moved(0, -1), lying]
+    death = [pose(base.shift_rows(0, 12, 1), 1, "tuck"), pose(base.shift_rows(0, 12, 2), 0, "tuck"),
+             lying.moved(0, -1), lying]
 
     save_sheet("player", 16, 16, [
         ("idle", idle, 4.0, True),
