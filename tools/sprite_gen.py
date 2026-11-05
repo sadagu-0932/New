@@ -161,7 +161,8 @@ class Canvas:
         return img
 
 
-def save_sheet(name: str, fw: int, fh: int, anims: list[tuple[str, list[Canvas], float, bool]]) -> None:
+def save_sheet(name: str, fw: int, fh: int, anims: list[tuple[str, list[Canvas], float, bool]],
+               extra: dict | None = None) -> None:
     """애니메이션 목록을 시트 PNG + JSON으로 저장한다. 한 줄 = 애니메이션 하나."""
     cols = max(len(frames) for _, frames, _, _ in anims)
     sheet = Image.new("RGBA", (cols * fw, len(anims) * fh), (0, 0, 0, 0))
@@ -171,6 +172,8 @@ def save_sheet(name: str, fw: int, fh: int, anims: list[tuple[str, list[Canvas],
             assert (frame.w, frame.h) == (fw, fh), f"{name}/{anim} 프레임 크기 불일치"
             sheet.paste(frame.to_image(), (col * fw, row * fh))
         meta["animations"][anim] = {"row": row, "frames": len(frames), "fps": fps, "loop": loop}
+    if extra:
+        meta.update(extra)
     sheet.save(OUT / f"{name}.png", optimize=False)
     write_json(OUT / f"{name}.json", meta)
 
@@ -285,6 +288,13 @@ PLAYER_LEG_POSES = {
     "walk_contact2": ((7, 20), (6, 23), (8, 20), (10, 23)),
     "walk_down2": ((7, 21), (7, 23), (8, 20), (10, 23)),
     "walk_pass2": ((9, 20), (9, 22), (7, 20), (7, 23)),
+    # 달리기 6프레임: 디딤(몸 낮음) → 차고 나감 → 공중(두 발 다 뜸) → 반대쪽 반복
+    "run_contact": ((10, 20), (11, 23), (6, 21), (4, 22)),
+    "run_push": ((8, 21), (7, 23), (9, 20), (9, 22)),
+    "run_flight": ((11, 19), (11, 21), (6, 20), (4, 21)),
+    "run_contact2": ((6, 21), (4, 22), (10, 20), (11, 23)),
+    "run_push2": ((9, 20), (9, 22), (8, 21), (7, 23)),
+    "run_flight2": ((6, 20), (4, 21), (11, 19), (11, 21)),
     # 공격·회피용
     "spread": ((9, 20), (11, 23), (6, 20), (4, 23)),
     "tuck": ((9, 20), (9, 21), (6, 20), (6, 21)),
@@ -309,12 +319,13 @@ def hem(cv: Canvas, pose: int) -> Canvas:
     return out
 
 
-def legs(cv: Canvas, key: str) -> Canvas:
+def legs(cv: Canvas, key: str, hip_dx: int = 0, hip_dy: int = 0) -> Canvas:
     """다리를 엉덩이 → 무릎 → 발 두 마디 선(굵기 2)으로 그린다. 뒷다리 먼저, 앞다리를 위에. 발끝 2칸은 장화."""
     out = cv.copy()
-    for y in range(PLAYER_BODY_LAST + 1, PLAYER_H):
-        for x in range(4, 13):
-            out.set(x, y, None)
+    for y in range(PLAYER_BODY_LAST + 1 + min(hip_dy, 0), PLAYER_H):
+        for x in range(3, 14):
+            if y > PLAYER_BODY_LAST + min(hip_dy, 0) + (0 if hip_dy >= 0 else 0):
+                out.set(x, y, None)
     near_knee, near_foot, far_knee, far_foot = PLAYER_LEG_POSES[key]
     mask: set[tuple[int, int]] = set()
 
@@ -323,7 +334,7 @@ def legs(cv: Canvas, key: str) -> Canvas:
             for x, y in _line_points(x0, y0, x1, y1):
                 for dx in (0, 1):
                     px, py = x + dx, y
-                    if py <= PLAYER_BODY_LAST:
+                    if py <= PLAYER_BODY_LAST + hip_dy:
                         continue
                     col = boot if py >= foot[1] - 1 else pants
                     out.set(px, py, c(col))
@@ -333,9 +344,11 @@ def legs(cv: Canvas, key: str) -> Canvas:
         mask.add((foot[0] + 2, foot[1]))
 
     far_mask_start = len(mask)
-    draw_leg(PLAYER_HIP_FAR, far_knee, far_foot, "navy", "brown_dark")
+    hip_far = (PLAYER_HIP_FAR[0] + hip_dx, PLAYER_HIP_FAR[1] + hip_dy)
+    hip_near = (PLAYER_HIP_NEAR[0] + hip_dx, PLAYER_HIP_NEAR[1] + hip_dy)
+    draw_leg(hip_far, far_knee, far_foot, "navy", "brown_dark")
     far_pixels = set(mask)
-    draw_leg(PLAYER_HIP_NEAR, near_knee, near_foot, "blue", "brown")
+    draw_leg(hip_near, near_knee, near_foot, "blue", "brown")
     near_pixels = mask - far_pixels
     # 앞다리와 뒷다리가 맞닿는 곳에는 테두리 한 줄 (두 다리가 갈라져 보이게)
     for (x, y) in near_pixels:
@@ -346,7 +359,7 @@ def legs(cv: Canvas, key: str) -> Canvas:
     for (x, y) in list(mask):
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             nx, ny = x + dx, y + dy
-            if (nx, ny) in mask or ny <= PLAYER_BODY_LAST or not (0 <= ny < PLAYER_H) or not (0 <= nx < 16):
+            if (nx, ny) in mask or ny <= PLAYER_BODY_LAST + hip_dy or not (0 <= ny < PLAYER_H) or not (0 <= nx < 16):
                 continue
             if out.px[ny][nx] is not None:
                 continue
@@ -457,6 +470,41 @@ def build_player_cloak() -> None:
     ])
 
 
+def shift_upper(cv: Canvas, dx: int, dy: int) -> Canvas:
+    """상체(머리~엉덩이, 0~PLAYER_BODY_LAST 행)를 통째로 옮긴다. 달리기 기울기·튀어 오름용."""
+    out = Canvas(cv.w, cv.h)
+    for y in range(cv.h):
+        for x in range(cv.w):
+            v = cv.px[y][x]
+            if v is None:
+                continue
+            if y <= PLAYER_BODY_LAST:
+                out.set(x + dx, y + dy, v)
+            else:
+                out.set(x, y, v)
+    return out
+
+
+def swing_arm(cv: Canvas, dy: int) -> Canvas:
+    """총 든 팔(가슴 높이, 오른쪽 부분)을 위아래로 흔든다."""
+    if dy == 0:
+        return cv
+    out = cv.copy()
+    x0, x1 = 10, 15
+    rows = range(PLAYER_GUN_Y - 1, PLAYER_GUN_Y + 2)
+    block = {(x, y): cv.px[y][x] for y in rows for x in range(x0, x1 + 1)}
+    for (x, y) in block:
+        out.set(x, y, None)
+    # 팔 아래로 드러나는 몸통 자리는 튜닉 색으로 메움
+    for (x, y), v in block.items():
+        if v is not None:
+            out.set(x, y + dy, v)
+    for y in rows:
+        if out.px[y][10] is None and cv.px[y][9] is not None:
+            out.set(10, y, c("outline"))
+    return out
+
+
 def build_player() -> None:
     base = Canvas.from_rows(PLAYER_BASE, PLAYER_CMAP)
     top = PLAYER_BODY_LAST
@@ -467,9 +515,15 @@ def build_player() -> None:
         return legs(hem(body, h), leg)
 
     idle = [pose(base, 0, "stand"), pose(base, 1, "stand"), pose(bob, 1, "stand"), pose(bob, 0, "stand")]
-    # 걷기 6프레임: 발을 디딘 직후(내려앉음)에만 상체가 1px 내려간다
-    move = [pose(base, 0, "walk_contact"), pose(bob, 0, "walk_down"), pose(base, 0, "walk_pass"),
-            pose(base, 0, "walk_contact2"), pose(bob, 0, "walk_down2"), pose(base, 0, "walk_pass2")]
+    # 달리기 6프레임: 몸 전체가 움직인다
+    #   상체를 앞으로 1px 기울이고, 디딜 때 1px 내려앉고, 공중에서 1px 떠오른다.
+    #   총 든 팔은 걸음에 맞춰 위아래로 흔들리고, 다리는 보폭을 크게 (공중 프레임엔 두 발 다 뜸)
+    run_plan = [("run_contact", 1, 1), ("run_push", 0, 0), ("run_flight", -1, -1),
+                ("run_contact2", 1, 1), ("run_push2", 0, 0), ("run_flight2", -1, -1)]
+    move = []
+    for leg, dy, arm in run_plan:
+        body = swing_arm(shift_upper(hem(base, 0), 1, dy), arm)
+        move.append(legs(body, leg, hip_dx=1, hip_dy=dy))
 
     # 사격: 총구 불꽃 → 반동
     flash = pose(base, 0, "stand")
@@ -515,13 +569,21 @@ def build_player() -> None:
 
     save_sheet("player", 16, PLAYER_H, [
         ("idle", idle, 4.0, True),
-        ("move", move, 10.0, True),
+        ("move", move, 12.0, True),
         ("shoot", shoot, 12.0, False),
         ("melee", melee, 15.0, False),
         ("dodge", dodge, 15.0, False),
         ("hurt", hurt, 12.0, False),
         ("death", death, 6.0, False),
-    ])
+    ], extra={
+        # 프레임별 상체 이동 [dx(보는 쪽 +), dy(아래 +)] — 게임이 망토 층을 같이 움직이는 데 쓴다
+        "body_offsets": {
+            "idle": [[0, 0], [0, 0], [0, 1], [0, 1]],
+            "move": [[1, dy] for _, dy, _ in run_plan],
+            "dodge": [[0, 2], [0, 4], [0, 2]],
+            "death": [[0, 2], [0, 4], [0, 0], [0, 0]],
+        },
+    })
 
 
 # ---------------------------------------------------------------------------

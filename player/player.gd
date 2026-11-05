@@ -48,6 +48,8 @@ var _aura: AnimatedSprite2D
 var _cloak: AnimatedSprite2D
 var _cloak_lean: float = 0.0
 var _cloak_vel: float = 0.0
+## 몸 그림의 프레임별 상체 이동 (player.json 의 body_offsets) — 망토를 같이 움직인다
+var _body_offsets: Dictionary = {}
 
 
 func _ready() -> void:
@@ -78,6 +80,7 @@ func _build_children() -> void:
 	_cloak.sprite_frames = DB.theme.load_sheet("player_cloak")
 	_cloak.play(&"cloak_hang")
 	add_child(_cloak)
+	_body_offsets = DB.theme.load_json("player").get("body_offsets", {})
 
 	_sprite = AnimatedSprite2D.new()
 	_sprite.sprite_frames = DB.theme.load_sheet("player")
@@ -461,7 +464,8 @@ func _update_cloak() -> void:
 	# 몸 기준 위치에 붙인다 (망토 그림은 뒤쪽으로 8px 넓음)
 	var half_extra := (_cloak.sprite_frames.get_frame_texture(_cloak.animation, 0).get_width() - 16) * 0.5
 	_cloak.flip_h = _sprite.flip_h
-	_cloak.offset = Vector2(-half_extra * facing, _sprite.offset.y + _crouch_y())
+	var body := _body_offset()
+	_cloak.offset = Vector2(-half_extra * facing + body.x * facing, _sprite.offset.y + body.y)
 	_cloak.modulate = _sprite.modulate
 	if _sprite.animation == &"hurt":
 		_cloak.modulate = Color(1, 0.55, 0.55) if _sprite.frame == 1 else Color(1.6, 1.6, 1.6)
@@ -469,14 +473,13 @@ func _update_cloak() -> void:
 	_cloak.visible = not (_sprite.animation == &"death" and _sprite.frame >= 2)
 
 
-## 몸 그림이 웅크린 정도 (망토도 같이 내려간다)
-func _crouch_y() -> float:
-	match _sprite.animation:
-		&"dodge":
-			return 4.0 if _sprite.frame == 1 else 2.0
-		&"death":
-			return 2.0 if _sprite.frame == 0 else 4.0
-	return 0.0
+## 지금 몸 그림 프레임의 상체 이동 (웅크림·튀어 오름·달리기 기울기). 망토도 같이 움직인다
+func _body_offset() -> Vector2:
+	var list: Array = _body_offsets.get(String(_sprite.animation), [])
+	if _sprite.frame < list.size():
+		var o: Array = list[_sprite.frame]
+		return Vector2(float(o[0]), float(o[1]))
+	return Vector2.ZERO
 
 
 ## 콤보 단계 이펙트: 단계가 오를수록 크고 진하게 (노랑 → 주황 → 흰빛). 숫자 표시 없음
