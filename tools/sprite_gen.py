@@ -203,7 +203,7 @@ PLAYER_CMAP: dict[str, str | None] = {
     "G": "stone_dark",
     "k": "brown_dark",   # 장화
 }
-# 밝은 흰 후드 + 등 뒤로 늘어진 긴 망토 (오른쪽을 봄). 앞은 열려 있어 튜닉·허리띠·다리가 보인다.
+# 16x24 (키 1.5칸). 밝은 흰 후드 + 등 뒤로 늘어진 긴 망토 (오른쪽을 봄). 앞은 열려 있어 튜닉·허리띠·다리가 보인다.
 # 후드는 머리 모양에 맞게 둥글게 씌우고, 흰 테두리가 이마·뒤통수 쪽에서 얼굴을 감싼다 (걸쳐 놓은 천이 아니라 쓴 느낌).
 # 망토 천이 목을 한 번 감싸 목도리처럼 보이고, 끝자락이 가슴 앞으로 늘어진다.
 # 후드 아래로 앞머리와 얼굴이 보이고, 망토 밑단은 찢어져 너덜너덜하다.
@@ -217,16 +217,32 @@ PLAYER_BASE = [
     "..oWPPPWntssso..",
     "..olPPPWnseso...",
     "..olPPPPWsso....",
-    ".oWPPPPWPPPoooo.",
-    "oWPPlPccWPhhggo.",
-    "oWPPlocclCoGGo..",
+    ".oWPPPPWPPPo....",
+    ".oWPPlWllPlo....",
+    "oWPPPocWPcooooo.",
+    "oWPPlocllchhggo.",
+    "oWPPlocccCoGGo..",
+    "oWPPlocCcCo.....",
     "oWPlPoTTTTo.....",
-    "oPPlPocCcCo.....",
-    "oPoPloNo.No.....",
-    ".o.oo.ko.ko.....",
+    "oWPlPocCcCo.....",
+    "oPPlPoNNNNo.....",
+    "oPPlPoNo.No.....",
+    "oPlPPoNo.No.....",
+    "oPPlPoNo.No.....",
+    "oPoPloko.ko.....",
+    ".o.Po.ko.ko.....",
+    "..o.o.oo.oo.....",
 ]
 # 쓰러져 누운 모습 (머리 왼쪽, 발 오른쪽, 망토가 몸 아래 깔림)
 PLAYER_LYING = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
     "................",
     "................",
     "................",
@@ -244,19 +260,24 @@ PLAYER_LYING = [
     ".oPPoo.oPlPlPoo.",
     "..oo....oooooo..",
 ]
-# 등 뒤 망토 밑단 (x 0~4, 14~15행): 찢어진 자락 펄럭임
+# 키 (프레임 높이). 발 위치는 16x16 시절과 같게 게임에서 위로 (높이-16)/2 만큼 올려 그린다
+PLAYER_H = 24
+# 상체(머리~엉덩이) 마지막 줄, 총구 높이
+PLAYER_BODY_LAST = 17
+PLAYER_GUN_Y = 12
+# 등 뒤 망토 밑단 (x 0~4, 21~23행): 찢어진 자락 펄럭임
 PLAYER_HEMS = [
-    ("oPoPl", ".o.oo"),
-    ("oPPoP", "o.oo."),
-    ("ooPPl", ".oo.o"),
+    ("oPoPl", ".o.Po", "..o.o"),
+    ("oPPoP", "o.oPo", ".o..o"),
+    ("ooPPl", ".oPo.", "..o.."),
 ]
-# 다리 (x 5~11, 13~15행)
+# 다리 (x 5~12, 18~23행)
 PLAYER_LEGS = {
-    "stand": ("ocCcCo.", "oNo.No.", ".ko.ko."),
-    "step_a": ("ocCcCo.", "No..oNo", "ko...ko"),
-    "step_b": ("ocCcCo.", ".oNNo..", ".okko.."),
-    "spread": ("ocCcCo.", "No...No", "ko...ko"),
-    "tuck": (".oCCo..", ".oNNo..", "..oo..."),
+    "stand": ("oNo.No..", "oNo.No..", "oNo.No..", "oko.ko..", "oko.ko..", ".oo.oo.."),
+    "step_a": ("oNo.oNo.", "oNo..oNo", "oNo...No", "oko...ko", "oko...ko", ".oo...oo"),
+    "step_b": ("oNNNo...", "oNNNo...", ".oNNo...", ".okko...", ".okko...", "..ooo..."),
+    "spread": ("oNo.oNo.", "No...oNo", "No....No", "ko....ko", "ko....ko", "oo....oo"),
+    "tuck": ("oNNNo...", ".oNNo...", ".okko...", "..oo....", "........", "........"),
 }
 
 
@@ -268,22 +289,23 @@ def _put(cv: Canvas, x0: int, y: int, part: str) -> None:
 
 def hem(cv: Canvas, pose: int) -> Canvas:
     out = cv.copy()
-    r14, r15 = PLAYER_HEMS[pose % len(PLAYER_HEMS)]
-    _put(out, 0, 14, r14)
-    _put(out, 0, 15, r15)
+    for i, row in enumerate(PLAYER_HEMS[pose % len(PLAYER_HEMS)]):
+        _put(out, 0, PLAYER_H - 3 + i, row)
     return out
 
 
 def legs(cv: Canvas, key: str) -> Canvas:
     out = cv.copy()
     for i, row in enumerate(PLAYER_LEGS[key]):
-        _put(out, 5, 13 + i, row)
+        _put(out, 5, PLAYER_H - 6 + i, row)
     return out
 
 
 def build_player() -> None:
     base = Canvas.from_rows(PLAYER_BASE, PLAYER_CMAP)
-    bob = base.shift_rows(0, 12, 1)  # 상체 1px 내려앉음 (숨쉬기). 다리는 그대로
+    top = PLAYER_BODY_LAST
+    gy = PLAYER_GUN_Y
+    bob = base.shift_rows(0, top, 1)  # 상체 1px 내려앉음 (숨쉬기). 다리는 그대로
 
     def pose(body: Canvas, h: int, leg: str) -> Canvas:
         return legs(hem(body, h), leg)
@@ -293,34 +315,34 @@ def build_player() -> None:
 
     # 사격: 총구 불꽃 → 반동
     flash = pose(base, 0, "stand")
-    flash.set(15, 10, c("white"))
-    flash.set(15, 9, c("yellow"))
-    flash.set(15, 11, c("yellow"))
-    flash.set(14, 8, c("orange"))
-    flash.set(14, 12, c("orange"))
+    flash.set(15, gy, c("white"))
+    flash.set(15, gy - 1, c("yellow"))
+    flash.set(15, gy + 1, c("yellow"))
+    flash.set(14, gy - 2, c("orange"))
+    flash.set(14, gy + 2, c("orange"))
     recoil = pose(base, 1, "stand").moved(-1, 0)
-    recoil.set(14, 10, c("yellow"))
+    recoil.set(14, gy, c("yellow"))
     shoot = [flash, recoil]
 
     # 근접: 단검 (위 → 앞 → 아래)
     blade, tip = c("pale"), c("white")
     m0 = pose(base, 2, "spread")
-    m0.line(11, 9, 14, 4, blade)
-    m0.set(15, 3, tip)
+    m0.line(12, gy - 1, 15, gy - 6, blade)
+    m0.set(15, gy - 7, tip)
     m1 = pose(base, 0, "spread")
-    for x, y in [(12, 4), (13, 5), (14, 7), (15, 9), (14, 11), (13, 13)]:
+    for x, y in [(12, gy - 6), (13, gy - 5), (14, gy - 3), (15, gy - 1), (14, gy + 1), (13, gy + 3)]:
         m1.set(x, y, tip)
-    for x, y in [(12, 5), (13, 7), (14, 9), (13, 11), (12, 12)]:
+    for x, y in [(12, gy - 5), (13, gy - 3), (14, gy - 1), (13, gy + 1), (12, gy + 2)]:
         m1.set(x, y, blade)
     m2 = pose(base, 1, "spread")
-    m2.line(11, 11, 14, 14, blade)
-    m2.set(15, 15, tip)
+    m2.line(12, gy + 1, 15, gy + 5, blade)
+    m2.set(15, gy + 6, tip)
     melee = [m0, m1, m2]
 
     # 회피: 몸을 낮추고 망토가 뒤로 쏠림 + 잔상 선
-    squash = pose(bob, 2, "spread")
-    ball = pose(base.shift_rows(0, 12, 2), 2, "tuck")
-    for y in (5, 9, 12):
+    squash = pose(base.shift_rows(0, top, 2), 2, "spread")
+    ball = pose(base.shift_rows(0, top, 4), 2, "tuck")
+    for y in (8, 13, 18):
         ball.line(0, y, 1, y, c("pale"))
     dodge = [squash, ball, squash]
 
@@ -329,10 +351,10 @@ def build_player() -> None:
 
     # 쓰러짐: 무릎 꿇기 → 옆으로 쓰러져 누움 (따로 그린 프레임)
     lying = Canvas.from_rows(PLAYER_LYING, PLAYER_CMAP)
-    death = [pose(base.shift_rows(0, 12, 1), 1, "tuck"), pose(base.shift_rows(0, 12, 2), 0, "tuck"),
+    death = [pose(base.shift_rows(0, top, 2), 1, "tuck"), pose(base.shift_rows(0, top, 4), 0, "tuck"),
              lying.moved(0, -1), lying]
 
-    save_sheet("player", 16, 16, [
+    save_sheet("player", 16, PLAYER_H, [
         ("idle", idle, 4.0, True),
         ("move", move, 8.0, True),
         ("shoot", shoot, 12.0, False),
@@ -1279,10 +1301,10 @@ def build_ui() -> None:
 # 팔레트 파일 (Aseprite·GIMP에서 그대로 불러올 수 있는 .gpl + 1px 견본 PNG)
 # ---------------------------------------------------------------------------
 def build_icon() -> None:
-    """창·exe 아이콘 (64x64): 플레이어를 4배로."""
-    base = Canvas.from_rows(PLAYER_BASE, PLAYER_CMAP)
+    """창·exe 아이콘 (64x64): 플레이어 상반신을 4배로."""
+    base = Canvas.from_rows(PLAYER_BASE, PLAYER_CMAP).to_image().crop((0, 0, 16, 16))
     img = Image.new("RGBA", (64, 64), (*PAL_RGB[c("shadow")], 255))
-    img.alpha_composite(base.to_image().resize((64, 64), Image.NEAREST))
+    img.alpha_composite(base.resize((64, 64), Image.NEAREST))
     img.save(ROOT / "art" / "icon.png", optimize=False)
 
 

@@ -18,6 +18,7 @@ func _ready() -> void:
 	_left = data.duration_ticks
 	_sprite = AnimatedSprite2D.new()
 	_sprite.sprite_frames = DB.theme.load_sheet("player")
+	_sprite.offset = SpriteSheet.foot_offset(_sprite.sprite_frames)
 	_sprite.play(&"idle")
 	_sprite.modulate = Color(0.7, 0.8, 1.0, 0.75)
 	add_child(_sprite)

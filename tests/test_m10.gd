@@ -12,6 +12,7 @@ func run_all() -> void:
 	await test_afterimage()
 	test_title_ignores_fullscreen_key()
 	test_export_preset()
+	await test_tall_player_feet()
 	if level != null:
 		level.queue_free()
 		level = null
@@ -89,3 +90,19 @@ func test_export_preset() -> void:
 	var exc: String = cfg.get_value("preset.0", "exclude_filter", "")
 	check(exc.contains("tests/*"), "테스트는 exe 에서 제외")
 	check(bool(cfg.get_value("preset.0.options", "binary_format/embed_pck", false)), "exe 하나로 (pck 포함)")
+
+
+## 키 큰 플레이어(16x24)는 발 위치가 그대로이고 판정 크기는 바뀌지 않는다
+func test_tall_player_feet() -> void:
+	await new_level(MAP)
+	var p := level.player
+	var sprite: AnimatedSprite2D = null
+	for n in p.get_children():
+		if n is AnimatedSprite2D and (n as AnimatedSprite2D).sprite_frames == DB.theme.load_sheet("player"):
+			sprite = n
+	var h := sprite.sprite_frames.get_frame_texture(&"idle", 0).get_height()
+	check(h > LevelMap.TILE_SIZE, "플레이어 그림이 한 칸보다 큼 (높이 %d)" % h)
+	# 그림 아래끝 = 몸 중심 + 8 (16x16 시절과 같은 발 위치)
+	var bottom := sprite.offset.y + h * 0.5
+	check(is_equal_approx(bottom, LevelMap.TILE_SIZE * 0.5), "발 위치 그대로 (아래끝 %.1f)" % bottom)
+	check(DB.player.hurtbox_radius == 4.0 and DB.player.body_radius == 4.0, "판정 크기는 그대로")
