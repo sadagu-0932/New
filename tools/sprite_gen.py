@@ -462,6 +462,231 @@ def _line_points(x0: int, y0: int, x1: int, y1: int):
             y0 += sy
 
 
+# ---------------------------------------------------------------------------
+# 플레이어 정면(아래를 볼 때)·뒷모습(위를 볼 때). 몸 16x24 + 망토 층 24x24
+#   정면: 망토는 몸 뒤 (양옆으로 보임) / 뒷모습: 망토가 몸 앞을 덮음 (게임에서 그리는 순서를 바꿈)
+# ---------------------------------------------------------------------------
+PLAYER_SIDE_DEATH: list = []
+FB_CMAP = dict(PLAYER_CMAP)
+FB_CMAP.update({"E": "brown", "Q": "stone_dark"})
+PLAYER_FRONT = [
+    "................",
+    ".....oooooo.....",
+    "....oWWPPPPo....",
+    "...oWPPPPPPlo...",
+    "...oWWWWWWWlo...",
+    "..oWPttttttPlo..",
+    "..oWntsssstnlo..",
+    "..oWnsesseslo...",
+    "..oPPnsssslPo...",
+    "..oWPWPPPPPlo...",
+    "..ooWllPPlllo...",
+    ".occcWPPPcccoco.",
+    ".occoccllcccoco.",
+    ".ohooccccCccoho.",
+    ".oGoTTTTyTTTooo.",
+    ".oGoccccCccco...",
+    "..o.occcCccco...",
+    "....oNNNoNNNo...",
+    "....oNNo.oNNo...",
+    "....oNNo.oNNo...",
+    "....oNNo.oNNo...",
+    "....oNNo.oNNo...",
+    "....okko.okko...",
+    "....oooo.oooo...",
+]
+PLAYER_BACK = [
+    "................",
+    ".....oooooo.....",
+    "....oWWPPPPo....",
+    "...oWPPPPPPlo...",
+    "...oWPPPPPPlo...",
+    "...oWPPPPPPlo...",
+    "...oWPPPPPPlo...",
+    "...oWPPPPPllo...",
+    "..ooWWPPPPlloo..",
+    ".oWWPPPPPPPPllo.",
+    ".occcPPPPPPccco.",
+    ".occcccccccccco.",
+    ".ohoccccccccoho.",
+    ".oooTTTTTTTTooo.",
+    "...occcccccco...",
+    "...occcccccco...",
+    "...occcccccco...",
+    "....oNNNoNNNo...",
+    "....oNNo.oNNo...",
+    "....oNNo.oNNo...",
+    "....oNNo.oNNo...",
+    "....oNNo.oNNo...",
+    "....okko.okko...",
+    "....oooo.oooo...",
+]
+# 정면·뒷모습 다리 (18~23행): 서기 / 왼발 듦 / 오른발 듦 / 웅크림
+FB_LEGS = {
+    "stand": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.oNNo...",
+              "....okko.okko...", "....oooo.oooo..."],
+    "lift_l": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....okko.oNNo...", "....oooo.oNNo...",
+               ".........okko...", ".........oooo..."],
+    "lift_r": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.okko...", "....oNNo.oooo...",
+               "....okko........", "....oooo........"],
+    "tuck": ["....oNNo.oNNo...", "....okko.okko...", "....oooo.oooo...", "................",
+             "................", "................"],
+}
+
+
+def fb_legs(cv: Canvas, key: str) -> Canvas:
+    out = cv.copy()
+    part = Canvas.from_rows(FB_LEGS[key], FB_CMAP)
+    for i in range(6):
+        out.px[PLAYER_H - 6 + i] = part.px[i][:]
+    return out
+
+
+def fb_arms(cv: Canvas, dy_left: int, dy_right: int) -> Canvas:
+    """양팔(화면 왼쪽 x1~2, 오른쪽 x13~14)을 위아래로 흔든다."""
+    out = cv.copy()
+    for (x0, x1), dy in (((1, 2), dy_left), ((13, 14), dy_right)):
+        if dy == 0:
+            continue
+        rows = range(11, 16)
+        block = {(x, y): cv.px[y][x] for y in rows for x in range(x0, x1 + 1)}
+        for (x, y) in block:
+            out.set(x, y, None)
+        for (x, y), v in block.items():
+            if v is not None:
+                out.set(x, y + dy, v)
+    return out
+
+
+def build_player_view(name: str, rows: list[str], back: bool) -> None:
+    base = Canvas.from_rows(rows, FB_CMAP)
+    top = PLAYER_BODY_LAST
+
+    def body(dy: int = 0) -> Canvas:
+        return base.shift_rows(0, top, dy) if dy else base.copy()
+
+    idle = [fb_legs(body(), "stand"), fb_legs(body(), "stand"), fb_legs(body(1), "stand"), fb_legs(body(1), "stand")]
+    # 달리기 6프레임: 다리를 번갈아 들고, 몸이 튀어 오르고, 팔을 흔든다
+    run_plan = [("lift_l", 1, -1, 1), ("stand", 0, 0, 0), ("lift_r", -1, 1, -1),
+                ("lift_r", 1, 1, -1), ("stand", 0, 0, 0), ("lift_l", -1, -1, 1)]
+    move = [fb_legs(fb_arms(body(dy), al, ar), leg) for leg, dy, al, ar in run_plan]
+    gun_x = 2 if not back else 13
+    flash = fb_legs(body(), "stand")
+    recoil = fb_legs(body(), "stand")
+    if back:
+        # 뒷모습: 오른쪽 어깨 위로 총을 들어 위쪽으로 쏨
+        for y in range(5, 11):
+            flash.set(gun_x, y, c("stone_light"))
+            recoil.set(gun_x, y + 1, c("stone_light"))
+        flash.set(gun_x, 4, c("white"))
+        flash.set(gun_x - 1, 3, c("yellow"))
+        flash.set(gun_x + 1, 3, c("yellow"))
+        flash.set(gun_x, 2, c("orange"))
+    else:
+        flash.set(gun_x, 17, c("white"))
+        flash.set(gun_x - 1, 18, c("yellow"))
+        flash.set(gun_x + 1, 18, c("yellow"))
+        flash.set(gun_x, 19, c("orange"))
+        recoil = recoil.shift_rows(0, top, -1)
+        recoil = fb_legs(recoil, "stand")
+    shoot = [flash, recoil]
+    # 근접: 단검이 앞(정면은 아래, 뒷모습은 위)으로 호를 그림
+    blade, tip = c("pale"), c("white")
+    m0, m1, m2 = (fb_legs(body(), "stand") for _ in range(3))
+    yy = (lambda y: 23 - y) if not back else (lambda y: y)
+    m0.line(13, yy(12), 15, yy(9), blade)
+    for x, y in ((3, 2), (5, 1), (8, 1), (11, 1), (13, 2)):
+        m1.set(x, yy(y), tip)
+    for x, y in ((4, 2), (6, 1), (10, 1), (12, 2)):
+        m1.set(x, yy(y), blade)
+    m2.line(0, yy(9), 2, yy(12), blade)
+    melee = [m0, m1, m2]
+    dodge = [fb_legs(body(2), "tuck"), fb_legs(body(4), "tuck"), fb_legs(body(2), "tuck")]
+    for y in (6, 11):
+        dodge[1].line(0, y, 1, y, c("pale"))
+        dodge[1].line(14, y, 15, y, c("pale"))
+    outline = {c("outline")}
+    standing = fb_legs(body(), "stand")
+    hurt = [standing.recolor(outline, c("white")), standing.recolor(outline, c("red"))]
+    death = [cv.copy() for cv in PLAYER_SIDE_DEATH]
+    save_sheet(name, 16, PLAYER_H, [
+        ("idle", idle, 4.0, True),
+        ("move", move, 12.0, True),
+        ("shoot", shoot, 12.0, False),
+        ("melee", melee, 15.0, False),
+        ("dodge", dodge, 15.0, False),
+        ("hurt", hurt, 12.0, False),
+        ("death", death, 6.0, False),
+    ], extra={"body_offsets": {
+        "idle": [[0, 0], [0, 0], [0, 1], [0, 1]],
+        "move": [[0, dy] for _, dy, _, _ in run_plan],
+        "dodge": [[0, 2], [0, 4], [0, 2]],
+        "death": [[0, 2], [0, 4], [0, 0], [0, 0]],
+    }})
+
+
+def fb_cloak_frame(back: bool, lean: str, flutter: int) -> Canvas:
+    """정면용(몸 뒤로 양옆에 보임) / 뒷모습용(몸 앞을 덮음) 망토. 24x24, 몸은 가운데 x 4~19."""
+    # 단계별 (밑단 높이, 양옆으로 퍼지는 정도)
+    if back:
+        # 뒷모습: 밑단을 무릎 높이로 올려 다리(걸음)가 보이게. 멀어질수록 자락이 양옆으로 퍼진다
+        spec = {"fwd": (18, -1), "hang": (19, 0), "trail1": (19, 1), "trail2": (19, 2), "billow": (18, 4)}[lean]
+    else:
+        spec = {"fwd": (21, -1), "hang": (22, 0), "trail1": (21, 2), "trail2": (20, 3), "billow": (18, 5)}[lean]
+    hem_y, spread = spec
+    wave = flutter if lean in ("trail1", "trail2", "billow") else 0
+    top_y = 9
+    sx0, sx1 = (4 + 3, 4 + 12) if back else (4 + 2, 4 + 13)
+    hx0, hx1 = 4 + 1 - spread - wave, 4 + 14 + spread + wave
+    poly = [(sx0, top_y), (sx1 + 1.0, top_y), (hx1 + 1.0, hem_y + 1.0), (hx0, hem_y + 1.0)]
+    shape = [[_in_poly(x + 0.5, y + 0.5, poly) for x in range(CLOAK_W)] for y in range(PLAYER_H)]
+    for x in range(CLOAK_W):
+        ys = [y for y in range(PLAYER_H) if shape[y][x]]
+        if not ys or max(ys) < top_y + 4:
+            continue
+        for k in range((x + flutter * 2) % 3):
+            shape[max(ys) - k][x] = False
+    t = Canvas(CLOAK_W, PLAYER_H)
+    for y in range(PLAYER_H):
+        for x in range(CLOAK_W):
+            if shape[y][x]:
+                left_open = x == 0 or not shape[y][x - 1]
+                t.set(x, y, c("white") if left_open else c("pale"))
+    # 주름 (세로)
+    for fx in (sx0 + 2, (sx0 + sx1) // 2, sx1 - 2):
+        for y in range(top_y + 2, hem_y - 1):
+            x = fx + round((y - top_y) * ((fx - 12) / 12.0) * (0.15 + 0.08 * spread))
+            if 0 <= x < CLOAK_W and shape[y][x]:
+                t.set(x, y, c("stone_light"))
+    if back:
+        # 등에 얹힌 후드 끝
+        t.set(12, top_y + 1, c("stone_light"))
+        t.set(12, top_y + 2, c("stone_light"))
+        t.set(11, top_y + 3, c("stone_light"))
+        t.set(13, top_y + 3, c("stone_light"))
+    for y in range(PLAYER_H):
+        for x in range(CLOAK_W):
+            if shape[y][x]:
+                continue
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < CLOAK_W and 0 <= ny < PLAYER_H and shape[ny][nx]:
+                    t.set(x, y, c("outline"))
+                    break
+    return t
+
+
+def build_player_views() -> None:
+    build_player_view("player_front", PLAYER_FRONT, back=False)
+    build_player_view("player_back", PLAYER_BACK, back=True)
+    fps = {"fwd": 4.0, "hang": 4.0, "trail1": 8.0, "trail2": 10.0, "billow": 14.0}
+    for sheet, back in (("player_cloak_front", False), ("player_cloak_back", True)):
+        save_sheet(sheet, CLOAK_W, PLAYER_H, [
+            ("cloak_" + lean, [fb_cloak_frame(back, lean, 0), fb_cloak_frame(back, lean, 1)], fps[lean], True)
+            for lean in CLOAK_LEANS
+        ])
+
+
 def build_player_cloak() -> None:
     fps = {"fwd": 4.0, "hang": 4.0, "trail1": 8.0, "trail2": 10.0, "billow": 14.0}
     save_sheet("player_cloak", CLOAK_W, PLAYER_H, [
@@ -566,6 +791,8 @@ def build_player() -> None:
     lying = Canvas.from_rows(PLAYER_LYING, PLAYER_CMAP)
     death = [pose(base.shift_rows(0, top, 2), 1, "tuck"), pose(base.shift_rows(0, top, 4), 0, "tuck"),
              lying.moved(0, -1), lying]
+    PLAYER_SIDE_DEATH.clear()
+    PLAYER_SIDE_DEATH.extend(death)
 
     save_sheet("player", 16, PLAYER_H, [
         ("idle", idle, 4.0, True),
@@ -1732,6 +1959,7 @@ def main() -> None:
     build_palette()
     build_player()
     build_player_cloak()
+    build_player_views()
     build_tiles()
     build_ui()
     build_bullets()

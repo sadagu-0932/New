@@ -28,6 +28,12 @@ extends Resource
 ## 뒤로 걸을 때(조준 반대 방향) 몸 쪽으로 눌리는 정도
 @export var cloak_backpedal_lean: float = 0.0
 
+@export_group("플레이어 그림 방향 (화면 표시만)")
+## 조준이 세로로 이 배율 이상 기울면 정면/뒷모습 (|y| > |x| × 값)
+@export var view_switch_ratio: float = 0.0
+## 방향이 바뀌는 경계에서 지금 그림을 유지하는 여유 (0.2 = 20%)
+@export var view_hysteresis: float = 0.0
+
 @export_group("탄 꼬리")
 ## 탄 꼬리 잔상이 사라지는 시간 (초)
 @export var bullet_trail_fade_seconds: float = 0.0

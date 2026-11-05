@@ -14,6 +14,7 @@ func run_all() -> void:
 	test_export_preset()
 	await test_tall_player_feet()
 	await test_cloak_follows_motion()
+	await test_player_views()
 	await test_bullet_looks()
 	await test_hit_effects()
 	if level != null:
@@ -138,6 +139,38 @@ func test_cloak_follows_motion() -> void:
 	await step(40)
 	check(p._cloak.animation == &"cloak_fwd", "조준 반대로 뒷걸음질하면 몸 쪽으로 눌림 (%s)" % p._cloak.animation)
 	check(p._cloak.flip_h == p._sprite.flip_h, "망토는 몸과 같은 쪽을 봄")
+
+
+## 조준 방향에 따라 옆/정면/뒷모습. 뒷모습이면 망토가 몸을 덮는다 (화면 표시 전용)
+func test_player_views() -> void:
+	await new_level("res://tests/maps/m3_test.txt")
+	var p := level.player
+	var pos := p.global_position
+	input.push(Vector2.ZERO, 3, 0, 0, pos + Vector2(100, 0))
+	await step(3)
+	check(p.view == Player.View.SIDE, "옆을 조준하면 옆모습")
+	input.push(Vector2.ZERO, 3, 0, 0, pos + Vector2(10, 100))
+	await step(3)
+	check(p.view == Player.View.FRONT, "아래를 조준하면 정면")
+	check(p._cloak.get_index() < p._sprite.get_index(), "정면: 망토는 몸 뒤")
+	input.push(Vector2.ZERO, 3, 0, 0, pos + Vector2(-10, -100))
+	await step(3)
+	check(p.view == Player.View.BACK, "위를 조준하면 뒷모습")
+	check(p._cloak.get_index() > p._sprite.get_index(), "뒷모습: 망토가 몸 앞")
+	check(not p._sprite.flip_h, "뒷모습은 뒤집지 않음")
+	# 대각선 경계 근처에서는 지금 그림을 유지 (깜빡임 방지)
+	input.push(Vector2.ZERO, 3, 0, 0, pos + Vector2(100, -115))
+	await step(3)
+	check(p.view == Player.View.BACK, "경계 근처는 뒷모습 유지")
+	input.push(Vector2.ZERO, 3, 0, 0, pos + Vector2(-100, -20))
+	await step(3)
+	check(p.view == Player.View.SIDE and p._sprite.flip_h, "왼쪽 조준 → 옆모습(뒤집힘)")
+	check(p._cloak.get_index() < p._sprite.get_index(), "옆모습: 망토는 몸 뒤")
+	# 아래로 달리며 위를 조준(뒷걸음질) → 망토가 몸 쪽으로 눌림
+	input.push(Vector2.DOWN, 40, 0, 0, pos + Vector2(0, -400))
+	await step(40)
+	check(p.view == Player.View.BACK, "위를 보며 뒷걸음질")
+	check(p._cloak.animation == &"cloak_fwd", "뒷걸음질하면 망토가 눌림 (%s)" % p._cloak.animation)
 
 
 ## 적마다 어울리는 탄 그림, 진행 방향 회전, 꼬리 (화면 표시 전용)

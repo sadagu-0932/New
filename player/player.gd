@@ -51,6 +51,17 @@ var _cloak_vel: float = 0.0
 ## 몸 그림의 프레임별 상체 이동 (player.json 의 body_offsets) — 망토를 같이 움직인다
 var _body_offsets: Dictionary = {}
 
+## 보는 방향에 따른 그림 (옆모습 / 정면 / 뒷모습). 화면 표시 전용
+enum View { SIDE, FRONT, BACK }
+const VIEW_SHEETS := {
+	View.SIDE: ["player", "player_cloak"],
+	View.FRONT: ["player_front", "player_cloak_front"],
+	View.BACK: ["player_back", "player_cloak_back"],
+}
+var view: View = View.SIDE
+## 방향별 [몸 SpriteFrames, 망토 SpriteFrames, body_offsets]
+var _view_res: Dictionary = {}
+
 
 func _ready() -> void:
 	add_to_group(GROUP)
@@ -75,15 +86,19 @@ func _build_children() -> void:
 	body_shape.position = Vector2(0, data.body_offset_y)
 	add_child(body_shape)
 
-	# 망토는 몸보다 먼저 추가 → 몸 뒤에 그려진다
+	for v: View in VIEW_SHEETS:
+		var names: Array = VIEW_SHEETS[v]
+		_view_res[v] = [DB.theme.load_sheet(names[0]), DB.theme.load_sheet(names[1]),
+			DB.theme.load_json(names[0]).get("body_offsets", {})]
+	# 망토는 몸보다 먼저 추가 → 몸 뒤에 그려진다 (뒷모습일 때만 몸 앞으로 옮김)
 	_cloak = AnimatedSprite2D.new()
-	_cloak.sprite_frames = DB.theme.load_sheet("player_cloak")
+	_cloak.sprite_frames = _view_res[View.SIDE][1]
 	_cloak.play(&"cloak_hang")
 	add_child(_cloak)
-	_body_offsets = DB.theme.load_json("player").get("body_offsets", {})
+	_body_offsets = _view_res[View.SIDE][2]
 
 	_sprite = AnimatedSprite2D.new()
-	_sprite.sprite_frames = DB.theme.load_sheet("player")
+	_sprite.sprite_frames = _view_res[View.SIDE][0]
 	_sprite.offset = SpriteSheet.foot_offset(_sprite.sprite_frames)
 	_sprite.play(&"idle")
 	add_child(_sprite)
@@ -328,6 +343,7 @@ func set_cutscene_lock(value: bool) -> void:
 func cutscene_collapse() -> void:
 	state = State.DEAD
 	velocity = Vector2.ZERO
+	_set_view(View.SIDE)  # 쓰러지는 그림은 옆모습에만 있음
 	_sprite.modulate = Color.WHITE
 	_sprite.play(&"death")
 
@@ -353,6 +369,7 @@ func _exit_tree() -> void:
 func _die() -> void:
 	state = State.DEAD
 	velocity = Vector2.ZERO
+	_set_view(View.SIDE)  # 쓰러지는 그림은 옆모습에만 있음
 	melee.cancel()
 	stealth_ticks_left = 0
 	_sprite.modulate = Color.WHITE
@@ -396,14 +413,14 @@ func _update_visual(input: InputFrame) -> void:
 	if _shoot_anim_ticks > 0:
 		_shoot_anim_ticks -= 1
 	var anim: StringName = &"idle"
+	var look := aim_dir
 	if state == State.DODGE:
 		anim = &"dodge"
-		_sprite.flip_h = dodge.direction().x < 0.0
+		look = dodge.direction()
 	elif state == State.DASH_SLASH:
 		anim = &"melee"
-		_sprite.flip_h = _dash_dir.x < 0.0
+		look = _dash_dir
 	else:
-		_sprite.flip_h = aim_dir.x < 0.0
 		if hurt_invuln_left > data.hurt_invuln_ticks - HURT_ANIM_TICKS:
 			anim = &"hurt"
 		elif melee.is_active():
@@ -412,6 +429,9 @@ func _update_visual(input: InputFrame) -> void:
 			anim = &"shoot"
 		elif input.move != Vector2.ZERO:
 			anim = &"move"
+	_set_view(_choose_view(look))
+	if view == View.SIDE and look.x != 0.0:
+		_sprite.flip_h = look.x < 0.0
 	if _sprite.animation != anim:
 		_sprite.play(anim)
 	# 투명: 푸르스름하게 거의 안 보이게 깜빡임 / 회피 무적: 반투명 / 피격 후 무적: 깜빡임
@@ -435,6 +455,58 @@ func _update_visual(input: InputFrame) -> void:
 			global_position + _sprite.offset, _sprite.flip_h, DB.feel.afterimage_fade_seconds, tint)
 
 
+## 보는 방향 → 그림 방향. 경계에서 깜빡이지 않게 지금 방향을 조금 더 유지한다
+func _choose_view(dir: Vector2) -> View:
+	if dir == Vector2.ZERO:
+		return view
+	var f := DB.feel
+	var ax := absf(dir.x)
+	var ay := absf(dir.y)
+	var keep := 1.0 + f.view_hysteresis
+	var vertical: bool
+	if view == View.SIDE:
+		vertical = ay > ax * f.view_switch_ratio * keep
+	else:
+		vertical = ay * keep >= ax * f.view_switch_ratio
+	if not vertical:
+		return View.SIDE
+	return View.BACK if dir.y < 0.0 else View.FRONT
+
+
+## 그림 방향을 바꾼다 (지금 애니메이션·프레임은 그대로 이어서)
+func _set_view(v: View) -> void:
+	if v == view:
+		return
+	view = v
+	var res: Array = _view_res[v]
+	var anim := _sprite.animation
+	var frame := _sprite.frame
+	var progress := _sprite.frame_progress
+	_sprite.sprite_frames = res[0]
+	_sprite.play(anim)
+	_sprite.set_frame_and_progress(frame, progress)
+	if v != View.SIDE:
+		_sprite.flip_h = false
+	var cloak_anim := _cloak.animation
+	var cloak_frame := _cloak.frame
+	_cloak.sprite_frames = res[1]
+	_cloak.play(cloak_anim)
+	_cloak.frame = cloak_frame
+	_body_offsets = res[2]
+	# 뒷모습이면 망토가 몸을 덮는다 (몸 앞에 그림)
+	move_child(_cloak, _sprite.get_index() if v == View.BACK else _sprite.get_index() - 1)
+
+
+## 그림이 향한 방향 (망토가 뒤로 날리는 기준)
+func _facing_vector() -> Vector2:
+	match view:
+		View.FRONT:
+			return Vector2.DOWN
+		View.BACK:
+			return Vector2.UP
+	return Vector2.LEFT if _sprite.flip_h else Vector2.RIGHT
+
+
 ## 망토 기울기 단계 (-1 앞으로 쏠림 ~ 3 펄럭) → 애니메이션 이름
 const CLOAK_ANIMS: Array[StringName] = [&"cloak_fwd", &"cloak_hang", &"cloak_trail1", &"cloak_trail2", &"cloak_billow"]
 
@@ -442,14 +514,14 @@ const CLOAK_ANIMS: Array[StringName] = [&"cloak_fwd", &"cloak_hang", &"cloak_tra
 ## 망토: 이동 속도·방향을 스프링으로 따라간다. 멈추면 한 번 앞으로 출렁였다가 늘어짐 (화면 표시 전용)
 func _update_cloak() -> void:
 	var f := DB.feel
-	var facing := -1.0 if _sprite.flip_h else 1.0
+	var face := _facing_vector()
 	var target := 0.0
 	if state == State.DODGE or state == State.DASH_SLASH:
 		target = f.cloak_dodge_lean
 	elif state != State.DEAD and not cutscene_lock:
 		var run := maxf(data.move_speed, 1.0)
-		var along := velocity.x * facing / run      # +: 보는 쪽으로 달림 → 뒤로 날림
-		var vertical := absf(velocity.y) / run
+		var along := velocity.dot(face) / run      # +: 보는 쪽으로 달림 → 뒤로 날림
+		var vertical := absf(velocity.cross(face)) / run   # 옆으로 움직임
 		if along >= 0.0:
 			target = along * f.cloak_run_lean
 		else:
@@ -465,7 +537,11 @@ func _update_cloak() -> void:
 	var half_extra := (_cloak.sprite_frames.get_frame_texture(_cloak.animation, 0).get_width() - 16) * 0.5
 	_cloak.flip_h = _sprite.flip_h
 	var body := _body_offset()
-	_cloak.offset = Vector2(-half_extra * facing + body.x * facing, _sprite.offset.y + body.y)
+	if view == View.SIDE:
+		var facing := face.x
+		_cloak.offset = Vector2(-half_extra * facing + body.x * facing, _sprite.offset.y + body.y)
+	else:
+		_cloak.offset = Vector2(body.x, _sprite.offset.y + body.y)   # 정면·뒷모습: 가운데 정렬
 	_cloak.modulate = _sprite.modulate
 	if _sprite.animation == &"hurt":
 		_cloak.modulate = Color(1, 0.55, 0.55) if _sprite.frame == 1 else Color(1.6, 1.6, 1.6)

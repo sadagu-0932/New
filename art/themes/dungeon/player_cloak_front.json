@@ -1,0 +1,36 @@
+{
+  "frame_width": 24,
+  "frame_height": 24,
+  "animations": {
+    "cloak_fwd": {
+      "row": 0,
+      "frames": 2,
+      "fps": 4.0,
+      "loop": true
+    },
+    "cloak_hang": {
+      "row": 1,
+      "frames": 2,
+      "fps": 4.0,
+      "loop": true
+    },
+    "cloak_trail1": {
+      "row": 2,
+      "frames": 2,
+      "fps": 8.0,
+      "loop": true
+    },
+    "cloak_trail2": {
+      "row": 3,
+      "frames": 2,
+      "fps": 10.0,
+      "loop": true
+    },
+    "cloak_billow": {
+      "row": 4,
+      "frames": 2,
+      "fps": 14.0,
+      "loop": true
+    }
+  }
+}
