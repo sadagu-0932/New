@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+import math
 import random
 from pathlib import Path
 
@@ -189,10 +190,11 @@ PLAYER_CMAP: dict[str, str | None] = {
     ".": None,
     "o": "outline",
     "W": "white",        # 망토 빛 받는 테두리
-    "P": "pale",         # 밝은 후드·망토
-    "l": "stone_light",  # 망토 주름 그늘
-    "n": "stone",        # 후드 안쪽 그늘
-    "t": "brown",        # 앞머리
+    "P": "pale",         # 밝은 목도리
+    "l": "stone_light",  # 목도리 주름 그늘
+    "n": "stone",
+    "t": "brown",        # 머리카락
+    "d": "brown_dark",   # 머리카락 그늘
     "s": "skin",
     "e": "outline",      # 눈
     "y": "yellow",       # 망토 고정 장식
@@ -206,35 +208,33 @@ PLAYER_CMAP: dict[str, str | None] = {
     "G": "stone_dark",
     "k": "brown_dark",   # 장화
 }
-# 16x24 (키 1.5칸). 밝은 흰 후드 + 등 뒤로 늘어진 긴 망토 (오른쪽을 봄). 앞은 열려 있어 튜닉·허리띠·다리가 보인다.
-# 후드는 머리 모양에 맞게 둥글게 씌우고, 흰 테두리가 이마·뒤통수 쪽에서 얼굴을 감싼다 (걸쳐 놓은 천이 아니라 쓴 느낌).
-# 망토 천이 목을 한 번 감싸 목도리처럼 보이고, 끝자락이 가슴 앞으로 늘어진다.
-# 후드 아래로 앞머리와 얼굴이 보이고, 망토 밑단은 찢어져 너덜너덜하다.
+# 16x24 (키 1.5칸, 오른쪽을 봄). 후드 없이 갈색 머리 + 목에 감은 밝은 흰 목도리.
+# 목도리 꼬리 두 가닥은 별도 층(player_cloak)이 움직임에 따라 뒤로 휘날린다.
 PLAYER_BASE = [
     "................",
-    ".....oooo.......",
-    "....oWWPPoo.....",
-    "...oWPPPPPPo....",
-    "...oWPPPWWWWo...",
-    "..oWPPPWntttto..",
-    "..oWPPPWntssso..",
-    "..olPPPWnseso...",
-    "..olPPPPWsso....",
-    ".oWPPPPWPPPo....",
-    ".oWPPlWllPlo....",
-    "oWPPPocWPcooooo.",
-    "oWPPlocllchhggo.",
-    "oWPPlocccCoGGo..",
-    "oWPPlocCcCo.....",
-    "oWPlPoTTTTo.....",
-    "oWPlPocCcCo.....",
-    "oPPlPoNNNNo.....",
-    "oPPlPoNo.No.....",
-    "oPlPPoNo.No.....",
-    "oPPlPoNo.No.....",
-    "oPoPloko.ko.....",
-    ".o.Po.ko.ko.....",
-    "..o.o.oo.oo.....",
+    ".....ooooo......",
+    "....ottttto.....",
+    "...otttttttoo...",
+    "..odttttttttto..",
+    "..oddttttsstto..",
+    "..oddthtssssso..",
+    "...odthsssseso..",
+    "...oddtssssso...",
+    "...oWPPPPPPlo...",
+    "...oWPlPPlPPo...",
+    "....occcccooooo.",
+    "....oCcccchhggo.",
+    "....oCcccCoGGo..",
+    "....oCcccCo.....",
+    "....oTTTTTo.....",
+    "....oCcccCo.....",
+    "....oNNNNNo.....",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
 ]
 # 쓰러져 누운 모습 (머리 왼쪽, 발 오른쪽, 망토가 몸 아래 깔림)
 PLAYER_LYING = [
@@ -256,12 +256,12 @@ PLAYER_LYING = [
     "................",
     "................",
     "..oooo..........",
-    ".oWWPo.oooooo...",
-    "oWPtssocccTNNoo.",
-    "oWPsesocccTNNkko",
-    "oPPsssoPPPPPPPoo",
-    ".oPPoo.oPlPlPoo.",
-    "..oo....oooooo..",
+    ".ottttooooooo...",
+    "odttssWPcccTNNoo",
+    "odtsesPlcccTNNko",
+    "oddsssoocccoNNoo",
+    ".ooooo..ooo.ooo.",
+    "................",
 ]
 # 키 (프레임 높이). 발 위치는 16x16 시절과 같게 게임에서 위로 (높이-16)/2 만큼 올려 그린다
 PLAYER_H = 24
@@ -312,11 +312,7 @@ def _put(cv: Canvas, x0: int, y: int, part: str) -> None:
 def hem(cv: Canvas, pose: int) -> Canvas:
     """몸 그림에서 등 뒤 망토(어깨 아래 x 0~4)를 떼어낸다. 망토는 별도 층(player_cloak)이 움직임에 따라 그린다.
     pose 는 예전 호환용 (쓰지 않음)."""
-    out = cv.copy()
-    for y in range(CLOAK_FROM_ROW, PLAYER_H):
-        for x in range(0, 5):
-            out.set(x, y, None)
-    return out
+    return cv.copy()  # 망토가 없어져 떼어낼 것 없음 (목도리 꼬리는 별도 층)
 
 
 def legs(cv: Canvas, key: str, hip_dx: int = 0, hip_dy: int = 0) -> Canvas:
@@ -387,6 +383,60 @@ CLOAK_LEANS = {
 }
 
 
+# 목도리 꼬리: 단계 이름 → (꼬리 각도°, 길이, 물결 세기). 각도는 "뒤쪽 수평"에서 아래로 잰다
+SCARF_LEANS = {
+    "fwd": (105, 6, 0.0),
+    "hang": (85, 7, 0.3),
+    "trail1": (50, 8, 0.8),
+    "trail2": (22, 9, 1.2),
+    "billow": (6, 10, 1.6),
+}
+
+
+def scarf_tails(anchor: tuple[int, int], lean: str, flutter: int, back_dir: int = -1, spread: float = 18.0,
+                angle_scale: float = 1.0) -> Canvas:
+    """목도리 꼬리 두 가닥 (24x24). anchor 에서 back_dir(-1 왼쪽/ +1 오른쪽) 쪽으로 늘어지거나 휘날린다.
+    뒤 가닥은 조금 짧고 더 아래로, 어둡게. 끝은 올이 풀려 가늘어진다."""
+    ang0, length, amp = SCARF_LEANS[lean]
+    ang0 = 90 + (ang0 - 90) * angle_scale
+    phase = math.pi * flutter
+    t = Canvas(CLOAK_W, PLAYER_H)
+    shape: dict[tuple[int, int], int] = {}
+    for k, (dang, dlen, dph) in enumerate(((spread, -2, 1.3), (0.0, 0, 0.0))):
+        a = math.radians(ang0 + dang)
+        dx, dy = back_dir * math.cos(a), math.sin(a)
+        px, py = -dy, dx
+        n = (length + dlen) * 4
+        for i in range(n + 1):
+            u = i / n
+            w = amp * math.sin(2 * math.pi * u * 1.1 + phase + dph) * u
+            x = anchor[0] + dx * (length + dlen) * u + px * w
+            y = anchor[1] + dy * (length + dlen) * u + py * w
+            xi, yi = int(round(x)), int(round(y))
+            thick = u < 0.8
+            cells = [(xi, yi)]
+            if thick:
+                cells.append((xi, yi + 1) if abs(dx) > abs(dy) else (xi + 1, yi))
+            for cx, cy in cells:
+                if 0 <= cx < CLOAK_W and 0 <= cy < PLAYER_H:
+                    shape[(cx, cy)] = k
+    for (x, y), k in shape.items():
+        top_open = (x, y - 1) not in shape
+        if k == 0:
+            t.set(x, y, c("stone_light") if not top_open else c("pale"))
+        else:
+            t.set(x, y, c("white") if top_open else c("pale"))
+    for y in range(PLAYER_H):
+        for x in range(CLOAK_W):
+            if (x, y) in shape:
+                continue
+            for ddx, ddy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                if (x + ddx, y + ddy) in shape:
+                    t.set(x, y, c("outline"))
+                    break
+    return t
+
+
 def _in_poly(px: float, py: float, poly: list[tuple[float, float]]) -> bool:
     inside = False
     n = len(poly)
@@ -401,48 +451,8 @@ def _in_poly(px: float, py: float, poly: list[tuple[float, float]]) -> bool:
 
 
 def cloak_frame(lean: str, flutter: int) -> Canvas:
-    bx, by, hy = CLOAK_LEANS[lean]
-    # 펄럭임: 날리는 단계일수록 밑단 끝이 위아래로 흔들림
-    wave = {"fwd": 0, "hang": 0, "trail1": 1, "trail2": 1, "billow": 2}[lean]
-    by += wave if flutter else 0
-    top_y = CLOAK_FROM_ROW - 1
-    front_x = CLOAK_BODY_X + 6
-    poly = [(CLOAK_BODY_X + 1.0, top_y), (front_x + 1.0, top_y), (front_x + 1.0, hy + 1.0),
-            (bx, by + 1.0), (CLOAK_BODY_X + 0.5, top_y + 2.0)]
-    shape = [[_in_poly(x + 0.5, y + 0.5, poly) for x in range(CLOAK_W)] for y in range(PLAYER_H)]
-    # 찢어진 밑단: 열마다 아래쪽을 0~2칸 뜯어낸다 (프레임마다 무늬가 바뀜)
-    for x in range(CLOAK_W):
-        ys = [y for y in range(PLAYER_H) if shape[y][x]]
-        if not ys or max(ys) < top_y + 4:
-            continue
-        cut = (x + flutter * 2) % 3
-        for k in range(cut):
-            shape[max(ys) - k][x] = False
-    t = Canvas(CLOAK_W, PLAYER_H)
-    for y in range(PLAYER_H):
-        for x in range(CLOAK_W):
-            if not shape[y][x]:
-                continue
-            left_open = x == 0 or not shape[y][x - 1]
-            t.set(x, y, c("white") if left_open else c("pale"))
-    # 주름 두 줄 (어깨 → 밑단 쪽으로)
-    mid = ((bx + front_x) // 2, (by + hy) // 2)
-    for x0, y0, x1, y1 in ((CLOAK_BODY_X + 3, top_y + 2, mid[0], mid[1] - 1),
-                           (CLOAK_BODY_X + 5, top_y + 3, (mid[0] + front_x) // 2, hy - 2)):
-        for x, y in _line_points(x0, y0, x1, y1):
-            if 0 <= y < PLAYER_H and 0 <= x < CLOAK_W and shape[y][x] and not (x == 0 or not shape[y][x - 1]):
-                t.set(x, y, c("stone_light"))
-    # 바깥 테두리
-    for y in range(PLAYER_H):
-        for x in range(CLOAK_W):
-            if shape[y][x]:
-                continue
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < CLOAK_W and 0 <= ny < PLAYER_H and shape[ny][nx]:
-                    t.set(x, y, c("outline"))
-                    break
-    return t
+    """옆모습 목도리 꼬리: 목 뒤(몸 x 3, 9행)에서 등 뒤로."""
+    return scarf_tails((CLOAK_BODY_X + 3, 9), lean, flutter)
 
 
 def _line_points(x0: int, y0: int, x1: int, y1: int):
@@ -472,17 +482,17 @@ FB_CMAP.update({"E": "brown", "Q": "stone_dark"})
 PLAYER_FRONT = [
     "................",
     ".....oooooo.....",
-    "....oWWPPPPo....",
-    "...oWPPPPPPlo...",
-    "...oWWWWWWWlo...",
-    "..oWPttttttPlo..",
-    "..oWntsssstnlo..",
-    "..oWnsesseslo...",
-    "..oPPnsssslPo...",
-    "..oWPWPPPPPlo...",
-    "..ooWllPPlllo...",
-    ".occcWPPPcccoco.",
-    ".occoccllcccoco.",
+    "....otttttto....",
+    "...otttttttto...",
+    "..otttttttttto..",
+    "..odttsttsttdo..",
+    "..odssssssssdo..",
+    "..odsessssesdo..",
+    "...odssssssdo...",
+    "..oWPPPPPPPPlo..",
+    "..oWPlPPPlPPlo..",
+    ".occcccPlcccoco.",
+    ".occcccPlcccoco.",
     ".ohooccccCccoho.",
     ".oGoTTTTyTTTooo.",
     ".oGoccccCccco...",
@@ -498,15 +508,15 @@ PLAYER_FRONT = [
 PLAYER_BACK = [
     "................",
     ".....oooooo.....",
-    "....oWWPPPPo....",
-    "...oWPPPPPPlo...",
-    "...oWPPPPPPlo...",
-    "...oWPPPPPPlo...",
-    "...oWPPPPPPlo...",
-    "...oWPPPPPllo...",
-    "..ooWWPPPPlloo..",
-    ".oWWPPPPPPPPllo.",
-    ".occcPPPPPPccco.",
+    "....otttttto....",
+    "...otttttttto...",
+    "..otttttttttto..",
+    "..odttttttttdo..",
+    "..odtttdtttddo..",
+    "..oddttttttddo..",
+    "...oddtttdddo...",
+    "..oWPPPPPPPPlo..",
+    ".ooWPPlPPlPPloo.",
     ".occcccccccccco.",
     ".ohoccccccccoho.",
     ".oooTTTTTTTTooo.",
@@ -626,54 +636,10 @@ def build_player_view(name: str, rows: list[str], back: bool) -> None:
 
 
 def fb_cloak_frame(back: bool, lean: str, flutter: int) -> Canvas:
-    """정면용(몸 뒤로 양옆에 보임) / 뒷모습용(몸 앞을 덮음) 망토. 24x24, 몸은 가운데 x 4~19."""
-    # 단계별 (밑단 높이, 양옆으로 퍼지는 정도)
+    """정면: 목 옆에서 몸 뒤로 (휘날릴 때만 옆으로 보임) / 뒷모습: 목 뒤 매듭에서 등 위로 늘어짐 (몸 앞에 그림)."""
     if back:
-        # 뒷모습: 밑단을 무릎 높이로 올려 다리(걸음)가 보이게. 멀어질수록 자락이 양옆으로 퍼진다
-        spec = {"fwd": (18, -1), "hang": (19, 0), "trail1": (19, 1), "trail2": (19, 2), "billow": (18, 4)}[lean]
-    else:
-        spec = {"fwd": (21, -1), "hang": (22, 0), "trail1": (21, 2), "trail2": (20, 3), "billow": (18, 5)}[lean]
-    hem_y, spread = spec
-    wave = flutter if lean in ("trail1", "trail2", "billow") else 0
-    top_y = 9
-    sx0, sx1 = (4 + 3, 4 + 12) if back else (4 + 2, 4 + 13)
-    hx0, hx1 = 4 + 1 - spread - wave, 4 + 14 + spread + wave
-    poly = [(sx0, top_y), (sx1 + 1.0, top_y), (hx1 + 1.0, hem_y + 1.0), (hx0, hem_y + 1.0)]
-    shape = [[_in_poly(x + 0.5, y + 0.5, poly) for x in range(CLOAK_W)] for y in range(PLAYER_H)]
-    for x in range(CLOAK_W):
-        ys = [y for y in range(PLAYER_H) if shape[y][x]]
-        if not ys or max(ys) < top_y + 4:
-            continue
-        for k in range((x + flutter * 2) % 3):
-            shape[max(ys) - k][x] = False
-    t = Canvas(CLOAK_W, PLAYER_H)
-    for y in range(PLAYER_H):
-        for x in range(CLOAK_W):
-            if shape[y][x]:
-                left_open = x == 0 or not shape[y][x - 1]
-                t.set(x, y, c("white") if left_open else c("pale"))
-    # 주름 (세로)
-    for fx in (sx0 + 2, (sx0 + sx1) // 2, sx1 - 2):
-        for y in range(top_y + 2, hem_y - 1):
-            x = fx + round((y - top_y) * ((fx - 12) / 12.0) * (0.15 + 0.08 * spread))
-            if 0 <= x < CLOAK_W and shape[y][x]:
-                t.set(x, y, c("stone_light"))
-    if back:
-        # 등에 얹힌 후드 끝
-        t.set(12, top_y + 1, c("stone_light"))
-        t.set(12, top_y + 2, c("stone_light"))
-        t.set(11, top_y + 3, c("stone_light"))
-        t.set(13, top_y + 3, c("stone_light"))
-    for y in range(PLAYER_H):
-        for x in range(CLOAK_W):
-            if shape[y][x]:
-                continue
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < CLOAK_W and 0 <= ny < PLAYER_H and shape[ny][nx]:
-                    t.set(x, y, c("outline"))
-                    break
-    return t
+        return scarf_tails((4 + 6, 10), lean, flutter, spread=-10.0, angle_scale=0.7)
+    return scarf_tails((4 + 3, 9), lean, flutter)
 
 
 def build_player_views() -> None:
