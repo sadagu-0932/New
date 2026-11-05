@@ -185,33 +185,39 @@ def write_json(path: Path, data: dict) -> None:
 PLAYER_CMAP: dict[str, str | None] = {
     ".": None,
     "o": "outline",
-    "h": "blue",
-    "H": "sky",
-    "n": "navy",
+    "H": "sky",          # 후드·망토 빛 받는 면
+    "h": "blue",         # 후드 기본
+    "n": "navy",         # 후드 그늘
+    "S": "shadow",       # 후드 속 어둠
     "s": "skin",
-    "e": "outline",
-    "b": "brown",
-    "B": "brown_dark",
-    "g": "stone_light",
+    "w": "white",        # 그늘 속에서 빛나는 눈
+    "r": "red",          # 목도리
+    "R": "crimson",
+    "c": "blue",         # 망토
+    "C": "navy",
+    "b": "brown",        # 허리띠
+    "B": "brown_dark",   # 장화
+    "g": "stone_light",  # 총
     "G": "stone_dark",
 }
+# 후드를 깊게 눌러쓴 모습 (오른쪽을 봄). 얼굴은 그늘 속, 눈 하나만 빛남. 목도리 끝이 뒤로 날림
 PLAYER_BASE = [
     "................",
-    "................",
-    "......ooooo.....",
-    ".....ohHHhho....",
-    "....ohHhhhhno...",
-    "....ohhossseo...",
-    "....onhosssso...",
-    "....onnhoooo....",
-    "...onhhhhhhgGG..",
-    "...onnhbbbhoo...",
-    "...onnhhhhho....",
-    "....onnhhhho....",
-    "....onnnnnno....",
-    ".....oBo.oBo....",
-    ".....oBo.oBo....",
-    ".....ooo.ooo....",
+    ".....ooooo......",
+    "....oHHhhho.....",
+    "...oHhhhhhno....",
+    "..oHhhhhnSSo....",
+    "..ohhhhnSSSso...",
+    "..ohhhnSSwSso...",
+    "..onhhnSssso....",
+    ".oorrrrRRroooo..",
+    "or.oHccRchsgggo.",
+    "...ohccbbcoGGo..",
+    "...ohcccccno....",
+    "...onCcccCno....",
+    "...oCcoCcCo.....",
+    "....oBo.oBo.....",
+    "....ooo.ooo.....",
 ]
 
 
@@ -224,72 +230,117 @@ def player_legs(base: Canvas, rows: list[str]) -> Canvas:
     return cv
 
 
+# 쓰러져 누운 모습 (머리 왼쪽, 발 오른쪽)
+PLAYER_LYING = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "..oooo..........",
+    ".oHhhho.oooooo..",
+    "oHhhSSorRcccccoo",
+    "ohhSwsoRccbbccBo",
+    "onnSsso.cccccCBo",
+    ".onnoo.oCCCCCoo.",
+    "..oo....ooooo...",
+]
+
+
+def scarf(cv: Canvas, pose: int) -> Canvas:
+    """목도리 끝 펄럭임. 0 = 뒤로 수평, 1 = 아래로 처짐, 2 = 위로 날림"""
+    out = cv.copy()
+    for y in range(7, 12):
+        for x in range(0, 2):
+            out.set(x, y, None)
+    tail_y = {0: 9, 1: 10, 2: 8}[pose]
+    out.set(0, tail_y, c("outline"))
+    out.set(1, tail_y, c("red"))
+    out.set(1, 8, c("outline"))
+    return out
+
+
 def build_player() -> None:
     base = Canvas.from_rows(PLAYER_BASE, PLAYER_CMAP)
     bob = base.shift_rows(0, 12, 1)  # 상체를 1px 내린 프레임
 
-    idle = [base, bob]
+    idle = [scarf(base, 0), scarf(base, 1), scarf(bob, 1), scarf(bob, 0)]
 
     stride_a = player_legs(base, [
-        "....oBo...oBo...",
-        "....oBo...oBo...",
-        "....ooo...ooo...",
+        "...oBo....oBo...",
+        "...oBo....oBo...",
+        "...ooo....ooo...",
     ])
     together = player_legs(bob, [
         ".....oBooBo.....",
         ".....oBooBo.....",
         ".....oooooo.....",
     ])
-    move = [stride_a, together, stride_a.shift_rows(0, 12, 0), together]
+    stride_b = player_legs(base, [
+        "....oBo..oBo....",
+        "...oBo....oBo...",
+        "...ooo....ooo...",
+    ])
+    move = [scarf(stride_a, 2), scarf(together, 0), scarf(stride_b, 2), scarf(together, 1)]
 
-    flash = base.copy()
-    flash.set(14, 8, c("yellow"))
-    flash.set(15, 8, c("white"))
+    # 사격: 총구 불꽃 → 반동
+    flash = scarf(base, 0)
+    flash.set(15, 9, c("white"))
+    flash.set(15, 8, c("yellow"))
+    flash.set(15, 10, c("yellow"))
     flash.set(14, 7, c("orange"))
-    flash.set(14, 9, c("orange"))
-    recoil = base.copy()
-    recoil.set(14, 8, c("yellow"))
+    flash.set(14, 11, c("orange"))
+    recoil = scarf(base, 0).moved(-1, 0)
+    recoil.set(14, 9, c("yellow"))
     shoot = [flash, recoil]
 
+    # 근접: 망토 속 단검을 휘두름 (위 → 앞 → 아래)
     blade, tip = c("pale"), c("white")
-    m0 = base.copy()
-    m0.line(10, 8, 13, 2, blade)
-    m0.set(13, 2, tip)
-    m1 = base.copy()
-    for x, y in [(12, 3), (13, 4), (14, 6), (14, 8), (14, 10), (13, 12)]:
+    m0 = scarf(base, 2)
+    m0.line(11, 8, 14, 3, blade)
+    m0.set(14, 2, tip)
+    m0.set(15, 2, tip)
+    m1 = scarf(base, 0)
+    for x, y in [(12, 3), (13, 4), (14, 6), (15, 8), (14, 10), (13, 12)]:
         m1.set(x, y, tip)
-    for x, y in [(12, 4), (13, 6), (13, 8), (13, 10), (12, 11)]:
+    for x, y in [(12, 4), (13, 6), (14, 8), (13, 10), (12, 11)]:
         m1.set(x, y, blade)
-    m2 = base.copy()
-    m2.line(10, 9, 14, 14, blade)
-    m2.set(14, 14, tip)
+    m2 = scarf(base, 1)
+    m2.line(11, 10, 14, 14, blade)
+    m2.set(15, 15, tip)
     melee = [m0, m1, m2]
 
+    # 회피: 몸을 낮추고 망토·목도리가 뒤로 쏠림
     squash = player_legs(bob, [
         "....oBo...oBo...",
         "...oBo.....oBo..",
         "...ooo.....ooo..",
     ])
+    squash = scarf(squash, 0)
     ball = base.shift_rows(0, 12, 2)
     ball = player_legs(ball, [
         ".....oBooBo.....",
         ".....oooooo.....",
         "................",
     ])
-    for y in (7, 9, 11):
-        ball.line(0, y, 2, y, c("pale"))
+    ball = scarf(ball, 0)
+    for y in (6, 8, 12):
+        ball.line(0, y, 1, y, c("pale"))
     dodge = [squash, ball, squash]
 
     outline = {c("outline")}
     hurt = [base.recolor(outline, c("white")), base.recolor(outline, c("red"))]
 
-    lying = base.rotate_cw()
-    x0, y0, x1, y1 = lying.bbox()
-    lying = lying.moved(0, 15 - y1)
-    death = [base.shift_rows(0, 12, 1), base.shift_rows(0, 12, 3), lying.moved(0, -1), lying]
+    # 쓰러짐: 무릎 꿇기 → 옆으로 쓰러져 누운 모습 (따로 그린 프레임)
+    lying = Canvas.from_rows(PLAYER_LYING, PLAYER_CMAP)
+    death = [scarf(base.shift_rows(0, 12, 1), 1), scarf(base.shift_rows(0, 12, 3), 1), lying.moved(0, -1), lying]
 
     save_sheet("player", 16, 16, [
-        ("idle", idle, 3.0, True),
+        ("idle", idle, 4.0, True),
         ("move", move, 8.0, True),
         ("shoot", shoot, 12.0, False),
         ("melee", melee, 15.0, False),
