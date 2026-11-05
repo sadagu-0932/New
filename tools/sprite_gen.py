@@ -202,7 +202,9 @@ PLAYER_CMAP: dict[str, str | None] = {
     "c": "blue",         # 튜닉
     "C": "navy",         # 튜닉 그늘
     "T": "brown",        # 허리띠
-    "N": "navy",         # 바지
+    "N": "navy",         # 바지 (먼 다리)
+    "L": "blue",         # 가까운 다리 바지
+    "K": "brown",        # 가까운 다리 장화
     "h": "tan",          # 장갑
     "g": "stone_light",  # 총
     "G": "stone_dark",
@@ -299,6 +301,63 @@ PLAYER_LEG_POSES = {
     "spread": ((9, 20), (11, 23), (6, 20), (4, 23)),
     "tuck": ((9, 20), (9, 21), (6, 20), (6, 21)),
 }
+# 옆모습 걷기 (17~23행을 손으로 찍음). L·K = 가까운 다리, N·k = 먼 다리.
+# 디딤(앞다리 앞으로) → 내려앉음(뒷발 듦) → 지나감(뒷다리가 무릎 굽혀 앞으로) → 반대쪽은 색만 바꿔 반복
+SIDE_WALK_LEGS = [
+    [
+        "....oNNLLLo.....",
+        "...oNNooLLo.....",
+        "...oNNo.oLLo....",
+        "..oNNo..oLLo....",
+        "..oNNo...oLLo...",
+        ".okkko...oKKKo..",
+        ".oooo....ooooo..",
+    ],
+    [
+        "....oNNLLLo.....",
+        "...oNNooLLo.....",
+        "..oNNo..oLLo....",
+        ".okkko..oLLo....",
+        ".oooo...oLLo....",
+        "........oKKKo...",
+        "........ooooo...",
+    ],
+    [
+        "....oLLNNNo.....",
+        "....oLLoNNo.....",
+        "....oLLooNNo....",
+        "....oLLokkko....",
+        "....oLLoooo.....",
+        "....oKKKo.......",
+        "....ooooo.......",
+    ],
+]
+# 걷기 6프레임의 상체 내려앉음 (내려앉는 프레임에서 1px)
+SIDE_WALK_BOB = [0, 1, 0, 0, 1, 0]
+
+
+def side_walk_frames(base: Canvas) -> list[Canvas]:
+    swap = str.maketrans("LNKk", "NLkK")
+    frames = []
+    for i, dy in enumerate(SIDE_WALK_BOB):
+        rows = SIDE_WALK_LEGS[i % 3]
+        if i >= 3:
+            rows = [r.translate(swap) for r in rows]
+        body = base.copy()
+        for y in range(PLAYER_BODY_LAST, PLAYER_H):
+            body.px[y] = [None] * body.w
+        if dy:
+            body = body.shift_rows(0, PLAYER_BODY_LAST - 1, dy)
+        part = Canvas.from_rows(rows, PLAYER_CMAP)
+        for j in range(len(rows)):
+            for x in range(16):
+                v = part.px[j][x]
+                if v is not None:
+                    body.px[PLAYER_BODY_LAST + j][x] = v
+        frames.append(body)
+    return frames
+
+
 PLAYER_HIP_NEAR = (8, 18)
 PLAYER_HIP_FAR = (7, 18)
 
@@ -539,6 +598,10 @@ FB_LEGS = {
                ".........okko...", ".........oooo..."],
     "lift_r": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.okko...", "....oNNo.oooo...",
                "....okko........", "....oooo........"],
+    "half_l": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.oNNo...", "....okko.oNNo...",
+               "....oooo.okko...", ".........oooo..."],
+    "half_r": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.okko...",
+               "....okko.oooo...", "....oooo........"],
     "tuck": ["....oNNo.oNNo...", "....okko.okko...", "....oooo.oooo...", "................",
              "................", "................"],
 }
@@ -577,8 +640,9 @@ def build_player_view(name: str, rows: list[str], back: bool) -> None:
 
     idle = [fb_legs(body(), "stand"), fb_legs(body(), "stand"), fb_legs(body(1), "stand"), fb_legs(body(1), "stand")]
     # 달리기 6프레임: 다리를 번갈아 들고, 몸이 튀어 오르고, 팔을 흔든다
-    run_plan = [("lift_l", 1, -1, 1), ("stand", 0, 0, 0), ("lift_r", -1, 1, -1),
-                ("lift_r", 1, 1, -1), ("stand", 0, 0, 0), ("lift_l", -1, -1, 1)]
+    # 걷기 6프레임: 왼발 듦 → 내려놓는 중 → 두 발 디딤(몸 1px 내려앉음) → 오른발 반복. 팔은 반대 다리와 엇갈려 흔든다
+    run_plan = [("lift_l", 0, -1, 1), ("half_l", 0, -1, 1), ("stand", 1, 0, 0),
+                ("lift_r", 0, 1, -1), ("half_r", 0, 1, -1), ("stand", 1, 0, 0)]
     move = [fb_legs(fb_arms(body(dy), al, ar), leg) for leg, dy, al, ar in run_plan]
     gun_x = 2 if not back else 13
     flash = fb_legs(body(), "stand")
@@ -709,12 +773,8 @@ def build_player() -> None:
     # 달리기 6프레임: 몸 전체가 움직인다
     #   상체를 앞으로 1px 기울이고, 디딜 때 1px 내려앉고, 공중에서 1px 떠오른다.
     #   총 든 팔은 걸음에 맞춰 위아래로 흔들리고, 다리는 보폭을 크게 (공중 프레임엔 두 발 다 뜸)
-    run_plan = [("run_contact", 1, 1), ("run_push", 0, 0), ("run_flight", -1, -1),
-                ("run_contact2", 1, 1), ("run_push2", 0, 0), ("run_flight2", -1, -1)]
-    move = []
-    for leg, dy, arm in run_plan:
-        body = swing_arm(shift_upper(hem(base, 0), 1, dy), arm)
-        move.append(legs(body, leg, hip_dx=1, hip_dy=dy))
+    # 걷기 6프레임: 손으로 찍은 다리 + 내려앉을 때 상체 1px
+    move = side_walk_frames(base)
 
     # 사격: 총구 불꽃 → 반동
     flash = pose(base, 0, "stand")
@@ -772,7 +832,7 @@ def build_player() -> None:
         # 프레임별 상체 이동 [dx(보는 쪽 +), dy(아래 +)] — 게임이 망토 층을 같이 움직이는 데 쓴다
         "body_offsets": {
             "idle": [[0, 0], [0, 0], [0, 1], [0, 1]],
-            "move": [[1, dy] for _, dy, _ in run_plan],
+            "move": [[0, dy] for dy in SIDE_WALK_BOB],
             "dodge": [[0, 2], [0, 4], [0, 2]],
             "death": [[0, 2], [0, 4], [0, 0], [0, 0]],
         },
