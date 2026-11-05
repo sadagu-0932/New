@@ -306,34 +306,34 @@ PLAYER_LEG_POSES = {
 SIDE_WALK_LEGS = [
     [
         "....oNNLLLo.....",
-        "...oNNooLLo.....",
+        "....oNNoLLo.....",
         "...oNNo.oLLo....",
-        "..oNNo..oLLo....",
-        "..oNNo...oLLo...",
-        ".okkko...oKKKo..",
-        ".oooo....ooooo..",
+        "...oNNo.oLLo....",
+        "...oNNo..oLLo...",
+        "..okkko..oKKKo..",
+        "..oooo...ooooo..",
     ],
     [
         "....oNNLLLo.....",
-        "...oNNooLLo.....",
-        "..oNNo..oLLo....",
-        ".okkko..oLLo....",
-        ".oooo...oLLo....",
-        "........oKKKo...",
+        "....oNNoLLo.....",
+        "...oNNo.oLLo....",
+        "...oNNo.oLLo....",
+        "..okkko.oLLo....",
+        "..oooo..oKKKo...",
         "........ooooo...",
     ],
     [
         "....oLLNNNo.....",
         "....oLLoNNo.....",
-        "....oLLooNNo....",
+        "....oLLoNNo.....",
         "....oLLokkko....",
         "....oLLoooo.....",
         "....oKKKo.......",
         "....ooooo.......",
     ],
 ]
-# 걷기 6프레임의 상체 내려앉음 (내려앉는 프레임에서 1px)
-SIDE_WALK_BOB = [0, 1, 0, 0, 1, 0]
+# 걷기 6프레임의 상체 내려앉음 (0 = 상체 고정. 흔들면 뒤뚱거려 보여서 뺌)
+SIDE_WALK_BOB = [0, 0, 0, 0, 0, 0]
 
 
 def side_walk_frames(base: Canvas) -> list[Canvas]:
@@ -640,9 +640,9 @@ def build_player_view(name: str, rows: list[str], back: bool) -> None:
 
     idle = [fb_legs(body(), "stand"), fb_legs(body(), "stand"), fb_legs(body(1), "stand"), fb_legs(body(1), "stand")]
     # 달리기 6프레임: 다리를 번갈아 들고, 몸이 튀어 오르고, 팔을 흔든다
-    # 걷기 6프레임: 왼발 듦 → 내려놓는 중 → 두 발 디딤(몸 1px 내려앉음) → 오른발 반복. 팔은 반대 다리와 엇갈려 흔든다
-    run_plan = [("lift_l", 0, -1, 1), ("half_l", 0, -1, 1), ("stand", 1, 0, 0),
-                ("lift_r", 0, 1, -1), ("half_r", 0, 1, -1), ("stand", 1, 0, 0)]
+    # 걷기 6프레임: 왼발 살짝 듦(2프레임) → 디딤 → 오른발 반복. 상체·팔은 고정 (흔들면 뒤뚱거려 보임)
+    run_plan = [("half_l", 0, 0, 0), ("half_l", 0, 0, 0), ("stand", 0, 0, 0),
+                ("half_r", 0, 0, 0), ("half_r", 0, 0, 0), ("stand", 0, 0, 0)]
     move = [fb_legs(fb_arms(body(dy), al, ar), leg) for leg, dy, al, ar in run_plan]
     gun_x = 2 if not back else 13
     flash = fb_legs(body(), "stand")
