@@ -824,6 +824,65 @@ def build_effects() -> None:
         cv.set(7, 7, c("white"))
         hit.append(cv)
 
+    # --- 맞을 때 이펙트 (종류별) ---
+    fx_rng = random.Random(3131)
+    # 벽: 밝은 돌 파편(2px)이 튀고 먼지 고리가 퍼짐
+    debris = []
+    chips = [(k * math.tau / 7 + fx_rng.uniform(-0.3, 0.3), fx_rng.uniform(0.75, 1.0),
+              fx_rng.choice(["pale", "stone_light", "white"])) for k in range(7)]
+    for step, r in enumerate((2.5, 4.5, 6.5)):
+        cv = Canvas(16, 16)
+        if step < 2:
+            dr = 2.0 + step * 2.0
+            for k in range(12):
+                a_ = k * math.tau / 12
+                cv.set(round(7.5 + dr * math.cos(a_)), round(7.5 + dr * math.sin(a_)), c("stone_light" if step else "pale"))
+        for a_, sp_, col in chips:
+            x, y = round(7.5 + r * sp_ * math.cos(a_)), round(7.5 + r * sp_ * math.sin(a_) + step)
+            size = 2 if step < 2 else 1
+            for dx in range(size):
+                for dy in range(size):
+                    cv.set(x + dx, y + dy, c(col))
+            cv.set(x + size, y + size, c("outline"))
+        debris.append(cv)
+    # 적: 주황·흰 불꽃이 짧게 터짐
+    spark = []
+    for r in (2, 4, 5):
+        cv = Canvas(16, 16)
+        for k in range(6):
+            a_ = math.radians(k * 60 + 30)
+            for t_ in range(max(1, r - 2), r + 1):
+                cv.set(round(7.5 + t_ * math.cos(a_)), round(7.5 + t_ * math.sin(a_)),
+                       c("white") if t_ == r - 1 else c("orange") if t_ == r else c("yellow"))
+        if r == 2:
+            for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+                cv.set(7 + dx, 7 + dy, c("white"))
+        spark.append(cv)
+    # 패링: 금속이 부딪힌 십자 섬광
+    clang = []
+    for r, core in ((3, "white"), (6, "white"), (7, "yellow")):
+        cv = Canvas(16, 16)
+        for t_ in range(-r, r + 1):
+            col = c(core) if abs(t_) < r - 1 else c("yellow")
+            cv.set(7 + t_, 7, col)
+            cv.set(7, 7 + t_, col)
+        for t_ in range(-(r // 2), r // 2 + 1):
+            cv.set(7 + t_, 7 + t_, c("pale"))
+            cv.set(7 + t_, 7 - t_, c("pale"))
+        clang.append(cv)
+    # 흡수 장막: 하늘색 알갱이가 가운데로 빨려듦
+    absorb = []
+    motes = [(k * math.tau / 8 + 0.3, 1.0) for k in range(8)]
+    for r in (7.0, 4.5, 2.0):
+        cv = Canvas(16, 16)
+        for a_, _ in motes:
+            cv.set(round(7.5 + r * math.cos(a_)), round(7.5 + r * math.sin(a_)), c("cyan"))
+            cv.set(round(7.5 + (r + 1.2) * math.cos(a_)), round(7.5 + (r + 1.2) * math.sin(a_)), c("sky"))
+        if r < 3:
+            for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+                cv.set(7 + dx, 7 + dy, c("white"))
+        absorb.append(cv)
+
     save_sheet("effects", 16, 16, [
         ("slash", slash, 20.0, False),
         ("parry", parry, 20.0, False),
@@ -832,6 +891,10 @@ def build_effects() -> None:
         ("hit", hit, 20.0, False),
         ("enemy_death", build_enemy_death(), 12.0, False),
         ("combo_aura", build_combo_aura(), 10.0, True),
+        ("hit_wall", debris, 18.0, False),
+        ("hit_enemy", spark, 20.0, False),
+        ("hit_parry", clang, 18.0, False),
+        ("hit_absorb", absorb, 16.0, False),
     ])
 
 

@@ -374,7 +374,7 @@ func _start_stealth() -> void:
 func _on_parried(projectile: Projectile, perfect: bool) -> void:
 	ammo.add(DB.parry.ammo_on_parry)
 	Events.parried.emit(perfect)
-	Effect.spawn(&"parry", projectile.global_position)
+	Effect.spawn(&"hit_parry", projectile.global_position, 0.0, 1.5)
 	if perfect:
 		combo.add()
 		Effect.spawn(&"perfect", projectile.global_position, 0.0, 2.0)

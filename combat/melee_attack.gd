@@ -109,6 +109,7 @@ func _hit_enemies() -> int:
 		var hit := HitInfo.make(ceili(data.damage * damage_mult), HitInfo.Kind.MELEE, Team.PLAYER, dir, get_parent())
 		if hurtbox.receive_hit(hit) == Hurtbox.Result.HIT:
 			count += 1
+			Effect.spawn(&"hit_enemy", hurtbox.global_position)
 	return count
 
 

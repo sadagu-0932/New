@@ -60,7 +60,7 @@ func _absorb(projectile: Projectile) -> bool:
 		return false
 	projectile.destroy(false)
 	player.ammo.add(_ad().ammo_per_bullet)
-	Effect.spawn(&"parry", projectile.global_position)
+	Effect.spawn(&"hit_absorb", projectile.global_position)
 	return true
 
 

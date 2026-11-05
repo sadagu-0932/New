@@ -15,6 +15,7 @@ func run_all() -> void:
 	await test_tall_player_feet()
 	await test_cloak_follows_motion()
 	await test_bullet_looks()
+	await test_hit_effects()
 	if level != null:
 		level.queue_free()
 		level = null
@@ -161,3 +162,43 @@ func test_bullet_looks() -> void:
 	var sh := Projectile.spawn(level.projectiles, Team.ENEMY, Vector2(100, 60), dir, DB.enemies["spreader"].projectile)
 	await step(2)
 	check(sh._sprite.rotation == 0.0, "수정 조각은 방향 대신 제자리에서 빙글빙글 (프레임 회전)")
+
+
+func _effects_named(anim: StringName) -> int:
+	var count := 0
+	for n in level.effects.get_children():
+		if n is Effect and (n as Effect).animation == anim:
+			count += 1
+	return count
+
+
+## 무엇에 맞았는지에 따라 이펙트가 다르다 (화면 표시 전용)
+func test_hit_effects() -> void:
+	await new_level(MAP)
+	var p := level.player
+	# 벽: 위쪽으로 쏘면 돌 파편
+	Projectile.spawn(level.projectiles, Team.PLAYER, p.global_position + Vector2(0, -8), Vector2.UP, DB.gun.projectile)
+	var wall := await wait_until(func() -> bool: return _effects_named(&"hit_wall") > 0, 30)
+	check(wall, "벽에 맞으면 돌 파편")
+	# 적: 허수아비를 맞히면 불꽃
+	var dummy: TargetDummy = null
+	for n in level.get_node("Props").get_children():
+		if n is TargetDummy:
+			dummy = n
+			break
+	Projectile.spawn(level.projectiles, Team.PLAYER, dummy.global_position - Vector2(30, 0), Vector2.RIGHT, DB.gun.projectile)
+	await step(10)
+	check(_effects_named(&"hit_enemy") > 0, "적을 맞히면 불꽃")
+	# 패링: 금속 섬광
+	var b := Projectile.spawn(level.projectiles, Team.ENEMY, p.global_position + Vector2(14, 0), Vector2.LEFT, DB.test_turret.projectile)
+	input.push(Vector2.ZERO, 1, 0, InputFrame.MELEE, p.global_position + Vector2(50, 0))
+	await step(2)
+	check(_effects_named(&"hit_parry") > 0, "패링하면 금속 섬광")
+	# 흡수 장막: 빨려듦
+	await step(DB.melee.active_ticks + DB.melee.recovery_ticks)
+	p.set_skill(DB.skill_by_id("absorb"))
+	input.push(Vector2.ZERO, 1, 0, InputFrame.SKILL, p.global_position + Vector2(50, 0))
+	await step(1)
+	Projectile.spawn(level.projectiles, Team.ENEMY, p.global_position + Vector2(40, 0), Vector2.LEFT, DB.test_turret.projectile)
+	var absorbed := await wait_until(func() -> bool: return _effects_named(&"hit_absorb") > 0, 30)
+	check(absorbed, "흡수 장막에 닿으면 빨려드는 효과")

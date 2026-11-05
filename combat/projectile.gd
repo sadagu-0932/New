@@ -110,11 +110,15 @@ func _check_collisions() -> void:
 		_done[id] = true
 		var hit := HitInfo.make(damage, kind, team, velocity.normalized(), self)
 		hit.perfect = perfect
-		if hurtbox.receive_hit(hit) == Hurtbox.Result.HIT and not pierce:
-			destroy(true)
-			return
+		if hurtbox.receive_hit(hit) == Hurtbox.Result.HIT:
+			# 적을 맞히면 불꽃 (관통 탄은 지나가며 매번), 플레이어가 맞으면 작은 섬광
+			var fx: StringName = &"hit_enemy" if team == Team.PLAYER else &"hit"
+			if not pierce:
+				destroy(true, fx)
+				return
+			Effect.spawn(fx, global_position)
 	if not _find(Layers.WORLD, Node).is_empty():
-		destroy(true)
+		destroy(true, &"hit_wall")
 
 
 ## mask 레이어에서 겹친 것 중 type 인 것만, 위치 순으로 정렬해 돌려준다 (결정론)
@@ -184,12 +188,12 @@ func _leave_trail() -> void:
 
 
 ## 없앤다 (show_effect: 맞은 자리 이펙트)
-func destroy(show_effect: bool) -> void:
+func destroy(show_effect: bool, effect: StringName = &"hit") -> void:
 	if not alive:
 		return
 	alive = false
 	if show_effect:
-		Effect.spawn(&"hit", global_position)
+		Effect.spawn(effect, global_position, velocity.angle())
 	queue_free()
 
 
