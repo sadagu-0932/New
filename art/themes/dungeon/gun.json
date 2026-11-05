@@ -1,0 +1,22 @@
+{
+  "frame_width": 20,
+  "frame_height": 10,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": true
+    },
+    "shoot": {
+      "row": 1,
+      "frames": 3,
+      "fps": 15.0,
+      "loop": false
+    }
+  },
+  "pivot": [
+    0.0,
+    4.5
+  ]
+}

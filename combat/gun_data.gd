@@ -8,6 +8,8 @@ extends Resource
 @export var start_ammo: int = 0
 ## 연사 간격 (틱). 누르고 있으면 이 간격으로 계속 쏜다
 @export var fire_interval_ticks: int = 0
-## 총구 거리 (플레이어 중심에서 px)
+## 탄이 나가는 높이 (발 중심에서 위로 px, 총을 든 어깨 높이)
+@export var muzzle_height: float = 0.0
+## 총구 거리 (어깨에서 조준 방향으로 px)
 @export var muzzle_offset: float = 0.0
 @export var projectile: ProjectileData

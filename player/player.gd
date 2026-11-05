@@ -59,6 +59,10 @@ const VIEW_SHEETS := {
 	View.BACK: ["player_back", "player_cloak_back"],
 }
 var view: View = View.SIDE
+## 손에 든 총 (따로 그린 그림, 어깨에 붙어 조준 방향으로 돈다). 화면 표시 전용
+var _gun: AnimatedSprite2D
+## 총이 어깨에서 마우스 쪽을 향하는 방향 (사격 방향과 같음)
+var _shot_dir: Vector2 = Vector2.RIGHT
 ## 방향별 [몸 SpriteFrames, 망토 SpriteFrames, body_offsets]
 var _view_res: Dictionary = {}
 
@@ -88,8 +92,10 @@ func _build_children() -> void:
 
 	for v: View in VIEW_SHEETS:
 		var names: Array = VIEW_SHEETS[v]
+		var meta := DB.theme.load_json(names[0])
+		var sh: Array = meta.get("shoulder", [8.0, 12.0])
 		_view_res[v] = [DB.theme.load_sheet(names[0]), DB.theme.load_sheet(names[1]),
-			DB.theme.load_json(names[0]).get("body_offsets", {})]
+			meta.get("body_offsets", {}), Vector2(float(sh[0]), float(sh[1]))]
 	# 망토는 몸보다 먼저 추가 → 몸 뒤에 그려진다 (뒷모습일 때만 몸 앞으로 옮김)
 	_cloak = AnimatedSprite2D.new()
 	_cloak.sprite_frames = _view_res[View.SIDE][1]
@@ -102,6 +108,15 @@ func _build_children() -> void:
 	_sprite.offset = SpriteSheet.foot_offset(_sprite.sprite_frames)
 	_sprite.play(&"idle")
 	add_child(_sprite)
+
+	_gun = AnimatedSprite2D.new()
+	_gun.sprite_frames = DB.theme.load_sheet("gun")
+	_gun.centered = false
+	var pivot: Array = DB.theme.load_json("gun").get("pivot", [0.0, 0.0])
+	_gun.offset = -Vector2(float(pivot[0]), float(pivot[1]))
+	_gun.play(&"idle")
+	_gun.animation_finished.connect(func() -> void: _gun.play(&"idle"))
+	add_child(_gun)
 
 	_hurtbox = Hurtbox.new()
 	_hurtbox.collision_layer = Layers.PLAYER_HURTBOX
@@ -133,6 +148,7 @@ func _physics_process(_delta: float) -> void:
 	if state == State.DEAD:
 		velocity = Vector2.ZERO
 		_update_cloak()
+		_update_gun()
 		return
 	if cutscene_lock:
 		velocity = Vector2.ZERO
@@ -140,6 +156,7 @@ func _physics_process(_delta: float) -> void:
 			_sprite.play(&"idle")
 		_sprite.modulate = Color.WHITE
 		_update_cloak()
+		_update_gun()
 		return
 	_update_aim(input)
 	melee.aim_dir = aim_dir
@@ -199,8 +216,11 @@ func _try_shoot(input: InputFrame) -> void:
 			Events.ammo_empty.emit()
 		return
 	var container := get_tree().get_first_node_in_group(Level.GROUP_PROJECTILES)
-	if gun.try_fire(ammo, container, global_position, aim_dir, combo.damage_mult()):
+	# 어깨 높이에서 마우스 쪽으로 쏜다 (총구에서 탄이 나가 보이게)
+	if gun.try_fire(ammo, container, _shot_origin(), _shot_dir, combo.damage_mult()):
 		_shoot_anim_ticks = DB.gun.fire_interval_ticks
+		_gun.play(&"shoot")
+		_gun.frame = 0
 		Events.player_shot.emit()
 
 
@@ -291,6 +311,13 @@ func _update_aim(input: InputFrame) -> void:
 	var to_aim := input.aim - global_position
 	if to_aim.length_squared() > 1.0:
 		aim_dir = to_aim.normalized()
+	var to_shot := input.aim - _shot_origin()
+	_shot_dir = to_shot.normalized() if to_shot.length_squared() > 1.0 else aim_dir
+
+
+## 탄이 나가는 기준점 (어깨 높이)
+func _shot_origin() -> Vector2:
+	return global_position + Vector2(0.0, -DB.gun.muzzle_height)
 
 
 ## 지금 무적인지 (회피 무적, 피격 후 무적, 디버그 무적)
@@ -446,6 +473,7 @@ func _update_visual(input: InputFrame) -> void:
 		_sprite.modulate = Color.WHITE
 	_update_aura()
 	_update_cloak()
+	_update_gun()
 	# 회피·돌진 잔상 (화면 표시)
 	if (state == State.DODGE or state == State.DASH_SLASH) and Game.tick % maxi(DB.feel.afterimage_interval_ticks, 1) == 0:
 		var tint := Color(1.0, 0.8, 0.4) if state == State.DASH_SLASH else Color(0.6, 0.85, 1.0)
@@ -493,8 +521,34 @@ func _set_view(v: View) -> void:
 	_cloak.play(cloak_anim)
 	_cloak.frame = cloak_frame
 	_body_offsets = res[2]
-	# 뒷모습이면 망토가 몸을 덮는다 (몸 앞에 그림)
-	move_child(_cloak, _sprite.get_index() if v == View.BACK else _sprite.get_index() - 1)
+	_apply_draw_order()
+
+
+## 그리는 순서: 뒷모습이면 총(몸 뒤) → 몸 → 목도리 꼬리(등 위), 아니면 꼬리 → 몸 → 총
+func _apply_draw_order() -> void:
+	var order: Array = [_gun, _sprite, _cloak] if view == View.BACK else [_cloak, _sprite, _gun]
+	var first := mini(_cloak.get_index(), mini(_sprite.get_index(), _gun.get_index()))
+	for i in order.size():
+		move_child(order[i] as Node, first + i)
+
+
+## 총: 어깨에 붙이고 사격 방향으로 돌린다. 회피·근접·사망 중에는 숨김 (화면 표시 전용)
+func _update_gun() -> void:
+	var hidden_now := state == State.DODGE or state == State.DASH_SLASH or state == State.DEAD \
+		or melee.is_active() or _sprite.animation == &"death"
+	_gun.visible = not hidden_now
+	if hidden_now:
+		return
+	var shoulder: Vector2 = _view_res[view][3]
+	var body := _body_offset()
+	var facing := -1.0 if (view == View.SIDE and _sprite.flip_h) else 1.0
+	var w := float(_sprite.sprite_frames.get_frame_texture(_sprite.animation, 0).get_width())
+	var h := float(_sprite.sprite_frames.get_frame_texture(_sprite.animation, 0).get_height())
+	_gun.position = Vector2((shoulder.x - w * 0.5) * facing + body.x * facing,
+		shoulder.y - h * 0.5 + _sprite.offset.y + body.y)
+	_gun.rotation = _shot_dir.angle()
+	_gun.flip_v = _shot_dir.x < 0.0
+	_gun.modulate = _sprite.modulate
 
 
 ## 그림이 향한 방향 (망토가 뒤로 날리는 기준)

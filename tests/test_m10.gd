@@ -15,6 +15,7 @@ func run_all() -> void:
 	await test_tall_player_feet()
 	await test_cloak_follows_motion()
 	await test_player_views()
+	await test_gun_follows_aim()
 	await test_bullet_looks()
 	await test_hit_effects()
 	if level != null:
@@ -182,10 +183,50 @@ func test_player_views() -> void:
 		check(d._sprite.sprite_frames == DB.theme.load_sheet(sheet), "분신 그림 = %s" % sheet)
 		var cloak_i := -1
 		for c in d.get_children():
-			if c is AnimatedSprite2D and c != d._sprite:
+			if c is AnimatedSprite2D and (c as AnimatedSprite2D).sprite_frames == DB.theme.load_sheet(Player.VIEW_SHEETS[v][1]):
 				cloak_i = c.get_index()
 		check((cloak_i > d._sprite.get_index()) == (v == Player.View.BACK), "분신 망토 순서 (%s)" % sheet)
 		d.vanish()
+
+
+## 총은 따로 그린 그림: 어깨에 붙어 마우스 쪽으로 돌고, 탄은 어깨 높이에서 마우스 쪽으로 나간다
+func test_gun_follows_aim() -> void:
+	await new_level("res://tests/maps/m3_test.txt")
+	var p := level.player
+	var pos := p.global_position
+	var target := pos + Vector2(60, -40)
+	input.push(Vector2.ZERO, 3, 0, 0, target)
+	await step(3)
+	var origin := pos + Vector2(0, -DB.gun.muzzle_height)
+	check(p._gun.visible, "평소엔 총이 보임")
+	check(is_equal_approx(p._gun.rotation, (target - origin).angle()), "총구가 마우스 쪽을 향함")
+	check(not p._gun.flip_v, "오른쪽을 겨누면 총을 뒤집지 않음")
+	check(p._gun.position.y < -2.0, "총은 어깨 높이에 붙음 (%.1f)" % p._gun.position.y)
+	input.push(Vector2.ZERO, 1, InputFrame.SHOOT, 0, target)
+	await step(2)
+	var shot: Projectile = null
+	for n in level.projectiles.get_children():
+		if n is Projectile and (n as Projectile).team == Team.PLAYER:
+			shot = n
+	check(shot != null, "쏨")
+	if shot:
+		var dir := shot.velocity.normalized()
+		check(dir.dot((target - origin).normalized()) > 0.999, "탄은 어깨에서 마우스 쪽으로")
+	check(p._gun.animation == &"shoot", "쏘면 총 반동 그림")
+	input.push(Vector2.ZERO, 3, 0, 0, pos + Vector2(-60, 10))
+	await step(3)
+	check(p._gun.flip_v, "왼쪽을 겨누면 총을 뒤집어 위아래가 맞게")
+	input.push(Vector2.ZERO, 3, 0, 0, pos + Vector2(0, -100))
+	await step(3)
+	check(p.view == Player.View.BACK and p._gun.get_index() < p._sprite.get_index(), "뒷모습이면 총은 몸 뒤")
+	input.push(Vector2.ZERO, 3, 0, 0, pos + Vector2(0, 100))
+	await step(3)
+	check(p.view == Player.View.FRONT and p._gun.get_index() > p._sprite.get_index(), "정면이면 총은 몸 앞")
+	input.push(Vector2.RIGHT, 1, 0, InputFrame.DODGE, pos + Vector2(100, 0))
+	await step(2)
+	check(not p._gun.visible, "회피 중엔 총 숨김")
+	await step(40)
+	check(p._gun.visible, "회피가 끝나면 다시 보임")
 
 
 ## 적마다 어울리는 탄 그림, 진행 방향 회전, 꼬리 (화면 표시 전용)

@@ -36,13 +36,24 @@ func _ready() -> void:
 		side_x = 4.0 if flip else -4.0
 	cloak.flip_h = flip
 	cloak.offset = Vector2(side_x, _sprite.offset.y)
-	# 뒷모습이면 망토가 몸 앞
-	if view == Player.View.BACK:
-		add_child(_sprite)
-		add_child(cloak)
-	else:
-		add_child(cloak)
-		add_child(_sprite)
+	# 총: 보던 방향을 겨눈 채로 어깨에 (화면 표시 전용)
+	var gun := AnimatedSprite2D.new()
+	gun.sprite_frames = DB.theme.load_sheet("gun")
+	gun.play(&"idle")
+	gun.centered = false
+	var pivot: Array = DB.theme.load_json("gun").get("pivot", [0.0, 0.0])
+	gun.offset = -Vector2(float(pivot[0]), float(pivot[1]))
+	var sh: Array = DB.theme.load_json(names[0]).get("shoulder", [8.0, 12.0])
+	var facing := -1.0 if flip else 1.0
+	gun.position = Vector2((float(sh[0]) - 8.0) * facing, float(sh[1]) - 12.0 + _sprite.offset.y)
+	var dir := {Player.View.SIDE: Vector2(facing, 0), Player.View.FRONT: Vector2.DOWN, Player.View.BACK: Vector2.UP}[view] as Vector2
+	gun.rotation = dir.angle()
+	gun.flip_v = dir.x < 0.0
+	gun.modulate = _sprite.modulate
+	# 뒷모습이면 총 → 몸 → 목도리 꼬리, 아니면 꼬리 → 몸 → 총
+	var order: Array = [gun, _sprite, cloak] if view == Player.View.BACK else [cloak, _sprite, gun]
+	for n: Node in order:
+		add_child(n)
 	hurtbox = Hurtbox.new()
 	hurtbox.collision_layer = Layers.PLAYER_HURTBOX
 	hurtbox.set_circle(DB.player.hurtbox_radius, Vector2(0, DB.player.hurtbox_offset_y))
