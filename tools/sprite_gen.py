@@ -274,13 +274,23 @@ PLAYER_HEMS = [
     ("ooPPl", ".oPo.", "..o.."),
 ]
 # 다리 (x 5~12, 18~23행)
-PLAYER_LEGS = {
-    "stand": ("oNo.No..", "oNo.No..", "oNo.No..", "oko.ko..", "oko.ko..", ".oo.oo.."),
-    "step_a": ("oNo.oNo.", "oNo..oNo", "oNo...No", "oko...ko", "oko...ko", ".oo...oo"),
-    "step_b": ("oNNNo...", "oNNNo...", ".oNNo...", ".okko...", ".okko...", "..ooo..."),
-    "spread": ("oNo.oNo.", "No...oNo", "No....No", "ko....ko", "ko....ko", "oo....oo"),
-    "tuck": ("oNNNo...", ".oNNo...", ".okko...", "..oo....", "........", "........"),
+# 다리 자세: (앞다리 무릎, 앞다리 발, 뒷다리 무릎, 뒷다리 발) — 절대 좌표 (x, y). 엉덩이는 (8,18)/(7,18)
+# 앞다리(보는 쪽에 가까운 다리)는 밝게, 뒷다리는 어둡게 칠해 두 다리를 구분한다.
+PLAYER_LEG_POSES = {
+    "stand": ((8, 20), (9, 23), (7, 20), (6, 23)),
+    # 걷기 6프레임: 디딤 → 내려앉음 → 교차(뒷다리 듦) → 반대 디딤 → 내려앉음 → 교차(앞다리 듦)
+    "walk_contact": ((9, 20), (10, 23), (6, 20), (5, 23)),
+    "walk_down": ((9, 20), (10, 23), (6, 21), (6, 23)),
+    "walk_pass": ((8, 20), (8, 23), (9, 20), (8, 22)),
+    "walk_contact2": ((7, 20), (6, 23), (8, 20), (10, 23)),
+    "walk_down2": ((7, 21), (7, 23), (8, 20), (10, 23)),
+    "walk_pass2": ((9, 20), (9, 22), (7, 20), (7, 23)),
+    # 공격·회피용
+    "spread": ((9, 20), (11, 23), (6, 20), (4, 23)),
+    "tuck": ((9, 20), (9, 21), (6, 20), (6, 21)),
 }
+PLAYER_HIP_NEAR = (8, 18)
+PLAYER_HIP_FAR = (7, 18)
 
 
 def _put(cv: Canvas, x0: int, y: int, part: str) -> None:
@@ -300,9 +310,50 @@ def hem(cv: Canvas, pose: int) -> Canvas:
 
 
 def legs(cv: Canvas, key: str) -> Canvas:
+    """다리를 엉덩이 → 무릎 → 발 두 마디 선(굵기 2)으로 그린다. 뒷다리 먼저, 앞다리를 위에. 발끝 2칸은 장화."""
     out = cv.copy()
-    for i, row in enumerate(PLAYER_LEGS[key]):
-        _put(out, 5, PLAYER_H - 6 + i, row)
+    for y in range(PLAYER_BODY_LAST + 1, PLAYER_H):
+        for x in range(4, 13):
+            out.set(x, y, None)
+    near_knee, near_foot, far_knee, far_foot = PLAYER_LEG_POSES[key]
+    mask: set[tuple[int, int]] = set()
+
+    def draw_leg(hip, knee, foot, pants: str, boot: str) -> None:
+        for (x0, y0), (x1, y1) in ((hip, knee), (knee, foot)):
+            for x, y in _line_points(x0, y0, x1, y1):
+                for dx in (0, 1):
+                    px, py = x + dx, y
+                    if py <= PLAYER_BODY_LAST:
+                        continue
+                    col = boot if py >= foot[1] - 1 else pants
+                    out.set(px, py, c(col))
+                    mask.add((px, py))
+        # 발끝: 보는 쪽으로 한 칸
+        out.set(foot[0] + 2, foot[1], c(boot))
+        mask.add((foot[0] + 2, foot[1]))
+
+    far_mask_start = len(mask)
+    draw_leg(PLAYER_HIP_FAR, far_knee, far_foot, "navy", "brown_dark")
+    far_pixels = set(mask)
+    draw_leg(PLAYER_HIP_NEAR, near_knee, near_foot, "blue", "brown")
+    near_pixels = mask - far_pixels
+    # 앞다리와 뒷다리가 맞닿는 곳에는 테두리 한 줄 (두 다리가 갈라져 보이게)
+    for (x, y) in near_pixels:
+        for dx in (-1, 1):
+            if (x + dx, y) in far_pixels and (x + dx, y) not in near_pixels:
+                out.set(x + dx, y, c("outline"))
+    # 바깥 테두리: 빈 칸 중 다리에 닿은 곳. 단, 두 다리 사이 1칸 틈은 비워 둔다
+    for (x, y) in list(mask):
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if (nx, ny) in mask or ny <= PLAYER_BODY_LAST or not (0 <= ny < PLAYER_H) or not (0 <= nx < 16):
+                continue
+            if out.px[ny][nx] is not None:
+                continue
+            between = ((nx - 1, ny) in near_pixels and (nx + 1, ny) in far_pixels) or \
+                      ((nx + 1, ny) in near_pixels and (nx - 1, ny) in far_pixels)
+            if not between:
+                out.set(nx, ny, c("outline"))
     return out
 
 
@@ -416,7 +467,9 @@ def build_player() -> None:
         return legs(hem(body, h), leg)
 
     idle = [pose(base, 0, "stand"), pose(base, 1, "stand"), pose(bob, 1, "stand"), pose(bob, 0, "stand")]
-    move = [pose(base, 2, "step_a"), pose(bob, 0, "step_b"), pose(base, 1, "spread"), pose(bob, 0, "step_b")]
+    # 걷기 6프레임: 발을 디딘 직후(내려앉음)에만 상체가 1px 내려간다
+    move = [pose(base, 0, "walk_contact"), pose(bob, 0, "walk_down"), pose(base, 0, "walk_pass"),
+            pose(base, 0, "walk_contact2"), pose(bob, 0, "walk_down2"), pose(base, 0, "walk_pass2")]
 
     # 사격: 총구 불꽃 → 반동
     flash = pose(base, 0, "stand")
@@ -452,7 +505,8 @@ def build_player() -> None:
     dodge = [squash, ball, squash]
 
     outline = {c("outline")}
-    hurt = [base.recolor(outline, c("white")), base.recolor(outline, c("red"))]
+    standing = pose(base, 0, "stand")
+    hurt = [standing.recolor(outline, c("white")), standing.recolor(outline, c("red"))]
 
     # 쓰러짐: 무릎 꿇기 → 옆으로 쓰러져 누움 (따로 그린 프레임)
     lying = Canvas.from_rows(PLAYER_LYING, PLAYER_CMAP)
@@ -461,7 +515,7 @@ def build_player() -> None:
 
     save_sheet("player", 16, PLAYER_H, [
         ("idle", idle, 4.0, True),
-        ("move", move, 8.0, True),
+        ("move", move, 10.0, True),
         ("shoot", shoot, 12.0, False),
         ("melee", melee, 15.0, False),
         ("dodge", dodge, 15.0, False),
