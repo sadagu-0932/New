@@ -204,6 +204,7 @@ PLAYER_CMAP: dict[str, str | None] = {
     "k": "brown_dark",   # 장화
 }
 # 밝은 흰 후드 + 등 뒤로 늘어진 긴 망토 (오른쪽을 봄). 앞은 열려 있어 튜닉·허리띠·다리가 보인다.
+# 망토 천이 목을 한 번 감싸 목도리처럼 보이고, 끝자락이 가슴 앞으로 늘어진다.
 # 후드 아래로 앞머리와 얼굴이 보이고, 망토 밑단은 찢어져 너덜너덜하다.
 PLAYER_BASE = [
     "....oo..........",
@@ -214,10 +215,10 @@ PLAYER_BASE = [
     "..oWPPPlnttto...",
     "..oWPPlntssso...",
     "..oWPPlnsseso...",
-    ".oWPPPloosso....",
-    ".oWPPloybcoooo..",
-    "oWPPPocccchhggo.",
-    "oWPPlocccCoGGo..",
+    ".oWPPPWPPPPo....",
+    ".oWPPlWllPloooo.",
+    "oWPPPocWPchhggo.",
+    "oWPPlocllCoGGo..",
     "oWPlPoTTTTo.....",
     "oPPlPocCcCo.....",
     "oPoPloNo.No.....",
