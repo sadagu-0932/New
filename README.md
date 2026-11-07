@@ -13,6 +13,15 @@
    처음 열 때 이미지 가져오기(import)가 자동으로 진행된다.
 4. **F5**(프로젝트 실행)로 실행.
 
+## 웹 버전 (Godot 없이 브라우저에서)
+
+```
+godot --headless --path . --export-release "Web" export/web/index.html
+cd export/web && python3 -m http.server 8060
+```
+브라우저에서 `http://localhost:8060` 을 연다. (파일을 더블클릭해서는 안 열림 — 꼭 웹 서버로)
+내보내기 템플릿(Web)이 필요하다: Godot 편집기 → 편집기 → 내보내기 템플릿 관리.
+
 ## 조작
 
 | 입력 | 동작 |

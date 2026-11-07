@@ -12,7 +12,7 @@ hint_hide_on = "dodge"
 hint_hide_delay_ticks = 90
 drain_ammo = false
 gate_rule = 0
-sign_text = "Tab: 스킬 설정\n출발 전에만 · R 재시작하면 다시"
+sign_text = "Tab: 스킬 설정\n출발 전에만 가능"
 story_id = "tutorial_section_1"
 
 [sub_resource type="Resource" id="section_2"]

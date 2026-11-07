@@ -7,6 +7,8 @@ extends Node2D
 ## 글상자 최대 너비 (px, 화면 표시)
 const BOX_WIDTH := 120
 const BOX_PADDING := 3
+## 화면 위쪽 HUD(체력·타이머) 줄과 겹치지 않게 비워 둘 높이 (px)
+const HUD_TOP_MARGIN := 16.0
 
 var text: String = ""
 ## 이 거리 안이면 글상자 표시 (px, TutorialData.sign_radius)
@@ -56,8 +58,8 @@ func _physics_process(_delta: float) -> void:
 		_label.text = text
 		_box.visible = show
 		_box.reset_size()
-		# 표지판 위 가운데. 위가 맵(화면) 밖으로 나가면 표지판 아래로
+		# 표지판 위 가운데. 위가 화면 위쪽(HUD 줄)에 걸리면 표지판 아래로
 		var above := -10.0 - _box.size.y
-		if global_position.y + above < 0.0:
+		if global_position.y + above < HUD_TOP_MARGIN:
 			above = 10.0
 		_box.position = Vector2(-_box.size.x * 0.5, above)

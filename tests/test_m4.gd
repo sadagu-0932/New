@@ -218,7 +218,7 @@ func test_first_sign_fits_screen() -> void:
 	check(sign != null and sign.is_showing(), "출발 지점 표지판 글 보임")
 	if sign:
 		var top := sign.global_position.y + sign._box.position.y
-		check(top >= 0.0, "글상자 위쪽이 화면 안 (y=%.1f)" % top)
+		check(top >= Signpost.HUD_TOP_MARGIN, "글상자가 화면 안, HUD 줄 아래 (y=%.1f)" % top)
 		check(sign._box.size.x <= 130.0, "글상자 너비 적당 (%.0f)" % sign._box.size.x)
 
 
