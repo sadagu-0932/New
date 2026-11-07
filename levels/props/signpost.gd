@@ -5,7 +5,7 @@ extends Node2D
 ## 주의: 숨은 테크를 쓰지 않는다.
 
 ## 글상자 최대 너비 (px, 화면 표시)
-const BOX_WIDTH := 150
+const BOX_WIDTH := 120
 const BOX_PADDING := 3
 
 var text: String = ""
@@ -56,5 +56,8 @@ func _physics_process(_delta: float) -> void:
 		_label.text = text
 		_box.visible = show
 		_box.reset_size()
-		# 표지판 위 가운데
-		_box.position = Vector2(-_box.size.x * 0.5, -10.0 - _box.size.y)
+		# 표지판 위 가운데. 위가 맵(화면) 밖으로 나가면 표지판 아래로
+		var above := -10.0 - _box.size.y
+		if global_position.y + above < 0.0:
+			above = 10.0
+		_box.position = Vector2(-_box.size.x * 0.5, above)

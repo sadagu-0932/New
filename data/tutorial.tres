@@ -12,7 +12,7 @@ hint_hide_on = "dodge"
 hint_hide_delay_ticks = 90
 drain_ammo = false
 gate_rule = 0
-sign_text = "Tab 스킬 설정\n출발(첫 조작) 전에만 바꿀 수 있다\n쓰러지거나 R 재시작하면 다시 고를 수 있다"
+sign_text = "Tab: 스킬 설정\n출발 전에만 · R 재시작하면 다시"
 story_id = "tutorial_section_1"
 
 [sub_resource type="Resource" id="section_2"]
@@ -41,9 +41,9 @@ story_id = "tutorial_section_3"
 script = ExtResource("2")
 title = "패링"
 map_file = "res://levels/tutorial/sections/section_4.txt"
-hint = "날아오는 탄에 맞춰 우클릭 → 조준한 쪽으로 튕겨낸다 · 수정을 맞혀라"
-hint_hide_on = "parry"
-hint_hide_delay_ticks = 180
+hint = "탄이 닿을 때 우클릭 → 수정 쪽을 조준해 튕겨내면 문이 열린다"
+hint_hide_on = "switch"
+hint_hide_delay_ticks = 60
 drain_ammo = false
 gate_rule = 2
 story_id = "tutorial_section_4"

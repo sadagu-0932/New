@@ -28,6 +28,8 @@ func run_all() -> void:
 	await test_gate_clear()
 	await test_gate_blocks_until_open()
 	await test_gate_switch()
+	await test_parry_section_never_stuck()
+	await test_first_sign_fits_screen()
 	await test_pit_blocks_player_not_bullets()
 	await test_spikes()
 	await test_boulders()
@@ -175,6 +177,49 @@ func test_gate_switch() -> void:
 	s.hurtbox.receive_hit(HitInfo.make(2, HitInfo.Kind.REFLECT, Team.PLAYER, Vector2.UP, null))
 	await step(1)
 	check(s.is_on and (_gates(4)[0] as Gate).is_open, "반사탄에 맞으면 켜지고 문 열림 (원거리형이 살아 있어도)")
+
+
+## 원거리형을 다 잡아도 탄 발사대가 계속 쏴서 수정을 켤 수 있다. 안내는 수정이 켜질 때까지 유지
+func test_parry_section_never_stuck() -> void:
+	var p := await _start()
+	Debug.god_mode = true
+	p.teleport(_section_start(4) + Vector2(4, 0))
+	await step(2)
+	check(_last_hint == _data(4).hint, "4구간 안내 표시")
+	for e: Variant in level.director.contents(4)["enemies"]:
+		(e as Enemy).hurtbox.receive_hit(HitInfo.make(99, HitInfo.Kind.BULLET, Team.PLAYER, Vector2.RIGHT, null))
+	var sw := level.director.contents(4)["switches"][0] as CrystalSwitch
+	p.teleport(sw.global_position + Vector2(48, 72))
+	var shots := 0
+	for i in 200:
+		await step(1)
+		for n in level.projectiles.get_children():
+			if n is Projectile and (n as Projectile).team == Team.ENEMY and not n.has_meta(&"seen"):
+				n.set_meta(&"seen", true)
+				shots += 1
+	check(shots >= 2, "원거리형을 다 잡아도 탄이 계속 날아옴 (발사대 %d발)" % shots)
+	Events.parried.emit(false)
+	await step(_data(4).hint_hide_delay_ticks + 5)
+	check(_last_hint == _data(4).hint, "패링만 해서는 안내가 안 사라짐 (수정을 켜야 함)")
+	sw.hurtbox.receive_hit(HitInfo.make(2, HitInfo.Kind.REFLECT, Team.PLAYER, Vector2.UP, null))
+	await step(_data(4).hint_hide_delay_ticks + 2)
+	check(_last_hint == "" and (_gates(4)[0] as Gate).is_open, "수정을 켜면 문이 열리고 안내가 사라짐")
+	Debug.god_mode = false
+
+
+## 첫 표지판 글상자가 화면(맵) 위로 잘리지 않는다
+func test_first_sign_fits_screen() -> void:
+	await _start()
+	await step(3)
+	var sign: Signpost = null
+	for n in level.find_children("*", "Signpost", true, false):
+		sign = n
+		break
+	check(sign != null and sign.is_showing(), "출발 지점 표지판 글 보임")
+	if sign:
+		var top := sign.global_position.y + sign._box.position.y
+		check(top >= 0.0, "글상자 위쪽이 화면 안 (y=%.1f)" % top)
+		check(sign._box.size.x <= 130.0, "글상자 너비 적당 (%.0f)" % sign._box.size.x)
 
 
 func test_pit_blocks_player_not_bullets() -> void:

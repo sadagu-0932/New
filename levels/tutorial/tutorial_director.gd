@@ -148,6 +148,8 @@ static func _signal_for(action: String) -> Signal:
 			return Events.perfect_dodge
 		"skill":
 			return Events.skill_used
+		"switch":
+			return Events.switch_activated
 	return Signal()
 
 

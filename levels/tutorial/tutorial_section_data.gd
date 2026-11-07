@@ -15,7 +15,7 @@ enum GateRule {
 @export_file("*.txt") var map_file: String = ""
 ## 화면 하단 안내 문구 (빈 문자열 = 없음)
 @export_multiline var hint: String = ""
-## 이 행동을 하면 안내 문구가 사라진다 ("", dodge, shoot, melee, parry, perfect_dodge, skill)
+## 이 행동을 하면 안내 문구가 사라진다 ("", dodge, shoot, melee, parry, perfect_dodge, skill, switch)
 @export var hint_hide_on: String = ""
 ## 행동 후 문구가 사라질 때까지 틱
 @export var hint_hide_delay_ticks: int = 0

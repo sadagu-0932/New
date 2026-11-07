@@ -1,7 +1,6 @@
 class_name TestTurretData
 extends Resource
-## 테스트 방 전용 포탑 수치 (패링·완벽 회피 연습용). 실제 값은 res://data/props/test_turret.tres
-## M3 의 원거리형 적이 생기면 튜토리얼에는 쓰지 않는다.
+## 탄 발사대 수치 (패링 연습용, 테스트 방·튜토리얼 4구간). 실제 값은 res://data/props/test_turret.tres
 
 ## 발사 간격 (틱)
 @export var fire_interval_ticks: int = 0

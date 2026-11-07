@@ -30,6 +30,17 @@ func _ready() -> void:
 	add_child(DebugShapes.new())
 
 
+## 꺼져 있으면 은은하게 깜빡여 "이걸 맞히는 것"이 보이게 (화면 표시 전용)
+func _physics_process(_delta: float) -> void:
+	if is_on:
+		_sprite.modulate = Color.WHITE
+		return
+	var data := DB.crystal_switch
+	var t := float(Game.tick % maxi(data.pulse_period_ticks, 1)) / float(maxi(data.pulse_period_ticks, 1))
+	var glow := 1.0 + data.pulse_strength * (0.5 - 0.5 * cos(TAU * t))
+	_sprite.modulate = Color(glow, glow, glow)
+
+
 func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
 	if hit.kind == HitInfo.Kind.REFLECT and not is_on:
 		is_on = true

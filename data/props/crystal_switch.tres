@@ -7,3 +7,5 @@ script = ExtResource("1")
 body_radius = 5.0
 body_offset_y = 3.0
 hurtbox_radius = 7.0
+pulse_period_ticks = 60
+pulse_strength = 0.8
