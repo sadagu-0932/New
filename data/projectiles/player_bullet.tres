@@ -6,6 +6,6 @@
 script = ExtResource("1")
 speed = 240.0
 damage = 1
-radius = 2.0
+radius = 3.0
 lifetime_ticks = 60
 anim = &"player"

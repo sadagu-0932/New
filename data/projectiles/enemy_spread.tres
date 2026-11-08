@@ -6,6 +6,6 @@
 script = ExtResource("1")
 speed = 80.0
 damage = 1
-radius = 3.0
+radius = 4.0
 lifetime_ticks = 300
 anim = &"shard"
