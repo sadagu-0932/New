@@ -13,6 +13,16 @@
    처음 열 때 이미지 가져오기(import)가 자동으로 진행된다.
 4. **F5**(프로젝트 실행)로 실행.
 
+## 리눅스 버전
+
+리눅스 내보내기 템플릿(`linux_release.x86_64`)이 깔려 있어야 한다.
+
+```
+godot --headless --export-release "Linux" export/linux/TutorialDemo.x86_64
+```
+
+실행: `./TutorialDemo.x86_64` (실행 권한이 없으면 `chmod +x TutorialDemo.x86_64`)
+
 ## 웹 버전 (Godot 없이 브라우저에서)
 
 ```
