@@ -5,8 +5,14 @@ extends CanvasLayer
 var _root: Control
 
 
+## 열려 있는지 (Crosshair 가 포인터로 바꿀 때 사용)
+func is_showing() -> bool:
+	return _root != null and _root.visible
+
+
 func _ready() -> void:
 	layer = 95
+	add_to_group(Crosshair.POINTER_GROUP)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_root = Control.new()
 	_root.set_anchors_preset(Control.PRESET_FULL_RECT)

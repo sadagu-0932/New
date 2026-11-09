@@ -2041,9 +2041,27 @@ CROSSHAIR = [
 ]
 
 
+# 메뉴용 화살표 포인터 (타이틀·스킬 설정·일시정지·기록 화면). 끝점(핫스폿)은 왼쪽 위 (0, 0)
+POINTER = [
+    "o.......",
+    "oo......",
+    "owo.....",
+    "owwo....",
+    "owwwo...",
+    "owwwwo..",
+    "owwwppo.",
+    "owwpoooo",
+    "owpo....",
+    "opo.....",
+    "oo......",
+]
+
+
 def build_ui() -> None:
     cross = Canvas.from_rows(CROSSHAIR, {".": None, "o": "outline", "w": "white"})
     cross.to_image().save(OUT / "crosshair.png", optimize=False)
+    pointer = Canvas.from_rows(POINTER, {".": None, "o": "outline", "w": "white", "p": "pale"})
+    pointer.to_image().save(OUT / "pointer.png", optimize=False)
 
 
 # ---------------------------------------------------------------------------

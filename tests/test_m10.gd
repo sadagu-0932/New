@@ -11,6 +11,7 @@ func run_all() -> void:
 	await test_screen_fx()
 	await test_afterimage()
 	test_title_ignores_fullscreen_key()
+	await test_menu_pointer()
 	test_export_preset()
 	await test_tall_player_feet()
 	await test_cloak_follows_motion()
@@ -84,6 +85,35 @@ func test_title_ignores_fullscreen_key() -> void:
 	title._input(any)
 	check(started[0], "다른 키를 떼면 시작")
 	title.queue_free()
+
+
+
+## 메뉴 화면이 열려 있으면 화살표 포인터, 닫히면 조준점
+func test_menu_pointer() -> void:
+	# 앞 테스트에서 지운 메뉴 화면이 완전히 사라질 때까지
+	await get_tree().process_frame
+	var title := TitleScreen.new()
+	add_child(title)
+	var cross := Crosshair.new()
+	add_child(cross)
+	cross._process(0.0)
+	check(cross.layer > title.layer, "커서가 메뉴 화면보다 위에 그려짐")
+	check(cross._pointer.visible and not cross._cross.visible, "타이틀에서는 화살표 포인터")
+	check(not cross._pointer.centered, "포인터 끝(왼쪽 위)이 마우스 위치")
+	title.set_visible_screen(false)
+	cross._process(0.0)
+	check(cross._cross.visible and not cross._pointer.visible, "메뉴가 닫히면 조준점")
+	var panel := SkillPanel.new(null)
+	add_child(panel)
+	cross._process(0.0)
+	check(cross._cross.visible, "닫힌 스킬 설정 창은 영향 없음")
+	panel._root.visible = true
+	cross._process(0.0)
+	check(cross._pointer.visible, "스킬 설정 창에서는 화살표 포인터")
+	panel.queue_free()
+	title.queue_free()
+	cross.queue_free()
+	await get_tree().process_frame
 
 
 func test_export_preset() -> void:

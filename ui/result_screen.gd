@@ -39,6 +39,7 @@ func _init(run_controller: RunController) -> void:
 
 func _ready() -> void:
 	layer = 98
+	add_to_group(Crosshair.POINTER_GROUP)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_root = Control.new()
 	_root.set_anchors_preset(Control.PRESET_FULL_RECT)

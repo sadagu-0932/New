@@ -15,6 +15,7 @@ var _blink: float = 0.0
 
 func _ready() -> void:
 	layer = 99
+	add_to_group(Crosshair.POINTER_GROUP)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_root = Control.new()
 	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
