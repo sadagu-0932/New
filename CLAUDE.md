@@ -201,6 +201,7 @@ tools/             sprite_gen.py 등 빌드 도구
 - 코드 주석은 한국어
 - README.md에 실행 방법, 조작법, exe 빌드 방법 정리
 - 수치를 바꿀 때 `data/` 파일만 고치면 되도록 유지
+- 수정을 main 에 올린 뒤에는 `tools/deploy_web.sh` 로 웹 버전(https://sadagu-0932.github.io/New/)에도 바로 반영. 플레이 테스트는 사용자가 웹에서 직접 한다
 
 ## 미정 사항
 
