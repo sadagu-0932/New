@@ -27,6 +27,11 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	# 터치 조작(안드로이드)에서는 커서를 그리지 않는다
+	if TouchControls.instance != null:
+		_pointer.visible = false
+		_cross.visible = false
+		return
 	var pos := get_viewport().get_mouse_position().round()
 	var menu := is_menu_open()
 	_pointer.visible = menu

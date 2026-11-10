@@ -23,6 +23,9 @@ func _ready() -> void:
 	add_child(BossBar.new())
 	add_child(DialoguePlayer.new())
 	add_child(Crosshair.new())
+	# 안드로이드(기능 태그 touch_controls)에서만 화면 조이스틱·버튼
+	if TouchControls.is_enabled():
+		add_child(TouchControls.new())
 	add_child(PauseOverlay.new())
 	add_child(ScreenFx.new())
 	skill_panel = SkillPanel.new(null)

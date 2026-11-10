@@ -1,6 +1,6 @@
 class_name RunTimer
 extends CanvasLayer
-## 화면 오른쪽 위 타이머 (게임 틱 기준, 밀리초까지 크게).
+## 화면 오른쪽 위 타이머 (게임 틱 기준, 밀리초까지 크게). data/game_config 의 show_timer_in_game 이 꺼져 있으면 숨긴다.
 ## 구간에 들어가면 그 아래에 스플릿 + 1위 기록 대비 차이 (빠르면 초록, 느리면 빨강)를 잠깐 띄운다.
 
 ## 스플릿 표시 시간 (초, 화면 표시)
@@ -17,6 +17,8 @@ var _best_splits: Array = []
 
 func _ready() -> void:
 	layer = 81
+	# 게임 중 타이머를 숨기는 설정이면 통째로 안 보이게 (시간 재기는 Game 이 따로 한다)
+	visible = Game.config.show_timer_in_game
 	_time = UiText.make_label("0:00.000", UiText.SIZE_LARGE)
 	_time.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_time.position = Vector2(220, -2)

@@ -2062,6 +2062,52 @@ def build_ui() -> None:
     cross.to_image().save(OUT / "crosshair.png", optimize=False)
     pointer = Canvas.from_rows(POINTER, {".": None, "o": "outline", "w": "white", "p": "pale"})
     pointer.to_image().save(OUT / "pointer.png", optimize=False)
+    build_touch_ui()
+
+
+def _ring_canvas(size: int, rings: list[tuple[float, float, str]]) -> Canvas:
+    """원 여러 겹 (안쪽 반지름, 바깥 반지름, 색). 뒤에 오는 것이 위에 칠해진다."""
+    cv = Canvas(size, size)
+    ctr = (size - 1) / 2
+    for inner, outer, color in rings:
+        for y in range(size):
+            for x in range(size):
+                d = math.hypot(x - ctr, y - ctr)
+                if inner <= d < outer:
+                    cv.set(x, y, c(color))
+    return cv
+
+
+def build_touch_ui() -> None:
+    """안드로이드 터치 조작 (조이스틱 받침·손잡이, 둥근 버튼). 반투명은 게임에서 modulate 로 준다."""
+    # 조이스틱 받침 40x40: 테두리 고리 + 어두운 속
+    base = _ring_canvas(40, [(0, 20, "outline"), (0, 19, "shadow"), (16, 18, "stone_light"), (8, 9, "stone")])
+    base.to_image().save(OUT / "touch_stick_base.png", optimize=False)
+    # 조이스틱 손잡이 16x16: 밝은 원 + 위쪽 하이라이트
+    knob = _ring_canvas(16, [(0, 8, "outline"), (0, 7, "pale"), (0, 5, "white")])
+    for x, y in [(5, 4), (6, 4), (4, 5)]:
+        knob.set(x, y, c("cyan"))
+    knob.to_image().save(OUT / "touch_stick_knob.png", optimize=False)
+    # 둥근 버튼 26x26 (글자는 게임에서 얹는다): 테두리 + 속 + 아래쪽 그늘
+    btn = _ring_canvas(26, [(0, 13, "outline"), (0, 12, "stone_light"), (0, 11, "stone")])
+    for y in range(26):
+        for x in range(26):
+            d = math.hypot(x - 12.5, y - 12.5)
+            if 9 <= d < 11 and y > 14:
+                btn.set(x, y, c("stone_dark"))
+    btn.to_image().save(OUT / "touch_button.png", optimize=False)
+    # 작은 네모 버튼 30x14 (위쪽 일시정지·스킬 설정 등)
+    small = Canvas(30, 14)
+    for y in range(14):
+        for x in range(30):
+            edge = x in (0, 29) or y in (0, 13)
+            corner = (x in (0, 29)) and (y in (0, 13))
+            if corner:
+                continue
+            small.set(x, y, c("outline") if edge else c("stone"))
+    for x in range(1, 29):
+        small.set(x, 12, c("stone_dark"))
+    small.to_image().save(OUT / "touch_button_small.png", optimize=False)
 
 
 # ---------------------------------------------------------------------------

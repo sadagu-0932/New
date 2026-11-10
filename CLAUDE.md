@@ -17,7 +17,7 @@
 - 타일 16×16 px
 - 게임 로직은 고정 60틱 `_physics_process`에서만 처리 (기록 공정성·리플레이용)
 - 입력: 키보드+마우스 기본. Input Map으로만 처리해서 나중에 게임패드·키 변경 추가가 쉽게
-- 배포: Windows exe 내보내기
+- 배포: Windows exe·리눅스·웹(GitHub Pages)·안드로이드 APK. 앱 이름은 demo
 
 ## 조작
 
@@ -201,7 +201,9 @@ tools/             sprite_gen.py 등 빌드 도구
 - 코드 주석은 한국어
 - README.md에 실행 방법, 조작법, exe 빌드 방법 정리
 - 수치를 바꿀 때 `data/` 파일만 고치면 되도록 유지
-- 수정을 main 에 올린 뒤에는 `tools/deploy_web.sh` 로 웹 버전(https://sadagu-0932.github.io/New/)에도 바로 반영. 플레이 테스트는 사용자가 웹에서 직접 한다
+- 수정은 항상 커밋해서 main 에 올린다 (git 에 사용자의 수정 사항이 늘 반영되게)
+- main 에 올린 뒤에는 `tools/deploy_web.sh` 로 웹 버전(https://sadagu-0932.github.io/New/)에도 바로 반영. 실행 파일은 `tools/deploy_downloads.sh` (README 다운로드 링크). 플레이 테스트는 사용자가 직접 한다
+- 안드로이드 APK 에만 터치 조작(기능 태그 `touch_controls`). PC·웹 버전에는 나오지 않게
 
 ## 미정 사항
 

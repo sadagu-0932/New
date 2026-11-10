@@ -6,7 +6,7 @@ config_version=5
 
 [application]
 
-config/name="Tutorial Demo (가제)"
+config/name="demo"
 config/description="2D 픽셀 탑다운 액션 슈팅 데모 - 튜토리얼 스피드런"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
@@ -181,5 +181,6 @@ common/physics_interpolation=true
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
+textures/vram_compression/import_etc2_astc=true
 2d/snap/snap_2d_transforms_to_pixel=true
 2d/snap/snap_2d_vertices_to_pixel=true

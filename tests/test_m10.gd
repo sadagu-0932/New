@@ -12,6 +12,7 @@ func run_all() -> void:
 	await test_afterimage()
 	test_title_ignores_fullscreen_key()
 	await test_menu_pointer()
+	await test_touch_controls()
 	test_export_preset()
 	await test_tall_player_feet()
 	await test_cloak_follows_motion()
@@ -113,6 +114,39 @@ func test_menu_pointer() -> void:
 	panel.queue_free()
 	title.queue_free()
 	cross.queue_free()
+	await get_tree().process_frame
+
+
+
+## 안드로이드 터치 조작: 기본(PC·웹)에서는 꺼져 있고, 조이스틱·버튼이 같은 액션을 누른다
+func test_touch_controls() -> void:
+	check(not TouchControls.is_enabled(), "PC·웹에서는 터치 조작 꺼짐")
+	var cfg := ConfigFile.new()
+	cfg.load("res://export_presets.cfg")
+	var android := ""
+	for sec in cfg.get_sections():
+		if cfg.get_value(sec, "platform", "") == "Android":
+			android = sec
+	check(android != "" and String(cfg.get_value(android, "custom_features", "")).contains(TouchControls.FEATURE), "APK 에만 터치 조작 태그")
+	var tc := TouchControls.new()
+	add_child(tc)
+	await get_tree().process_frame
+	tc._process(0.0)
+	var d := DB.touch
+	check(tc._on_press(0, d.move_stick_center + Vector2(d.stick_radius, 0)), "이동 조이스틱 잡힘")
+	check(Input.get_action_strength(&"move_right") > 0.9, "오른쪽으로 밀면 오른쪽 이동")
+	check(tc._on_press(1, d.aim_stick_center + Vector2(0, -d.stick_radius)), "조준 조이스틱 잡힘")
+	check(tc.aim_dir.is_equal_approx(Vector2.UP), "조준 방향 = 민 방향")
+	Input.flush_buffered_events()
+	check(Input.is_action_pressed(&"shoot"), "끝까지 밀면 사격")
+	check(tc._on_press(2, d.action_button_positions[0]), "근접 버튼 눌림")
+	Input.flush_buffered_events()
+	check(Input.is_action_pressed(&"melee"), "근접 버튼 → 근접 액션")
+	tc._release_all()
+	Input.flush_buffered_events()
+	check(not Input.is_action_pressed(&"shoot") and not Input.is_action_pressed(&"melee") \
+		and Input.get_action_strength(&"move_right") == 0.0, "손을 떼면 모두 풀림")
+	tc.queue_free()
 	await get_tree().process_frame
 
 

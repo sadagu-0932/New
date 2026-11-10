@@ -27,3 +27,5 @@ extends Resource
 @export var restart_hold_ticks: int = 0
 ## 사망 후 자동 재시작까지 틱 (사망 모션을 잠깐 보여줌)
 @export var death_restart_delay_ticks: int = 0
+## 게임 중 화면에 타이머·스플릿을 보여줄지 (꺼도 시간은 계속 재고 기록 화면에는 나온다)
+@export var show_timer_in_game: bool = false

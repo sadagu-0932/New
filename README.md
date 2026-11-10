@@ -1,9 +1,19 @@
-# Tutorial Demo (가제)
+# demo
 
 2D 픽셀아트 탑다운 액션 슈팅 데모. 동아리 부스 시연·스피드런용 튜토리얼 구간.
 전체 설계는 [CLAUDE.md](CLAUDE.md) 참고.
 
 > 진행: **M1~M10 완료** — PC 플레이 테스트·밸런스 조정 단계
+
+## 다운로드 (클릭하면 바로 받아짐)
+
+| 버전 | 파일 |
+|---|---|
+| 🌐 웹 (설치 없이 바로 플레이) | **[브라우저에서 열기](https://sadagu-0932.github.io/New/)** |
+| 🪟 Windows | **[demo-windows.zip](https://github.com/sadagu-0932/New/raw/download/demo-windows.zip)** → 압축 풀고 `demo.exe` 실행 |
+| 🐧 Linux (x86_64) | **[demo-linux.tar.gz](https://github.com/sadagu-0932/New/raw/download/demo-linux.tar.gz)** → 압축 풀고 `demo.x86_64` 실행 |
+
+파일 갱신: `tools/deploy_downloads.sh` (실행 파일), `tools/deploy_web.sh` (웹)
 
 ## 실행 방법
 
@@ -18,10 +28,10 @@
 리눅스 내보내기 템플릿(`linux_release.x86_64`)이 깔려 있어야 한다.
 
 ```
-godot --headless --export-release "Linux" export/linux/TutorialDemo.x86_64
+godot --headless --export-release "Linux" export/linux/demo.x86_64
 ```
 
-실행: `./TutorialDemo.x86_64` (실행 권한이 없으면 `chmod +x TutorialDemo.x86_64`)
+실행: `./demo.x86_64` (실행 권한이 없으면 `chmod +x demo.x86_64`)
 
 ## 웹 버전 (Godot 없이 브라우저에서)
 
@@ -194,13 +204,13 @@ godot --headless --path . --fixed-fps 60 res://tests/test_runner.tscn
 1. Godot 에디터 → **에디터 → 내보내기 템플릿 관리** → **다운로드 및 설치** (처음 한 번, 4.7.x 버전용)
 2. **프로젝트 → 내보내기** → "Windows Desktop" 선택 → **프로젝트 내보내기**
    - **디버그와 함께 내보내기** 체크를 **끈다** (부스용: 디버그 키 F1~F4 가 꺼진다)
-   - 저장 위치 기본값: `export/TutorialDemo.exe`
+   - 저장 위치 기본값: `export/demo.exe`
 3. 만들어진 exe 하나만 부스 PC로 복사해 실행. 전체화면은 F11 (또는 `data/game_config.tres` 의 `start_fullscreen = true`)
 
 명령줄로는:
 
 ```
-godot --headless --path . --export-release "Windows Desktop" export/TutorialDemo.exe
+godot --headless --path . --export-release "Windows Desktop" export/demo.exe
 ```
 
 ※ exe 아이콘을 바꾸려면 Windows 에서 내보내거나 rcedit 설정이 필요하다 (Godot 문서 "Changing application icon for Windows").

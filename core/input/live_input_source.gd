@@ -25,8 +25,12 @@ func next_frame() -> InputFrame:
 	var move := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
 	# 127 단계 정수로 맞춘다 → 리플레이로 저장·복원해도 값이 정확히 같다
 	f.move = (move * MOVE_STEPS).round() / MOVE_STEPS
-	var mouse := _viewport.get_canvas_transform().affine_inverse() * _viewport.get_mouse_position()
-	f.aim = mouse.round()
+	if TouchControls.instance != null:
+		# 안드로이드: 조준 조이스틱 방향으로 플레이어 앞의 한 점
+		f.aim = TouchControls.instance.aim_world()
+	else:
+		var mouse := _viewport.get_canvas_transform().affine_inverse() * _viewport.get_mouse_position()
+		f.aim = mouse.round()
 	for button: int in BUTTON_ACTIONS:
 		var action: StringName = BUTTON_ACTIONS[button]
 		if Input.is_action_pressed(action):

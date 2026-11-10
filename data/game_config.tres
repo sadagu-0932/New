@@ -18,3 +18,4 @@ result_idle_seconds = 60.0
 start_fullscreen = false
 restart_hold_ticks = 30
 death_restart_delay_ticks = 40
+show_timer_in_game = false
