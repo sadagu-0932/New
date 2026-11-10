@@ -189,47 +189,58 @@ def write_json(path: Path, data: dict) -> None:
 PLAYER_CMAP: dict[str, str | None] = {
     ".": None,
     "o": "outline",
-    "W": "white",        # 망토 빛 받는 테두리
-    "P": "pale",         # 밝은 목도리
-    "l": "stone_light",  # 목도리 주름 그늘
+    "W": "white",        # 흰 동정(깃)
+    "P": "pale",         # 동정 그늘·허리 장식 고리
+    "l": "stone_light",
     "n": "stone",
-    "t": "brown",        # 머리카락
-    "d": "brown_dark",   # 머리카락 그늘
+    "t": "shadow",       # 검은 머리카락
+    "d": "stone_dark",   # 머리카락 윤기
     "s": "skin",
-    "e": "outline",      # 눈
-    "y": "yellow",       # 망토 고정 장식
-    "b": "sky",          # 옷깃
-    "c": "blue",         # 튜닉
-    "C": "navy",         # 튜닉 그늘
-    "T": "brown",        # 허리띠
-    "N": "navy",         # 바지 (먼 다리)
-    "L": "blue",         # 가까운 다리 바지
-    "K": "brown",        # 가까운 다리 장화
-    "h": "tan",          # 장갑
-    "g": "stone_light",  # 총
+    "e": "brown_dark",   # 눈 (짙은 갈색)
+    "y": "pale",         # 은 머리장식
+    "Y": "white",        # 머리장식 빛
+    "r": "crimson",      # 붉은 고름·리본·술
+    "R": "red",          # 고름 빛 받는 곳
+    "m": "tan",          # 소매·치맛단 자수
+    "c": "stone_dark",   # 검은 저고리
+    "C": "shadow",       # 저고리 그늘
+    "T": "shadow",       # 허리띠
+    "N": "shadow",       # 바지 (먼 다리)
+    "L": "stone_dark",   # 가까운 다리 바지
+    "K": "stone",        # 가까운 다리 부츠
+    "h": "skin",         # 손
+    "g": "stone_light",
     "G": "stone_dark",
-    "k": "brown_dark",   # 장화
+    "k": "stone_dark",   # 부츠
 }
-# 16x24 (키 1.5칸, 오른쪽을 봄). 후드 없이 갈색 머리 + 목에 감은 밝은 흰 목도리.
-# 목도리 꼬리 두 가닥은 별도 층(player_cloak)이 움직임에 따라 뒤로 휘날린다.
+# 플레이어 옷 색 (팔·다리를 코드로 그릴 때 쓰는 색)
+PLAYER_SLEEVE_NEAR = "stone_dark"   # 가까운 팔 소매
+PLAYER_SLEEVE_FAR = "shadow"        # 먼 팔 소매
+PLAYER_HAND = "skin"
+PLAYER_PANTS_NEAR = "stone_dark"
+PLAYER_PANTS_FAR = "shadow"
+PLAYER_BOOT_NEAR = "stone"
+PLAYER_BOOT_FAR = "stone_dark"
+# 레퍼런스 디자인: 검은 머리 + 은 머리장식·붉은 술, 검은 저고리에 흰 동정, 붉은 고름, 허리띠, 자수 놓인 치맛단, 부츠.
+# 16x24 (키 1.5칸, 오른쪽을 봄). 등 뒤로 휘날리는 붉은 리본 두 가닥은 별도 층(player_cloak).
 PLAYER_BASE = [
     "................",
-    ".....ooooo......",
-    "....ottttto.....",
-    "...otttttttoo...",
-    "..odttttttttto..",
-    "..oddttttsstto..",
-    "..oddthtssssso..",
-    "...odthsssseso..",
-    "...oddtssssso...",
-    "...oWPPPPPPlo...",
-    "...oWPlPPlPPo...",
-    "....occccco.....",
-    "....oCcccco.....",
-    "....oCcccCo.....",
-    "....oCcccCo.....",
-    "....oTTTTTo.....",
-    "....oCcccCo.....",
+    ".....oooo.o.....",
+    "....otttdoto....",
+    "...ottdttttto...",
+    "..oYttdtttttto..",
+    "..oytttttdstto..",
+    ".orotdttsstsso..",
+    ".orottdsssseso..",
+    "..o.odtsssssso..",
+    "....ocWWWsso....",
+    "....occWPWco....",
+    "....occcWPro....",
+    "....oCccRrro....",
+    "....oCcccrco....",
+    "....oCcccrco....",
+    "....oTTPTTTo....",
+    "....oCmcmcCo....",
     "....oNNNNNo.....",
     "................",
     "................",
@@ -345,7 +356,7 @@ def _back_arm(cv: Canvas, shoulder: tuple[int, int], hand: tuple[int, int]) -> N
     drawn = set()
     for (x, y) in sorted(cells | hand_cells):
         if 0 <= x < cv.w and 0 <= y < PLAYER_BODY_LAST and cv.px[y][x] is None:
-            cv.set(x, y, c("tan") if (x, y) in hand_cells else c("navy"))
+            cv.set(x, y, c(PLAYER_HAND) if (x, y) in hand_cells else c(PLAYER_SLEEVE_FAR))
             drawn.add((x, y))
     for (x, y) in list(drawn):
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
@@ -370,7 +381,7 @@ def _near_arm(cv: Canvas, shoulder: tuple[int, int], hand: tuple[int, int]) -> N
                 continue
             cv.set(nx, ny, c("outline"))
     for (x, y) in arm:
-        cv.set(x, y, c("tan") if (x, y) in hand_cells else c("blue"))
+        cv.set(x, y, c(PLAYER_HAND) if (x, y) in hand_cells else c(PLAYER_SLEEVE_NEAR))
 
 
 def with_near_arm(base: Canvas) -> Canvas:
@@ -394,7 +405,7 @@ def side_walk_frames(base: Canvas) -> list[Canvas]:
         if SIDE_WALK_BOB[i]:
             out = out.shift_rows(0, PLAYER_BODY_LAST - 1, SIDE_WALK_BOB[i])
         leg_cells = {}
-        for side, phase, pants, boot in (("far", (i + n // 2) % n, "navy", "brown_dark"), ("near", i, "blue", "brown")):
+        for side, phase, pants, boot in (("far", (i + n // 2) % n, PLAYER_PANTS_FAR, PLAYER_BOOT_FAR), ("near", i, PLAYER_PANTS_NEAR, PLAYER_BOOT_NEAR)):
             knee, ankle, foot = SIDE_WALK_LEGS[phase]
             hip = SIDE_HIP[side]
             if side == "far":
@@ -407,7 +418,7 @@ def side_walk_frames(base: Canvas) -> list[Canvas]:
             leg_cells[side] = cells
         # 엉덩이 줄
         for x in range(5, 10):
-            out.set(x, PLAYER_BODY_LAST, c("navy"))
+            out.set(x, PLAYER_BODY_LAST, c(PLAYER_PANTS_FAR))
         far, near = leg_cells["far"], leg_cells["near"]
         for (x, y), col in far.items():
             out.set(x, y, c(col))
@@ -472,9 +483,9 @@ def legs(cv: Canvas, key: str, hip_dx: int = 0, hip_dy: int = 0) -> Canvas:
     far_mask_start = len(mask)
     hip_far = (PLAYER_HIP_FAR[0] + hip_dx, PLAYER_HIP_FAR[1] + hip_dy)
     hip_near = (PLAYER_HIP_NEAR[0] + hip_dx, PLAYER_HIP_NEAR[1] + hip_dy)
-    draw_leg(hip_far, far_knee, far_foot, "navy", "brown_dark")
+    draw_leg(hip_far, far_knee, far_foot, PLAYER_PANTS_FAR, PLAYER_BOOT_FAR)
     far_pixels = set(mask)
-    draw_leg(hip_near, near_knee, near_foot, "blue", "brown")
+    draw_leg(hip_near, near_knee, near_foot, PLAYER_PANTS_NEAR, PLAYER_BOOT_NEAR)
     near_pixels = mask - far_pixels
     # 앞다리와 뒷다리가 맞닿는 곳에는 테두리 한 줄 (두 다리가 갈라져 보이게)
     for (x, y) in near_pixels:
@@ -525,7 +536,7 @@ SCARF_LEANS = {
 
 def scarf_tails(anchor: tuple[int, int], lean: str, flutter: int, back_dir: int = -1, spread: float = 18.0,
                 angle_scale: float = 1.0) -> Canvas:
-    """목도리 꼬리 두 가닥 (24x24). anchor 에서 back_dir(-1 왼쪽/ +1 오른쪽) 쪽으로 늘어지거나 휘날린다.
+    """붉은 리본 두 가닥 (24x24, 예전 목도리 꼬리 자리). anchor 에서 back_dir(-1 왼쪽/ +1 오른쪽) 쪽으로 늘어지거나 휘날린다.
     뒤 가닥은 조금 짧고 더 아래로, 어둡게. 끝은 올이 풀려 가늘어진다."""
     ang0, length, amp = SCARF_LEANS[lean]
     ang0 = 90 + (ang0 - 90) * angle_scale
@@ -553,9 +564,9 @@ def scarf_tails(anchor: tuple[int, int], lean: str, flutter: int, back_dir: int 
     for (x, y), k in shape.items():
         top_open = (x, y - 1) not in shape
         if k == 0:
-            t.set(x, y, c("stone_light") if not top_open else c("pale"))
+            t.set(x, y, c("crimson") if not top_open else c("red"))
         else:
-            t.set(x, y, c("white") if top_open else c("pale"))
+            t.set(x, y, c("red") if top_open else c("crimson"))
     for y in range(PLAYER_H):
         for x in range(CLOAK_W):
             if (x, y) in shape:
@@ -612,21 +623,21 @@ FB_CMAP.update({"E": "brown", "Q": "stone_dark"})
 PLAYER_FRONT = [
     "................",
     ".....oooooo.....",
-    "....otttttto....",
-    "...otttttttto...",
-    "..otttttttttto..",
-    "..odttsttsttdo..",
-    "..odssssssssdo..",
-    "..odsessssesdo..",
-    "...odssssssdo...",
-    "..oWPPPPPPPPlo..",
-    "..oWPlPPPlPPlo..",
-    ".occcccPlcccoco.",
-    ".occcccPlcccoco.",
-    ".ohooccccCccoho.",
-    ".oooTTTTyTTTooo.",
-    "...occccCccco...",
-    "..o.occcCccco...",
+    "....otttdtto....",
+    "...ottdttttto...",
+    "..oYtttttdttto..",
+    "..oytdttttttdo..",
+    "..ottssttsstto..",
+    ".rodsessssesdo..",
+    ".r.odssssssdo...",
+    "...ocWWsssWco...",
+    "..occcWWWWccco..",
+    ".occoocWWcocco..",
+    ".occoocRrRocco..",
+    ".ohooccCrcCcoho.",
+    ".oooTTTPTTTTooo.",
+    "...ocmcCcmcco...",
+    "...orcmCcmcro...",
     "....oNNNoNNNo...",
     "....oNNo.oNNo...",
     "....oNNo.oNNo...",
@@ -638,21 +649,21 @@ PLAYER_FRONT = [
 PLAYER_BACK = [
     "................",
     ".....oooooo.....",
-    "....otttttto....",
-    "...otttttttto...",
-    "..otttttttttto..",
-    "..odttttttttdo..",
-    "..odtttdtttddo..",
-    "..oddttttttddo..",
-    "...oddtttdddo...",
-    "..oWPPPPPPPPlo..",
-    ".ooWPPlPPlPPloo.",
+    "....ottdttto....",
+    "...otttttdtto...",
+    "..otttdtttttYo..",
+    "..odttttttttyo..",
+    "..otttdttdttoro.",
+    "..oddttttdtdoro.",
+    "...odttdtttdo.r.",
+    "..occcWWWWccco..",
+    ".ooccccccccccoo.",
     ".occcccccccccco.",
     ".ohoccccccccoho.",
     ".oooTTTTTTTTooo.",
-    "...occcccccco...",
-    "...occcccccco...",
-    "...occcccccco...",
+    "...ocmcccmcco...",
+    "...orccccccro...",
+    "...occmcmccco...",
     "....oNNNoNNNo...",
     "....oNNo.oNNo...",
     "....oNNo.oNNo...",
