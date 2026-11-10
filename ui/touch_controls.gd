@@ -15,7 +15,7 @@ extends CanvasLayer
 const FEATURE := "touch_controls"
 const MOVE_ACTIONS: Array[StringName] = [&"move_left", &"move_right", &"move_up", &"move_down"]
 const ACTION_BUTTONS: Array = [[&"shoot", "사격"], [&"melee", "근접"], [&"dodge", "회피"], [&"skill", "스킬1"], [&"interact", "사용"], [&"skill2", "스킬2"]]
-const TOP_BUTTONS: Array = [[&"pause", "멈춤"], [&"restart", "재시작"], [&"skill_menu", "스킬"]]
+const TOP_BUTTONS: Array = [[&"pause", "멈춤"], [&"restart", "재시작"], [&"skill_menu", "설정"]]
 const MENU_BUTTONS: Array = [[&"menu_confirm", "확인"], [&"pause", "뒤로"]]
 
 ## 지금 켜진 터치 조작 (없으면 null)

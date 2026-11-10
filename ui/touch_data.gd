@@ -35,3 +35,9 @@ extends Resource
 @export var pressed_alpha: float = 0.0
 ## 아직 잠긴 버튼(스킬2) 투명도
 @export var locked_alpha: float = 0.0
+
+@export_group("안내 글 바꾸기")
+## 안내 글에서 찾을 키보드·마우스 말 (긴 말부터)
+@export var text_from: PackedStringArray = []
+## 대신 넣을 터치 버튼 말 (text_from 과 같은 순서)
+@export var text_to: PackedStringArray = []

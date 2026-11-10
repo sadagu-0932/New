@@ -94,7 +94,7 @@ func _ready() -> void:
 	_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_root.add_child(_desc)
 
-	var help := UiText.make_label("A/D·1~5 고르기   Tab·Enter 확정   Esc 취소")
+	var help := UiText.make_label(UiText.for_device("A/D·1~5 고르기   Tab·Enter 확정   Esc 취소"))
 	help.position = Vector2(0, 162)
 	help.size = Vector2(320, 12)
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -103,7 +103,7 @@ func _ready() -> void:
 	_root.visible = false
 
 	# 화면 가운데 두 줄 (한 줄이면 화면 폭을 넘어 오른쪽이 잘린다)
-	_notice = UiText.make_label("출발한 뒤에는 스킬을 바꿀 수 없다\nR 길게 눌러 처음부터")
+	_notice = UiText.make_label(UiText.for_device("출발한 뒤에는 스킬을 바꿀 수 없다\nR 길게 눌러 처음부터"))
 	_notice.position = Vector2(0, 70)
 	_notice.size = Vector2(320, 26)
 	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

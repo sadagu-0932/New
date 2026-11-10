@@ -158,9 +158,9 @@ func _update_prompt() -> void:
 			var shown := ""
 			for i in INITIALS_LENGTH:
 				shown += ("[%s]" if i == cursor else " %s ") % initials[i]
-			_prompt.text = "이니셜 %s   Enter 등록" % shown
+			_prompt.text = UiText.for_device("이니셜 %s   Enter 등록" % shown)
 		Phase.DONE:
-			_prompt.text = ("순위 밖 · " if rank == 0 else "") + "Enter 다시 하기 · Esc 타이틀"
+			_prompt.text = UiText.for_device(("순위 밖 · " if rank == 0 else "") + "Enter 다시 하기 · Esc 타이틀")
 
 
 func _unhandled_input(event: InputEvent) -> void:

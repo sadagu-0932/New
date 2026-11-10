@@ -16,3 +16,14 @@ static func make_label(text: String = "", size: int = SIZE_SMALL) -> Label:
 	label.add_theme_constant_override(&"shadow_offset_y", 1)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
+
+
+## 터치 조작 기기(APK·폰 브라우저)면 안내 글의 키보드·마우스 말을 터치 버튼 이름으로 바꾼다.
+## 바꿀 말 목록은 data/touch.tres (text_from → text_to, 위에서부터 차례로)
+static func for_device(text: String) -> String:
+	if not TouchControls.is_enabled():
+		return text
+	var d := DB.touch
+	for i in mini(d.text_from.size(), d.text_to.size()):
+		text = text.replace(d.text_from[i], d.text_to[i])
+	return text

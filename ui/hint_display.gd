@@ -28,7 +28,7 @@ func _on_hint_changed(text: String) -> void:
 	if text.is_empty():
 		_target_alpha = 0.0
 	else:
-		_label.text = text
+		_label.text = UiText.for_device(text)
 		_target_alpha = 1.0
 
 

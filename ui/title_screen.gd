@@ -41,7 +41,7 @@ func _ready() -> void:
 	_board.size = Vector2(320, 48)
 	_board.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_root.add_child(_board)
-	_press = UiText.make_label("아무 키나 눌러 시작")
+	_press = UiText.make_label(UiText.for_device("아무 키나 눌러 시작"))
 	_press.position = Vector2(0, 140)
 	_press.size = Vector2(320, 12)
 	_press.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

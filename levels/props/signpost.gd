@@ -43,7 +43,7 @@ func _ready() -> void:
 func set_text(value: String) -> void:
 	text = value
 	if _label:
-		_label.text = value
+		_label.text = UiText.for_device(value)
 
 
 func is_showing() -> bool:
@@ -55,7 +55,7 @@ func _physics_process(_delta: float) -> void:
 	var show := player != null and not text.is_empty() \
 		and player.global_position.distance_to(global_position) <= radius
 	if show != _box.visible:
-		_label.text = text
+		_label.text = UiText.for_device(text)
 		_box.visible = show
 		_box.reset_size()
 		# 표지판 위 가운데. 위가 화면 위쪽(HUD 줄)에 걸리면 표지판 아래로

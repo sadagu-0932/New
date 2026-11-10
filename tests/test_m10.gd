@@ -154,6 +154,18 @@ func test_touch_controls() -> void:
 		and Input.get_action_strength(&"move_right") == 0.0, "손을 떼면 모두 풀림")
 	tc.queue_free()
 	await get_tree().process_frame
+	# 안내 글: PC 는 그대로, 터치 기기는 버튼 이름으로
+	var hint: String = DB.game_config.tutorial.pre_start_hint
+	check(UiText.for_device(hint) == hint, "PC 에서는 안내 글 그대로")
+	TouchControls.force_enabled = true
+	check(not UiText.for_device(hint).contains("Tab") and UiText.for_device(hint).contains("[설정]"), "터치 기기 안내 글은 버튼 이름으로 (%s)" % UiText.for_device(hint))
+	var left := false
+	for sd in DB.game_config.tutorial.sections:
+		for word in ["WASD", "Space", "클릭", "마우스", "Tab", "Q "]:
+			if UiText.for_device(sd.hint + sd.sign_text).contains(word):
+				left = true
+	check(not left, "구간 안내에 키보드·마우스 말이 남지 않음")
+	TouchControls.force_enabled = false
 
 
 func test_export_preset() -> void:

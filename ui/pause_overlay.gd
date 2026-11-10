@@ -23,7 +23,7 @@ func _ready() -> void:
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(dim)
-	var label := UiText.make_label("일시정지\n\nEsc 계속하기 · R 길게 눌러 처음부터")
+	var label := UiText.make_label(UiText.for_device("일시정지\n\nEsc 계속하기 · R 길게 눌러 처음부터"))
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.set_anchors_preset(Control.PRESET_FULL_RECT)
