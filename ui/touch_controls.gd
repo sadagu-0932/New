@@ -1,7 +1,7 @@
 class_name TouchControls
 extends CanvasLayer
-## 안드로이드 터치 조작 (APK 전용).
-## 내보내기 설정의 기능 태그 "touch_controls" 가 있을 때만 켜진다 → PC·웹 버전에는 나오지 않는다.
+## 터치 조작: 안드로이드 APK(기능 태그 "touch_controls"), 그리고 웹 버전을 폰·태블릿 브라우저로 열었을 때.
+## PC(Windows·리눅스)와 PC 브라우저의 웹 버전에는 나오지 않는다.
 ##
 ## - 왼쪽 조이스틱: 이동 (메뉴에서는 방향 선택)
 ## - 오른쪽 조이스틱: 조준만 (놓아도 마지막 방향 유지)
@@ -42,7 +42,13 @@ var _menu_dirs_sent: Dictionary = {}
 
 
 static func is_enabled() -> bool:
-	return force_enabled or OS.has_feature(FEATURE)
+	if force_enabled or OS.has_feature(FEATURE):
+		return true
+	# 웹 버전을 스마트폰·태블릿 브라우저로 열었을 때 (안드로이드·아이폰)
+	if OS.has_feature("web_android") or OS.has_feature("web_ios"):
+		return true
+	# 아이패드 사파리는 맥으로 보고하므로, 맥 + 터치 화면이면 아이패드로 본다
+	return OS.has_feature("web_macos") and DisplayServer.is_touchscreen_available()
 
 
 func _ready() -> void:
