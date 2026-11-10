@@ -60,6 +60,14 @@ func spawn_enemy(key: String, pos: Vector2) -> Enemy:
 	return e
 
 
+
+## 플레이어를 출발선 바로 너머로 옮긴다 (다음 틱에 출발)
+func cross_start_line(p: Player) -> void:
+	var line := get_tree().get_first_node_in_group(StartLine.GROUP) as Node2D
+	if line != null:
+		p.teleport(Vector2(line.global_position.x + 2.0, p.global_position.y))
+
+
 ## n 틱 진행
 func step(n: int) -> void:
 	for i in n:

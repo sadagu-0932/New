@@ -84,6 +84,7 @@ func test_splits_and_result() -> void:
 	level = run.level
 	var p := level.player
 	Debug.god_mode = true
+	cross_start_line(p)
 	input.push(Vector2.RIGHT, 30, 0, 0, p.global_position + Vector2(50, 0))
 	await step(30)
 	for k in range(2, 8):

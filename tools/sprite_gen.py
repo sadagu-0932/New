@@ -2063,6 +2063,17 @@ def build_ui() -> None:
     pointer = Canvas.from_rows(POINTER, {".": None, "o": "outline", "w": "white", "p": "pale"})
     pointer.to_image().save(OUT / "pointer.png", optimize=False)
     build_touch_ui()
+    build_start_line()
+
+
+def build_start_line() -> None:
+    """출발선 한 칸 16x16: 가운데 4px 폭 체크무늬 (세로로 이어 붙이면 끊김 없이 이어진다)"""
+    cv = Canvas(16, 16)
+    for y in range(16):
+        for x in range(6, 10):
+            light = ((x - 6) // 2 + y // 2) % 2 == 0
+            cv.set(x, y, c("white") if light else c("outline"))
+    cv.to_image().save(OUT / "start_line.png", optimize=False)
 
 
 def _ring_canvas(size: int, rings: list[tuple[float, float, str]]) -> Canvas:

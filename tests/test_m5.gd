@@ -229,7 +229,7 @@ func test_skill_panel_before_start_only() -> void:
 	check(run.level.player.skill.data.id == "blink" and _ev(&"changed") == 1, "스킬이 블링크로 바뀜")
 	check(not Game.clock_running, "스킬을 골라도 출발하지 않음")
 	# 출발 후엔 못 엶
-	input.push(Vector2.RIGHT, 1, 0, 0, run.level.player.global_position)
+	cross_start_line(run.level.player)
 	await step(2)
 	panel._unhandled_input(_tab())
 	check(Game.clock_running and not panel.is_open, "출발한 뒤에는 Tab 으로 못 엶")

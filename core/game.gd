@@ -36,7 +36,7 @@ func reset_run(seed_value: int = -1) -> void:
 	rng.reset(config.run_seed if seed_value < 0 else seed_value)
 
 
-## 첫 조작 입력 때 PlayerInput 이 부른다
+## 출발선을 넘을 때(StartLine) 또는 출발선 없는 맵에서 첫 조작 입력 때(PlayerInput) 부른다
 func start_clock() -> void:
 	if clock_running:
 		return

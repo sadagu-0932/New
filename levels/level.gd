@@ -18,6 +18,7 @@ const SPAWNS := {
 	"O": [preload("res://levels/hazards/boulder_spawner.gd"), ""],
 	"Z": [preload("res://bosses/golem/golem.gd"), "golem"],
 	"I": [preload("res://levels/props/signpost.gd"), ""],
+	"L": [preload("res://levels/props/start_line.gd"), ""],
 	"C": [preload("res://enemies/charger.gd"), "charger"],
 	"c": [preload("res://enemies/charger.gd"), "charger_weak"],
 	"S": [preload("res://enemies/shooter.gd"), "shooter"],

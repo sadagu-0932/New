@@ -35,5 +35,7 @@ func _physics_process(_delta: float) -> void:
 	current.move = (current.move * Replay.MOVE_SCALE).round() / Replay.MOVE_SCALE
 	if is_recording:
 		recording.append(current.duplicate_frame())
-	if not Game.clock_running and current.has_any_action():
+	# 출발선(StartLine)이 있는 맵은 선을 넘을 때 출발. 없으면 첫 조작 입력 때 출발
+	if not Game.clock_running and current.has_any_action() \
+			and get_tree().get_first_node_in_group(StartLine.GROUP) == null:
 		Game.start_clock()

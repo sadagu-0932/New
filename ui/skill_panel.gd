@@ -102,11 +102,12 @@ func _ready() -> void:
 	_root.add_child(help)
 	_root.visible = false
 
-	_notice = UiText.make_label("출발한 뒤에는 스킬을 바꿀 수 없다 · R 길게 눌러 처음부터")
-	_notice.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_notice.position = Vector2(0, 40)
-	_notice.size = Vector2(320, 12)
+	# 화면 가운데 두 줄 (한 줄이면 화면 폭을 넘어 오른쪽이 잘린다)
+	_notice = UiText.make_label("출발한 뒤에는 스킬을 바꿀 수 없다\nR 길게 눌러 처음부터")
+	_notice.position = Vector2(0, 70)
+	_notice.size = Vector2(320, 26)
 	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_notice.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_notice.visible = false
 	add_child(_notice)
 
