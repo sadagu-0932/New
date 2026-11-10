@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Windows·리눅스 실행 파일을 내보내 download 브랜치에 올린다 (README 의 다운로드 링크가 가리키는 곳).
+# Windows·리눅스·안드로이드 실행 파일을 내보내 download 브랜치에 올린다 (README 의 다운로드 링크가 가리키는 곳).
 # 브랜치는 매번 새로 만들어 덮어쓴다 → 큰 파일이 저장소 기록에 쌓이지 않는다.
 # 사용: tools/deploy_downloads.sh   (Godot 와 Windows·Linux 내보내기 템플릿 필요)
 set -euo pipefail
@@ -9,6 +9,8 @@ mkdir -p export/linux
 godot --headless --path . --import >/dev/null 2>&1 || true
 godot --headless --path . --export-release "Windows Desktop" export/demo.exe >/dev/null 2>&1
 godot --headless --path . --export-release "Linux" export/linux/demo.x86_64 >/dev/null 2>&1
+# 안드로이드 APK (터치 조작 포함)
+"$ROOT/tools/build_apk.sh" >/dev/null
 STAGE="$(mktemp -d)"
 TMP="$(mktemp -d)"
 trap 'git -C "$ROOT" worktree remove --force "$TMP" >/dev/null 2>&1 || true; rm -rf "$STAGE"' EXIT
