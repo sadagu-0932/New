@@ -15,6 +15,10 @@ git worktree add -q --detach "$TMP" origin/gh-pages
 find "$TMP" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 cp export/web/index.* "$TMP"/
 rm -f "$TMP"/*.import
+# 브라우저가 예전 게임 데이터(index.pck)를 기억해 옛 버전이 뜨지 않게, 버전마다 파일 이름을 바꾼다
+VER="$(git -C "$ROOT" rev-parse --short HEAD)"
+mv "$TMP/index.pck" "$TMP/index-$VER.pck"
+sed -i "s/\"executable\":\"index\"/\"executable\":\"index\",\"mainPack\":\"index-$VER.pck\"/; s/\"index.pck\":/\"index-$VER.pck\":/" "$TMP/index.html"
 touch "$TMP/.nojekyll"
 cd "$TMP"
 git add -A

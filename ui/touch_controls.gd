@@ -4,8 +4,8 @@ extends CanvasLayer
 ## 내보내기 설정의 기능 태그 "touch_controls" 가 있을 때만 켜진다 → PC·웹 버전에는 나오지 않는다.
 ##
 ## - 왼쪽 조이스틱: 이동 (메뉴에서는 방향 선택)
-## - 오른쪽 조이스틱: 조준, 끝까지 밀면 사격
-## - 둥근 버튼: 근접(=패링), 회피, 스킬, 사용
+## - 오른쪽 조이스틱: 조준만 (놓아도 마지막 방향 유지)
+## - 둥근 버튼: 사격(누르고 있으면 연사), 근접(=패링), 회피, 스킬, 사용
 ## - 위쪽 작은 버튼: 일시정지, 재시작(누르고 있기), 스킬 설정
 ## - 메뉴가 열려 있으면: 확인, 뒤로
 ##
@@ -14,7 +14,7 @@ extends CanvasLayer
 
 const FEATURE := "touch_controls"
 const MOVE_ACTIONS: Array[StringName] = [&"move_left", &"move_right", &"move_up", &"move_down"]
-const ACTION_BUTTONS: Array = [[&"melee", "근접"], [&"dodge", "회피"], [&"skill", "스킬"], [&"interact", "사용"]]
+const ACTION_BUTTONS: Array = [[&"shoot", "사격"], [&"melee", "근접"], [&"dodge", "회피"], [&"skill", "스킬"], [&"interact", "사용"]]
 const TOP_BUTTONS: Array = [[&"pause", "멈춤"], [&"restart", "재시작"], [&"skill_menu", "스킬"]]
 const MENU_BUTTONS: Array = [[&"menu_confirm", "확인"], [&"pause", "뒤로"]]
 
@@ -39,7 +39,6 @@ var _buttons: Array[Dictionary] = []
 var _touches: Dictionary = {}
 ## 메뉴 방향 입력을 이미 보낸 방향 (계속 밀고 있어도 한 번만)
 var _menu_dirs_sent: Dictionary = {}
-var _firing: bool = false
 
 
 static func is_enabled() -> bool:
@@ -290,10 +289,6 @@ func _set_aim(v: Vector2) -> void:
 	aim_vec = v
 	if v != Vector2.ZERO:
 		aim_dir = v.normalized()
-	var fire := v.length() >= _data.aim_fire_threshold
-	if fire != _firing:
-		_firing = fire
-		_send_action(&"shoot", fire)
 
 
 ## 조준점 (월드 좌표): 플레이어 총구 높이에서 조준 방향으로 aim_distance 만큼
