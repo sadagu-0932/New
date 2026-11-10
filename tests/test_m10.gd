@@ -145,6 +145,9 @@ func test_touch_controls() -> void:
 	check(tc._on_press(2, d.action_button_positions[1]), "근접 버튼 눌림")
 	Input.flush_buffered_events()
 	check(Input.is_action_pressed(&"melee"), "근접 버튼 → 근접 액션")
+	tc._on_press(4, d.action_button_positions[5])
+	Input.flush_buffered_events()
+	check(not Input.is_action_pressed(&"skill2"), "스킬2 칸은 잠겨 있어 눌러도 아무 일 없음")
 	tc._release_all()
 	Input.flush_buffered_events()
 	check(not Input.is_action_pressed(&"shoot") and not Input.is_action_pressed(&"melee") \

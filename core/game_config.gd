@@ -29,3 +29,6 @@ extends Resource
 @export var death_restart_delay_ticks: int = 0
 ## 게임 중 화면에 타이머·스플릿을 보여줄지 (꺼도 시간은 계속 재고 기록 화면에는 나온다)
 @export var show_timer_in_game: bool = false
+## 두 번째 스킬 칸(F / 터치 스킬2) 사용 여부. 지금은 칸만 있고 잠겨 있다
+## TODO: 스킬 2개 사용 규칙(중복 선택·쿨타임) 정해지면 켜기
+@export var skill2_enabled: bool = false

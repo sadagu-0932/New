@@ -19,7 +19,7 @@ extends Resource
 @export var menu_direction_threshold: float = 0.0
 
 @export_group("버튼")
-## 오른쪽 둥근 버튼 위치 (사격, 근접, 회피, 스킬, 사용 순)
+## 오른쪽 둥근 버튼 위치 (사격, 근접, 회피, 스킬1, 사용, 스킬2 순)
 @export var action_button_positions: Array[Vector2] = []
 ## 둥근 버튼을 누를 수 있는 반지름 (그림보다 살짝 크게)
 @export var action_button_radius: float = 0.0
@@ -33,3 +33,5 @@ extends Resource
 @export var idle_alpha: float = 0.0
 ## 누르고 있을 때 투명도
 @export var pressed_alpha: float = 0.0
+## 아직 잠긴 버튼(스킬2) 투명도
+@export var locked_alpha: float = 0.0

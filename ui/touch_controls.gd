@@ -5,7 +5,7 @@ extends CanvasLayer
 ##
 ## - 왼쪽 조이스틱: 이동 (메뉴에서는 방향 선택)
 ## - 오른쪽 조이스틱: 조준만 (놓아도 마지막 방향 유지)
-## - 둥근 버튼: 사격(누르고 있으면 연사), 근접(=패링), 회피, 스킬, 사용
+## - 둥근 버튼: 사격(누르고 있으면 연사), 근접(=패링), 회피, 스킬1, 사용, 스킬2(지금은 잠김)
 ## - 위쪽 작은 버튼: 일시정지, 재시작(누르고 있기), 스킬 설정
 ## - 메뉴가 열려 있으면: 확인, 뒤로
 ##
@@ -14,7 +14,7 @@ extends CanvasLayer
 
 const FEATURE := "touch_controls"
 const MOVE_ACTIONS: Array[StringName] = [&"move_left", &"move_right", &"move_up", &"move_down"]
-const ACTION_BUTTONS: Array = [[&"shoot", "사격"], [&"melee", "근접"], [&"dodge", "회피"], [&"skill", "스킬"], [&"interact", "사용"]]
+const ACTION_BUTTONS: Array = [[&"shoot", "사격"], [&"melee", "근접"], [&"dodge", "회피"], [&"skill", "스킬1"], [&"interact", "사용"], [&"skill2", "스킬2"]]
 const TOP_BUTTONS: Array = [[&"pause", "멈춤"], [&"restart", "재시작"], [&"skill_menu", "스킬"]]
 const MENU_BUTTONS: Array = [[&"menu_confirm", "확인"], [&"pause", "뒤로"]]
 
@@ -139,6 +139,8 @@ func _process(_delta: float) -> void:
 		var node: Sprite2D = b.node
 		node.visible = show
 		node.modulate.a = _data.pressed_alpha if b.held else _data.idle_alpha
+		if _is_locked(b):
+			node.modulate.a = _data.locked_alpha
 		# 화면이 바뀌어 숨은 버튼을 누르고 있었다면 뗀다
 		if not show and b.held:
 			_release_button(b)
@@ -242,7 +244,14 @@ func _release_all() -> void:
 # ---------------------------------------------------------------------------
 # 액션으로 바꾸기
 
+## 아직 쓸 수 없는 버튼 (스킬2 칸은 game_config.skill2_enabled 가 켜져야 쓴다)
+func _is_locked(b: Dictionary) -> bool:
+	return b.action == &"skill2" and not Game.config.skill2_enabled
+
+
 func _press_button(b: Dictionary) -> void:
+	if _is_locked(b):
+		return
 	b.held = true
 	_send_action(b.action, true)
 
