@@ -202,7 +202,7 @@ tools/             sprite_gen.py 등 빌드 도구
 - README.md에 실행 방법, 조작법, exe 빌드 방법 정리
 - 수치를 바꿀 때 `data/` 파일만 고치면 되도록 유지
 - 수정은 항상 커밋해서 main 에 올린다 (git 에 사용자의 수정 사항이 늘 반영되게)
-- main 에 올린 뒤에는 `tools/deploy_web.sh` 로 웹 버전(https://sadagu-0932.github.io/New/)에도 바로 반영. 실행 파일은 `tools/deploy_downloads.sh` (README 다운로드 링크). 플레이 테스트는 사용자가 직접 한다
+- 커밋할 때마다 반드시 `tools/publish.sh` 실행 → main 푸시 + 웹 버전(https://sadagu-0932.github.io/New/) + README 다운로드 링크(download 브랜치의 exe·리눅스·APK) 를 한 번에 갱신. 다운로드 파일이 main 보다 뒤처진 채로 두지 않는다. 플레이 테스트는 사용자가 직접 한다
 - 안드로이드 APK 에만 터치 조작(기능 태그 `touch_controls`). PC·웹 버전에는 나오지 않게
 
 ## 미정 사항

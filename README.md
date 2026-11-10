@@ -13,7 +13,7 @@
 | 🪟 Windows | **[demo-windows.zip](https://github.com/sadagu-0932/New/raw/download/demo-windows.zip)** → 압축 풀고 `demo.exe` 실행 |
 | 🐧 Linux (x86_64) | **[demo-linux.tar.gz](https://github.com/sadagu-0932/New/raw/download/demo-linux.tar.gz)** → 압축 풀고 `demo.x86_64` 실행 |
 
-파일 갱신: `tools/deploy_downloads.sh` (실행 파일), `tools/deploy_web.sh` (웹)
+파일 갱신: 커밋 후 `tools/publish.sh` → main·웹·다운로드 파일을 한 번에 최신으로
 
 ## 실행 방법
 
