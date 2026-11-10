@@ -10,8 +10,10 @@
 | 버전 | 파일 |
 |---|---|
 | 🌐 웹 (설치 없이 바로 플레이) | **[브라우저에서 열기](https://sadagu-0932.github.io/New/)** |
-| 🪟 Windows | **[demo-windows.zip](https://github.com/sadagu-0932/New/raw/download/demo-windows.zip)** → 압축 풀고 `demo.exe` 실행 |
-| 🐧 Linux (x86_64) | **[demo-linux.tar.gz](https://github.com/sadagu-0932/New/raw/download/demo-linux.tar.gz)** → 압축 풀고 `demo.x86_64` 실행 |
+| 🪟 Windows | **[demo-windows.zip](https://github.com/sadagu-0932/New/releases/latest/download/demo-windows.zip)** → 압축 풀고 `demo.exe` 실행 |
+| 🐧 Linux (x86_64) | **[demo-linux.tar.gz](https://github.com/sadagu-0932/New/releases/latest/download/demo-linux.tar.gz)** → 압축 풀고 `demo.x86_64` 실행 |
+
+모든 파일 모음: **[Releases (최신 버전)](https://github.com/sadagu-0932/New/releases/latest)**
 
 파일 갱신: 커밋 후 `tools/publish.sh` → main·웹·다운로드 파일을 한 번에 최신으로
 

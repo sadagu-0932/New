@@ -22,13 +22,22 @@ git checkout -q --orphan download-new
 git rm -rfq .
 cp "$STAGE/demo-windows.zip" "$STAGE/demo-linux.tar.gz" .
 if [ -f "$ROOT/export/android/demo.apk" ]; then cp "$ROOT/export/android/demo.apk" .; fi
-cat > README.md <<'MD'
-# 다운로드
+cat > NOTES.md <<'MD'
+## 받는 법
 
-- Windows: demo-windows.zip → 압축 풀고 demo.exe 실행
-- Linux (x86_64): demo-linux.tar.gz → 압축 풀고 demo.x86_64 실행
-- Android: demo.apk (있을 때) → 폰에서 열어 설치
+| 파일 | 설명 |
+|---|---|
+| demo-windows.zip | Windows: 압축 풀고 demo.exe 실행 |
+| demo-linux.tar.gz | Linux (x86_64): 압축 풀고 demo.x86_64 실행 |
+| demo.apk | Android: 폰에서 열어 설치 (있을 때) |
+
+웹 버전: https://sadagu-0932.github.io/New/
 MD
+cp NOTES.md README.md
+git -C "$ROOT" rev-parse --short HEAD > VERSION
+# Release 를 만들어 주는 GitHub Actions (download 브랜치에 푸시되면 실행)
+mkdir -p .github/workflows
+cp "$ROOT/tools/release/release.yml" .github/workflows/release.yml
 git add -A
 git commit -qm "실행 파일 ($(git -C "$ROOT" rev-parse --short HEAD))"
 git push -q -f origin HEAD:download
