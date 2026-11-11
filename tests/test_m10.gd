@@ -28,14 +28,18 @@ func run_all() -> void:
 
 
 func test_audio_silent_without_files() -> void:
-	var ok := true
-	for slot: String in ["shoot", "melee", "parry", "perfect", "hit", "boss"]:
-		if Audio.has_sound(slot) or Audio.play(slot):
-			ok = false
-	check(ok, "효과음 슬롯 6개 — 파일이 없으면 오류 없이 무음")
+	var missing: Array[String] = []
+	for slot: String in Audio.SLOTS:
+		if not Audio.has_sound(slot):
+			missing.append(slot)
+	check(missing.is_empty(), "효과음 슬롯 %d개 모두 소리 파일 있음 %s" % [Audio.SLOTS.size(), missing])
+	check(not Audio.has_sound("no_such_sound") and not Audio.play("no_such_sound"), "파일 없는 슬롯은 오류 없이 무음")
+	check(Audio.play("perfect_parry"), "소리 재생")
 	Events.player_shot.emit()
 	Events.parried.emit(true)
-	check(true, "소리 없는 상태에서 이벤트가 와도 문제없음")
+	Events.skill_used.emit("blink")
+	Events.skill_used.emit("unknown_skill")
+	check(true, "이벤트로 소리가 울려도 문제없음")
 
 
 func test_screen_fx() -> void:

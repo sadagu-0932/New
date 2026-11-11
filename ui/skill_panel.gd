@@ -158,7 +158,10 @@ func _close() -> void:
 func _select(i: int) -> void:
 	if not is_open:
 		return
+	var before := selected
 	selected = clampi(i, 0, DB.skills.size() - 1)
+	if selected != before:
+		Audio.play("ui_move")
 	_refresh()
 
 

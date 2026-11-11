@@ -4,11 +4,29 @@
 
 [resource]
 script = ExtResource("1")
-shoot = ""
-melee = ""
-parry = ""
-perfect = ""
-hit = ""
-boss = ""
+sound_dir = "res://art/audio"
 volume_db = -6.0
-voices = 8
+volumes = {
+"shoot": -4.0,
+"enemy_hit": -5.0,
+"melee": -2.0,
+"dodge": -2.0,
+"ui_move": -6.0,
+"split": -4.0
+}
+voices = 12
+pitch_random = 0.06
+fixed_pitch = {
+"perfect_parry": true,
+"perfect_dodge": true,
+"death": true,
+"start": true,
+"split": true,
+"boss_start": true,
+"boss_defeat": true,
+"ui_confirm": true,
+"combo": true,
+"switch": true,
+"skill_decoy": true
+}
+min_gap_ms = 40

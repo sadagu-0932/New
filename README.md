@@ -27,4 +27,5 @@
 - Godot 4.7, 설계 문서는 [CLAUDE.md](CLAUDE.md)
 - 테스트: `godot --headless --path . res://tests/test_runner.tscn`
 - 스프라이트 다시 만들기: `python3 tools/sprite_gen.py`
+- 효과음 다시 만들기: `python3 tools/sound_gen.py`
 - 배포 (main 푸시 + 웹 + Releases): `tools/publish.sh`
