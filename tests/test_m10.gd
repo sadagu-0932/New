@@ -196,10 +196,22 @@ func test_key_settings() -> void:
 	var hint: String = DB.game_config.tutorial.sections[0].hint
 	check(UiText.for_device(hint).contains("Shift 회피") and not UiText.for_device(hint).contains("Space"), "안내 글도 바뀐 키로 (%s)" % UiText.for_device(hint))
 	check(UiText.for_device("E 건너뛰기") == "E 건너뛰기", "컷씬 건너뛰기 글: 기본은 E")
-	# 스킬1(Q)에 E(상호작용이 쓰던 키)를 주면 서로 맞바뀐다
+	# 스킬1(Q)에 E(상호작용이 쓰는 키)를 줘도 바뀌지 않고 겹친 채로 둔다 → 둘 다 겹침 표시
 	Settings.rebind(&"skill", {"t": "k", "c": KEY_E})
-	check(Settings.key_name(&"skill") == "E" and Settings.key_name(&"interact") == "Q", "겹치는 키는 맞바꿈")
-	check(UiText.for_device("E 건너뛰기") == "Q 건너뛰기", "컷씬 건너뛰기 글이 설정된 상호작용 키를 따라감")
+	check(Settings.key_name(&"skill") == "E" and Settings.key_name(&"interact") == "E", "겹치는 키도 그대로 둠")
+	check(Settings.is_conflicting(&"skill") and Settings.is_conflicting(&"interact") and not Settings.is_conflicting(&"dodge"), "겹친 두 동작만 겹침 표시")
+	var cpanel := KeyBindPanel.new()
+	add_child(cpanel)
+	cpanel.open()
+	var skill_row := 7
+	var interact_row := 9
+	check(cpanel._keys[skill_row].text == "[E]" and cpanel._keys[interact_row].text == "[E]", "겹친 키는 [대괄호]로")
+	check(cpanel._keys[interact_row].get_theme_color(&"font_color") == KeyBindPanel.COLOR_CONFLICT, "겹친 키는 빨간색")
+	Settings.rebind(&"interact", {"t": "k", "c": KEY_G})
+	cpanel._refresh()
+	check(cpanel._keys[skill_row].text == "E" and not Settings.has_conflicts(), "다시 정하면 겹침 표시가 사라짐")
+	check(UiText.for_device("E 건너뛰기") == "G 건너뛰기", "컷씬 건너뛰기 글이 설정된 상호작용 키를 따라감")
+	cpanel.queue_free()
 	var esc := InputEventKey.new()
 	esc.physical_keycode = KEY_ESCAPE
 	esc.pressed = true

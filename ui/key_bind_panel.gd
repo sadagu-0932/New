@@ -2,11 +2,14 @@ class_name KeyBindPanel
 extends CanvasLayer
 ## 키 설정 창 (PC). 일시정지 화면에서 K 로 연다.
 ## ↑↓ 또는 마우스로 고르고, Enter·클릭 후 새 키(또는 마우스 버튼)를 누르면 바뀐다.
-## 다른 동작이 쓰던 키면 서로 맞바꾼다. Backspace 는 전부 기본값으로. Esc 닫기
+## 다른 동작과 키가 겹치면 바꾸지 않고 그대로 두되, 겹친 키들을 빨간 [대괄호]로 표시해 알려준다.
+## Backspace 는 전부 기본값으로. Esc 닫기
 
 const ROW_HEIGHT := 12.0
 const TOP := 18.0
 const COLOR_SELECTED := Color(0.97, 0.78, 0.35)
+## 겹치는 키 표시 색
+const COLOR_CONFLICT := Color(0.9, 0.25, 0.3)
 
 var is_open: bool = false
 var selected: int = 0
@@ -80,10 +83,23 @@ func _refresh() -> void:
 		var action: StringName = Settings.REBINDABLE[i][0]
 		var color := COLOR_SELECTED if i == selected else Color.WHITE
 		_names[i].add_theme_color_override(&"font_color", color)
+		if listening and i == selected:
+			_keys[i].text = "누를 키 …"
+		elif Settings.is_conflicting(action):
+			# 다른 동작과 겹치는 키: 빨간 [대괄호]
+			_keys[i].text = "[%s]" % Settings.key_name(action)
+			color = COLOR_CONFLICT
+		else:
+			_keys[i].text = Settings.key_name(action)
 		_keys[i].add_theme_color_override(&"font_color", color)
-		_keys[i].text = "누를 키 …" if (listening and i == selected) else Settings.key_name(action)
-	_help.text = "새 키나 마우스 버튼을 누르세요 · Esc 취소" if listening \
-		else "↑↓ 고르기 · Enter/클릭 바꾸기 · Backspace 기본값 · Esc 닫기"
+	var conflict := Settings.has_conflicts() and not listening
+	_help.add_theme_color_override(&"font_color", COLOR_CONFLICT if conflict else Color.WHITE)
+	if listening:
+		_help.text = "새 키나 마우스 버튼을 누르세요 · Esc 취소"
+	elif conflict:
+		_help.text = "[빨간 키]는 서로 겹쳐요 · Enter/클릭으로 다시 정하기 · Esc 닫기"
+	else:
+		_help.text = "↑↓ 고르기 · Enter/클릭 바꾸기 · Backspace 기본값 · Esc 닫기"
 
 
 ## 마우스가 가리키는 줄 (-1 = 없음)

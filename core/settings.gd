@@ -122,19 +122,33 @@ func binding_from_event(event: InputEvent) -> Dictionary:
 	return {}
 
 
-## 액션의 입력을 바꾼다. 다른 액션이 이미 쓰던 입력이면 서로 맞바꾼다
+## 액션의 입력을 바꾼다. 다른 액션과 겹쳐도 그대로 둔다 (겹침은 is_conflicting 으로 알려준다)
 func rebind(action: StringName, binding: Dictionary) -> void:
 	if binding.is_empty() or not _is_rebindable(action):
 		return
-	var old := binding_of(action)
-	for entry: Array in REBINDABLE:
-		var other: StringName = entry[0]
-		if other != action and binding_of(other) == binding and not old.is_empty():
-			keys[String(other)] = old
 	keys[String(action)] = binding
 	_apply_keys()
 	save_settings()
 	changed.emit()
+
+
+## 이 액션의 입력을 다른 액션도 쓰고 있는지
+func is_conflicting(action: StringName) -> bool:
+	var mine := binding_of(action)
+	if mine.is_empty():
+		return false
+	for entry: Array in REBINDABLE:
+		var other: StringName = entry[0]
+		if other != action and binding_of(other) == mine:
+			return true
+	return false
+
+
+func has_conflicts() -> bool:
+	for entry: Array in REBINDABLE:
+		if is_conflicting(entry[0]):
+			return true
+	return false
 
 
 func reset_keys() -> void:
