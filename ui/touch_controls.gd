@@ -9,6 +9,8 @@ extends CanvasLayer
 ## - 위쪽 작은 버튼: 일시정지, 재시작(누르고 있기), 스킬 설정
 ## - 메뉴가 열려 있으면: 확인, 뒤로
 ##
+## 버튼 위치 바꾸기: 일시정지 화면의 [배치] → 버튼·스틱을 끌어 옮기고 [완료] (Settings 에 저장, [초기화] 로 기본 배치)
+##
 ## 버튼은 키보드와 똑같은 Input Map 액션을 눌러 준다 → 게임 로직·리플레이는 키보드와 같은 길로 간다.
 ## 조준만은 마우스 위치 대신 aim_world() 를 LiveInputSource 가 읽는다.
 
@@ -17,6 +19,12 @@ const MOVE_ACTIONS: Array[StringName] = [&"move_left", &"move_right", &"move_up"
 const ACTION_BUTTONS: Array = [[&"shoot", "사격"], [&"melee", "근접"], [&"dodge", "회피"], [&"skill", "스킬1"], [&"interact", "사용"], [&"skill2", "스킬2"]]
 const TOP_BUTTONS: Array = [[&"pause", "멈춤"], [&"restart", "재시작"], [&"skill_menu", "설정"]]
 const MENU_BUTTONS: Array = [[&"menu_confirm", "확인"], [&"pause", "뒤로"]]
+## 일시정지 화면에서만 나오는 버튼 (버튼 위치 바꾸기 열기)
+const PAUSE_BUTTON: Array = [&"open_settings", "배치"]
+## 배치 모드에서만 나오는 버튼 (액션이 아니라 여기서 바로 처리)
+const EDIT_BUTTONS: Array = [[&"edit_done", "완료"], [&"edit_reset", "초기화"]]
+## 배치 모드에서 버튼이 화면 밖으로 나가지 않게 두는 여백
+const EDIT_MARGIN := 8.0
 
 ## 지금 켜진 터치 조작 (없으면 null)
 static var instance: TouchControls
@@ -39,6 +47,9 @@ var _buttons: Array[Dictionary] = []
 var _touches: Dictionary = {}
 ## 메뉴 방향 입력을 이미 보낸 방향 (계속 밀고 있어도 한 번만)
 var _menu_dirs_sent: Dictionary = {}
+## 버튼 위치 바꾸는 중
+var edit_mode: bool = false
+var _edit_help: Label
 
 
 static func is_enabled() -> bool:
@@ -58,8 +69,8 @@ func _ready() -> void:
 	layer = 105
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_strip_mouse_buttons()
-	_move_stick = _make_stick(_data.move_stick_center)
-	_aim_stick = _make_stick(_data.aim_stick_center)
+	_move_stick = _make_stick("stick:move", _data.move_stick_center)
+	_aim_stick = _make_stick("stick:aim", _data.aim_stick_center)
 	var round_tex := DB.theme.load_texture("touch_button")
 	var small_tex := DB.theme.load_texture("touch_button_small")
 	for i in ACTION_BUTTONS.size():
@@ -68,6 +79,15 @@ func _ready() -> void:
 		_add_button(TOP_BUTTONS[i], _data.top_button_positions[i], small_tex, 0.0, "top")
 	for i in MENU_BUTTONS.size():
 		_add_button(MENU_BUTTONS[i], _data.menu_button_positions[i], small_tex, 0.0, "menu")
+	_add_button(PAUSE_BUTTON, _data.pause_button_position, small_tex, 0.0, "pause")
+	for i in EDIT_BUTTONS.size():
+		_add_button(EDIT_BUTTONS[i], _data.edit_button_positions[i], small_tex, 0.0, "edit")
+	_edit_help = UiText.make_label("버튼을 끌어서 옮기세요")
+	_edit_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_edit_help.position = Vector2(0, _data.edit_button_positions[0].y - 24.0)
+	_edit_help.size = Vector2(320, 12)
+	_edit_help.visible = false
+	add_child(_edit_help)
 
 
 func _exit_tree() -> void:
@@ -85,7 +105,8 @@ func _strip_mouse_buttons() -> void:
 				InputMap.action_erase_event(action, ev)
 
 
-func _make_stick(center: Vector2) -> Dictionary:
+func _make_stick(id: String, default_center: Vector2) -> Dictionary:
+	var center := Settings.touch_position(id, default_center)
 	var base := Sprite2D.new()
 	base.texture = DB.theme.load_texture("touch_stick_base")
 	base.position = center
@@ -94,10 +115,14 @@ func _make_stick(center: Vector2) -> Dictionary:
 	knob.texture = DB.theme.load_texture("touch_stick_knob")
 	knob.position = center
 	add_child(knob)
-	return {"center": center, "base": base, "knob": knob, "value": Vector2.ZERO}
+	return {"id": id, "default": default_center, "center": center, "base": base, "knob": knob, "value": Vector2.ZERO}
 
 
-func _add_button(def: Array, pos: Vector2, tex: Texture2D, radius: float, group: String) -> void:
+func _add_button(def: Array, default_pos: Vector2, tex: Texture2D, radius: float, group: String) -> void:
+	var id := "%s:%s" % [group, def[0]]
+	# 게임 중 쓰는 버튼만 옮길 수 있다 (메뉴용 버튼은 고정)
+	var movable := group == "action" or group == "top"
+	var pos := Settings.touch_position(id, default_pos) if movable else default_pos
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.position = pos
@@ -112,6 +137,7 @@ func _add_button(def: Array, pos: Vector2, tex: Texture2D, radius: float, group:
 	_buttons.append({
 		"action": def[0], "pos": pos, "radius": radius, "size": size,
 		"node": spr, "group": group, "held": false,
+		"id": id, "default": default_pos, "movable": movable,
 	})
 
 
@@ -138,10 +164,25 @@ func _process(_delta: float) -> void:
 	var menu := m == "menu"
 	if m == "hidden" and not _touches.is_empty():
 		_release_all()
+	_edit_help.visible = edit_mode
+	if edit_mode:
+		# 배치 모드: 옮길 수 있는 것 전부 + 완료·초기화만 보여준다
+		_set_stick_visible(_move_stick, true)
+		_set_stick_visible(_aim_stick, true)
+		for b: Dictionary in _buttons:
+			var node: Sprite2D = b.node
+			node.visible = b.movable or b.group == "edit"
+			node.modulate.a = _data.pressed_alpha
+		return
+	var paused := _pause_showing()
 	_set_stick_visible(_move_stick, play or menu)
 	_set_stick_visible(_aim_stick, play)
 	for b: Dictionary in _buttons:
-		var show: bool = (b.group == "menu" and menu) or (b.group != "menu" and play)
+		var show: bool = play and b.movable
+		if b.group == "menu":
+			show = menu
+		elif b.group == "pause":
+			show = menu and paused
 		var node: Sprite2D = b.node
 		node.visible = show
 		node.modulate.a = _data.pressed_alpha if b.held else _data.idle_alpha
@@ -150,6 +191,76 @@ func _process(_delta: float) -> void:
 		# 화면이 바뀌어 숨은 버튼을 누르고 있었다면 뗀다
 		if not show and b.held:
 			_release_button(b)
+
+
+## 일시정지 화면이 떠 있는지 ([배치] 버튼은 거기서만)
+func _pause_showing() -> bool:
+	for n: Node in get_tree().get_nodes_in_group(Crosshair.POINTER_GROUP):
+		if n is PauseOverlay and (n as PauseOverlay).is_showing():
+			return true
+	return false
+
+
+# ---------------------------------------------------------------------------
+# 버튼 위치 바꾸기 (배치 모드)
+
+func set_edit_mode(value: bool) -> void:
+	if edit_mode == value:
+		return
+	_release_all()
+	edit_mode = value
+	if not value:
+		Settings.save_settings()
+
+
+## 옮길 수 있는 것 전부 (스틱 2개 + 게임 중 버튼)
+func _movables() -> Array[Dictionary]:
+	var out: Array[Dictionary] = [_move_stick, _aim_stick]
+	for b: Dictionary in _buttons:
+		if b.movable:
+			out.append(b)
+	return out
+
+
+func _item_pos(item: Dictionary) -> Vector2:
+	return item.center if item.has("center") else item.pos
+
+
+func _move_item(item: Dictionary, pos: Vector2) -> void:
+	pos = pos.clamp(Vector2(EDIT_MARGIN, EDIT_MARGIN), Vector2(320.0 - EDIT_MARGIN, 180.0 - EDIT_MARGIN)).round()
+	if item.has("center"):
+		item.center = pos
+		(item.base as Sprite2D).position = pos
+		(item.knob as Sprite2D).position = pos
+	else:
+		item.pos = pos
+		(item.node as Sprite2D).position = pos
+
+
+func _reset_layout() -> void:
+	Settings.reset_touch_positions()
+	for item: Dictionary in _movables():
+		_move_item(item, item.default)
+
+
+## 배치 모드에서 누른 곳: 완료·초기화 버튼이거나, 끌어 옮길 것을 잡는다
+func _edit_press(index: int, pos: Vector2) -> void:
+	for b: Dictionary in _buttons:
+		if b.group == "edit" and _button_hit(b, pos):
+			if b.action == &"edit_done":
+				set_edit_mode(false)
+			else:
+				_reset_layout()
+			return
+	var best: Dictionary = {}
+	var best_dist := 22.0
+	for item: Dictionary in _movables():
+		var dist := pos.distance_to(_item_pos(item))
+		if dist < best_dist:
+			best_dist = dist
+			best = item
+	if not best.is_empty():
+		_touches[index] = {"drag": best, "offset": _item_pos(best) - pos}
 
 
 func _set_stick_visible(stick: Dictionary, show: bool) -> void:
@@ -186,6 +297,9 @@ func _on_press(index: int, pos: Vector2) -> bool:
 	var m := mode()
 	if m == "hidden":
 		return false
+	if edit_mode:
+		_edit_press(index, pos)
+		return true
 	# 버튼이 조이스틱보다 먼저 (조이스틱 잡는 범위가 넓어서)
 	for b: Dictionary in _buttons:
 		var node: Sprite2D = b.node
@@ -216,7 +330,9 @@ func _button_hit(b: Dictionary, pos: Vector2) -> bool:
 
 func _on_drag(index: int, pos: Vector2) -> void:
 	var what: Variant = _touches.get(index)
-	if what is String:
+	if what is Dictionary and (what as Dictionary).has("drag"):
+		_move_item(what.drag, pos + what.offset)
+	elif what is String:
 		var stick := _move_stick if what == "move" else _aim_stick
 		var v: Vector2 = (pos - stick.center) / _data.stick_radius
 		v = v.limit_length(1.0)
@@ -232,7 +348,10 @@ func _on_drag(index: int, pos: Vector2) -> void:
 func _on_release(index: int) -> void:
 	var what: Variant = _touches.get(index)
 	_touches.erase(index)
-	if what is Dictionary:
+	if what is Dictionary and (what as Dictionary).has("drag"):
+		# 끌어 옮긴 자리를 기억 (파일 저장은 [완료] 때)
+		Settings.set_touch_position(what.drag.id, _item_pos(what.drag))
+	elif what is Dictionary:
 		_release_button(what)
 	elif what == "move":
 		_move_stick.value = Vector2.ZERO

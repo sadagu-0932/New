@@ -27,6 +27,10 @@ extends Resource
 @export var top_button_positions: Array[Vector2] = []
 ## 메뉴용 버튼 위치 (확인, 뒤로 순)
 @export var menu_button_positions: Array[Vector2] = []
+## 일시정지 화면의 [배치] 버튼 위치
+@export var pause_button_position: Vector2 = Vector2.ZERO
+## 배치 모드의 버튼 위치 (완료, 초기화 순)
+@export var edit_button_positions: Array[Vector2] = []
 
 @export_group("모양")
 ## 평소 투명도
@@ -37,7 +41,5 @@ extends Resource
 @export var locked_alpha: float = 0.0
 
 @export_group("안내 글 바꾸기")
-## 안내 글에서 찾을 키보드·마우스 말 (긴 말부터)
-@export var text_from: PackedStringArray = []
-## 대신 넣을 터치 버튼 말 (text_from 과 같은 순서)
-@export var text_to: PackedStringArray = []
+## 안내 글에서 찾을 키보드·마우스 말 → 대신 넣을 터치 버튼 말 (위에서부터 차례로, 긴 말부터)
+@export var text_map: Dictionary = {}

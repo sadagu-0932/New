@@ -13,6 +13,8 @@ func run_all() -> void:
 	test_title_ignores_fullscreen_key()
 	await test_menu_pointer()
 	await test_touch_controls()
+	await test_key_settings()
+	await test_touch_layout_edit()
 	test_export_preset()
 	await test_tall_player_feet()
 	await test_cloak_follows_motion()
@@ -159,6 +161,7 @@ func test_touch_controls() -> void:
 	check(UiText.for_device(hint) == hint, "PC 에서는 안내 글 그대로")
 	TouchControls.force_enabled = true
 	check(not UiText.for_device(hint).contains("Tab") and UiText.for_device(hint).contains("[설정]"), "터치 기기 안내 글은 버튼 이름으로 (%s)" % UiText.for_device(hint))
+	check(DB.touch.text_map.size() > 10, "바꿀 말 목록이 들어 있음")
 	var left := false
 	for sd in DB.game_config.tutorial.sections:
 		for word in ["WASD", "Space", "클릭", "마우스", "Tab", "Q "]:
@@ -166,6 +169,83 @@ func test_touch_controls() -> void:
 				left = true
 	check(not left, "구간 안내에 키보드·마우스 말이 남지 않음")
 	TouchControls.force_enabled = false
+
+
+
+## PC 키 설정: 바꾸기, 겹치면 맞바꾸기, 안내 글 반영, 기본값 복원
+func test_key_settings() -> void:
+	Settings.reset_keys()
+	check(Settings.key_name(&"dodge") == "Space" and Settings.move_keys_name() == "WASD", "기본 키 이름 (Space, WASD)")
+	Settings.rebind(&"dodge", {"t": "k", "c": KEY_SHIFT})
+	var ev := InputEventKey.new()
+	ev.physical_keycode = KEY_SHIFT
+	ev.pressed = true
+	check(ev.is_action(&"dodge") and Settings.key_name(&"dodge") == "Shift", "회피를 Shift 로 바꿈")
+	var hint: String = DB.game_config.tutorial.sections[0].hint
+	check(UiText.for_device(hint).contains("Shift 회피") and not UiText.for_device(hint).contains("Space"), "안내 글도 바뀐 키로 (%s)" % UiText.for_device(hint))
+	# 스킬1(Q)에 E(상호작용이 쓰던 키)를 주면 서로 맞바뀐다
+	Settings.rebind(&"skill", {"t": "k", "c": KEY_E})
+	check(Settings.key_name(&"skill") == "E" and Settings.key_name(&"interact") == "Q", "겹치는 키는 맞바꿈")
+	var esc := InputEventKey.new()
+	esc.physical_keycode = KEY_ESCAPE
+	esc.pressed = true
+	check(Settings.binding_from_event(esc).is_empty(), "Esc 는 키로 못 씀")
+	# 키 설정 창: 고르고 → 듣기 → 새 키
+	var panel := KeyBindPanel.new()
+	add_child(panel)
+	panel.open()
+	panel.selected = 4  # 사격
+	panel.listening = true
+	var f := InputEventKey.new()
+	f.physical_keycode = KEY_J
+	f.pressed = true
+	panel._input(f)
+	check(Settings.key_name(&"shoot") == "J" and not panel.listening, "키 설정 창에서 사격을 J 로")
+	panel.queue_free()
+	Settings.reset_keys()
+	check(Settings.key_name(&"dodge") == "Space" and Settings.key_name(&"shoot") == "좌클릭", "기본값으로 되돌림")
+	await get_tree().process_frame
+
+
+## 모바일 버튼 위치 바꾸기: 끌어 옮기면 기억하고, 초기화하면 기본 배치
+func test_touch_layout_edit() -> void:
+	Settings.reset_touch_positions()
+	var tc := TouchControls.new()
+	add_child(tc)
+	await get_tree().process_frame
+	var d := DB.touch
+	tc.set_edit_mode(true)
+	var from := d.action_button_positions[0]
+	tc._on_press(0, from)
+	tc._on_drag(0, from + Vector2(-40, -30))
+	tc._on_release(0)
+	Input.flush_buffered_events()
+	check(not Input.is_action_pressed(&"shoot"), "배치 모드에서는 버튼이 눌리지 않음")
+	check(Settings.touch_position("action:shoot", from) == from + Vector2(-40, -30), "끌어 옮긴 자리를 기억")
+	tc._on_press(1, d.move_stick_center)
+	tc._on_drag(1, Vector2(-50, 500))
+	tc._on_release(1)
+	var stick_pos := Settings.touch_position("stick:move", Vector2.ZERO)
+	check(stick_pos.x >= 0 and stick_pos.y <= 180, "화면 밖으로는 못 나감 %s" % stick_pos)
+	tc.set_edit_mode(false)
+	tc.queue_free()
+	await get_tree().process_frame
+	# 새로 만들어도 옮긴 자리에서 눌린다
+	var tc2 := TouchControls.new()
+	add_child(tc2)
+	await get_tree().process_frame
+	tc2._process(0.0)
+	tc2._on_press(0, from + Vector2(-40, -30))
+	Input.flush_buffered_events()
+	check(Input.is_action_pressed(&"shoot"), "옮긴 자리에서 사격 버튼이 눌림")
+	tc2._release_all()
+	tc2.set_edit_mode(true)
+	tc2._on_press(0, d.edit_button_positions[1])
+	check(Settings.touch_positions.is_empty(), "초기화하면 기본 배치")
+	tc2.set_edit_mode(false)
+	tc2.queue_free()
+	Input.flush_buffered_events()
+	await get_tree().process_frame
 
 
 func test_export_preset() -> void:

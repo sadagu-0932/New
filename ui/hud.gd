@@ -35,7 +35,11 @@ func _ready() -> void:
 	add_child(_canvas)
 	_skill_icons = DB.theme.load_sheet("skill_icons")
 	# 터치 기기에서는 키 이름(Q)을 보여주지 않는다
-	_q_label = UiText.make_label("" if TouchControls.is_enabled() else "Q")
+	_q_label = UiText.make_label("" if TouchControls.is_enabled() else Settings.key_name(&"skill"))
+	# 키 설정을 바꾸면 스킬 키 이름도 따라 바뀐다
+	Settings.changed.connect(func() -> void:
+		if not TouchControls.is_enabled():
+			_q_label.text = Settings.key_name(&"skill"))
 	_q_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	_q_label.position = Vector2(320 - MARGIN.x - 16 - 8, 180 - MARGIN.y - 12)
 	add_child(_q_label)
