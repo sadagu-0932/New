@@ -2,92 +2,98 @@
   "frame_width": 16,
   "frame_height": 16,
   "animations": {
-    "helmet_cap": {
+    "wood": {
       "row": 0,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "helmet_band": {
+    "helmet_cap": {
       "row": 1,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "pants_work": {
+    "helmet_band": {
       "row": 2,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "pants_pad": {
+    "pants_work": {
       "row": 3,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "gun_lab": {
+    "pants_pad": {
       "row": 4,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "gun_heavy": {
+    "gun_lab": {
       "row": 5,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "gun_rapid": {
+    "gun_heavy": {
       "row": 6,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "armor_suit": {
+    "gun_rapid": {
       "row": 7,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "armor_plate": {
+    "armor_suit": {
       "row": 8,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "armor_light": {
+    "armor_plate": {
       "row": 9,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "vial_heal": {
+    "armor_light": {
       "row": 10,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "cell_ammo": {
+    "vial_heal": {
       "row": 11,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "shard": {
+    "cell_ammo": {
       "row": 12,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "scrap": {
+    "shard": {
       "row": 13,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
-    "paper": {
+    "scrap": {
       "row": 14,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "paper": {
+      "row": 15,
       "frames": 1,
       "fps": 1.0,
       "loop": false

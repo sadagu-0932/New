@@ -266,11 +266,29 @@ func test_map_and_teleport() -> void:
 	check(panel.targets.size() == 2, "순간이동할 수 있는 곳 = 활성화한 웨이스톤 2곳")
 	check((panel.targets[panel.selected]["waystone"] as WaystoneData).id == "village", "지금 있는 곳의 웨이스톤이 골라져 있음")
 	var names: Array[String] = []
-	for l in panel._labels:
-		names.append(l.text)
+	for a in MapPanel.areas():
+		names.append(MapPanel.area_label(a))
+	check(MapPanel.world_size().x > MapPanel.VIEW.size.x, "지도는 화면보다 넓게 펼쳐져 있음 (%d px)" % int(MapPanel.world_size().x))
+	var overlap := false
+	var list := MapPanel.areas()
+	for i in list.size():
+		for j in range(i + 1, list.size()):
+			if MapPanel.area_rect(list[i]).grow(2.0).intersects(MapPanel.area_rect(list[j])):
+				overlap = true
+	check(not overlap, "지도에서 지역끼리 겹치지 않음")
+	check(float(panel._fog["forest"]) == 1.0 and float(panel._fog["village"]) == 1.0 and Story.has_flag("map_seen:village"),
+		"처음 보는 밝혀진 지역은 안개가 걷히는 것부터 보여줌, 숲은 가려진 채")
+	for i in 90:
+		await get_tree().process_frame
+	check(float(panel._fog["village"]) < 0.3 and float(panel._fog["forest"]) == 1.0, "안개가 걷힘 (%.2f)" % float(panel._fog["village"]))
+	var view := Rect2(panel.camera, MapPanel.VIEW.size)
+	check(view.grow(1.0).has_point(panel.targets[panel.selected]["pos"]), "고른 탑이 지도 창 안에 보임")
 	check(names.count(DB.story.text_unknown_area) == 2 and names.has("연구소") and names.has("마석 광산촌"), "가려진 지역은 이름도 가려짐 %s" % [names])
 	panel._select(0)
 	check((panel.targets[panel.selected]["waystone"] as WaystoneData).id == "lab_exit", "←→ 로 다른 웨이스톤 고름")
+	for i in 60:
+		await get_tree().process_frame
+	check(Rect2(panel.camera, MapPanel.VIEW.size).grow(1.0).has_point(panel.targets[panel.selected]["pos"]), "지도가 고른 탑을 따라 움직임")
 	var hp := _p().health.current
 	panel.confirm()
 	_scripted()
@@ -321,6 +339,35 @@ func test_forest_enemies() -> void:
 	check(charger.data == DB.enemies["charger_forest"], "숲의 돌진형은 숲용 수치를 씀")
 	check(_props(Waystone).size() == 2, "숲 입구와 보스방 앞에 웨이스톤")
 	_kill_enemies()
+	await step(2)
+	# 나무는 근접으로 베어 지나갈 수 있다
+	var lv := _lv()
+	check(lv.breakable != null, "숲: 나무를 벨 수 있는 지역")
+	var tree := Vector2i(13, 5)
+	check(lv.map.is_wall(tree) and lv.breakable.can_break(tree) and not lv.breakable.can_break(Vector2i(0, 0)), "안쪽 나무는 벨 수 있고 맵 테두리는 못 벰")
+	var p := _p()
+	p.teleport(LevelMap.cell_center(Vector2i(11, 5)))
+	await step(2)
+	var before := p.global_position
+	input.push(Vector2.RIGHT, 30)
+	await step(31)
+	check(p.global_position.x < LevelMap.cell_center(tree).x - 8.0, "베기 전에는 나무에 막힘")
+	var wood := Story.inventory.count("wood")
+	var swings := 0
+	while lv.map.is_wall(tree) and swings < 6:
+		p.teleport(LevelMap.cell_center(Vector2i(12, 5)))
+		input.push(Vector2.ZERO, 1, 0, InputFrame.MELEE, LevelMap.cell_center(tree))
+		await step(p.weapon.melee.active_ticks + p.weapon.melee.recovery_ticks + 3)
+		swings += 1
+	check(not lv.map.is_wall(tree) and swings == DB.area("forest").break_hits, "근접으로 %d번 치면 나무가 베어짐" % swings)
+	check(Story.inventory.count("wood") > wood, "벤 나무에서 나무토막을 얻음")
+	p.teleport(LevelMap.cell_center(Vector2i(12, 5)))
+	input.push(Vector2.RIGHT, 30, 0, 0, LevelMap.cell_center(tree))
+	await step(31)
+	check(p.global_position.x > LevelMap.cell_center(tree).x - 4.0, "벤 자리로 지나갈 수 있음 (x=%.0f)" % p.global_position.x)
+	var walls := lv.tiles.get_node(LevelBuilder.WALLS) as TileMapLayer
+	check(walls.get_cell_source_id(tree) == -1, "벤 칸의 벽 타일이 사라짐 (그루터기만 남음)")
+	p.teleport(before)
 	await step(2)
 	var gate: Waystone = _props(Waystone)[1]
 	_p().teleport(gate.global_position + Vector2(0, 10))

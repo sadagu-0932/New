@@ -1976,9 +1976,11 @@ def build_palette() -> None:
 # ---------------------------------------------------------------------------
 # 스토리판: 지역 타일 (연구소·광산촌·숲) — tiles 와 같은 구성(floor, floor_alt, wall_top, wall_face, pit)
 # ---------------------------------------------------------------------------
-def _save_tileset(name: str, tiles: list[tuple[str, Canvas]]) -> None:
+def _save_tileset(name: str, tiles: list[tuple[str, Canvas]], extra: dict | None = None) -> None:
     sheet = Image.new("RGBA", (16 * len(tiles), 16), (0, 0, 0, 0))
     meta: dict = {"tile_size": 16, "tiles": {}}
+    if extra:
+        meta.update(extra)
     for i, (tile_name, cv) in enumerate(tiles):
         sheet.paste(cv.to_image(), (i * 16, 0))
         meta["tiles"][tile_name] = [i, 0]
@@ -1991,128 +1993,359 @@ def _speckle(t: Canvas, rng: random.Random, col: str, n: int) -> None:
         t.set(rng.randrange(0, 16), rng.randrange(0, 16), c(col))
 
 
+def _shadowed(floor: Canvas, dark: str) -> Canvas:
+    """벽 바로 아래 바닥: 위쪽에 벽 그림자가 드리운다."""
+    t = floor.copy()
+    for y in range(0, 3):
+        t.line(0, y, 15, y, c(dark))
+    for x in range(0, 16, 2):
+        t.set(x, 3, c(dark))
+    return t
+
+
+def _top_variants(base, deco) -> list[tuple[str, Canvas]]:
+    """벽 윗면 16가지: 열린 쪽(n 위 · s 처마 · w 왼 · e 오른) 조합마다 가장자리를 그린다."""
+    out: list[tuple[str, Canvas]] = []
+    for mask in range(16):
+        n, s_, w, e = bool(mask & 1), bool(mask & 2), bool(mask & 4), bool(mask & 8)
+        cv = base()
+        deco(cv, n, s_, w, e)
+        suffix = ("n" if n else "") + ("s" if s_ else "") + ("w" if w else "") + ("e" if e else "")
+        out.append(("wall_top" + ("_" + suffix if suffix else ""), cv))
+    return out
+
+
 def build_story_tiles() -> None:
-    # 연구소: 금속 판 바닥, 밝은 벽 + 푸른 띠
+    # ------------------------------------------------------------------
+    # 연구소: 금속 판 바닥, 두꺼운 천장 + 패널 벽 (환기구·화면·배관이 섞인다)
+    # ------------------------------------------------------------------
     rng = random.Random(2001)
 
-    def lab_floor(mark: bool) -> Canvas:
+    def lab_floor(kind: int) -> Canvas:
         t = Canvas(16, 16)
         t.fill(c("stone_dark"))
         t.line(0, 0, 15, 0, c("shadow"))
         t.line(0, 0, 0, 15, c("shadow"))
         t.line(1, 1, 15, 1, c("stone"))
-        for x, y in ((2, 3), (13, 3), (2, 13), (13, 13)):
+        t.line(1, 1, 1, 15, c("stone"))
+        for x, y in ((3, 3), (13, 3), (3, 13), (13, 13)):
             t.set(x, y, c("stone_light"))
-        _speckle(t, rng, "stone", 4)
-        if mark:
-            t.line(4, 8, 11, 8, c("navy"))
-            t.line(4, 9, 11, 9, c("blue"))
+            t.set(x, y + 1, c("shadow"))
+        _speckle(t, rng, "stone", 3)
+        if kind == 1:  # 경고 줄무늬
+            for i in range(4, 12):
+                t.set(i, 8, c("yellow") if (i // 2) % 2 == 0 else c("outline"))
+                t.set(i, 9, c("orange") if (i // 2) % 2 == 0 else c("outline"))
+        elif kind == 2:  # 배수 격자
+            for y in range(5, 11):
+                t.line(5, y, 10, y, c("shadow"))
+            for x in (6, 8, 10):
+                t.line(x, 5, x, 10, c("outline"))
+        elif kind == 3:  # 푸른 유도선
+            t.line(2, 8, 13, 8, c("navy"))
+            t.line(4, 8, 11, 8, c("blue"))
         return t
 
-    lab_top = Canvas(16, 16)
-    lab_top.fill(c("shadow"))
-    lab_top.line(0, 7, 15, 7, c("stone_dark"))
-    lab_top.line(0, 15, 15, 15, c("outline"))
-    lab_face = Canvas(16, 16)
-    lab_face.fill(c("stone_light"))
-    lab_face.line(0, 0, 15, 0, c("pale"))
-    lab_face.line(0, 4, 15, 4, c("blue"))
-    lab_face.line(0, 5, 15, 5, c("navy"))
-    lab_face.line(7, 6, 7, 13, c("stone"))
-    lab_face.line(0, 14, 15, 14, c("stone"))
-    lab_face.line(0, 15, 15, 15, c("shadow"))
-    _save_tileset("tiles_lab", [("floor", lab_floor(False)), ("floor_alt", lab_floor(True)),
-                               ("wall_top", lab_top), ("wall_face", lab_face), ("pit", tile_pit())])
+    def lab_top() -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("shadow"))
+        for x, y in ((3, 3), (11, 3), (3, 11), (11, 11)):
+            t.set(x, y, c("stone_dark"))
+        t.line(7, 0, 7, 15, c("outline"))
+        t.line(0, 7, 15, 7, c("outline"))
+        return t
 
-    # 광산촌: 흙길 바닥, 벽 = 집 (지붕 + 판자벽)
+    def lab_top_deco(t: Canvas, n: bool, s_: bool, w: bool, e: bool) -> None:
+        if n:
+            t.line(0, 0, 15, 0, c("outline"))
+            t.line(0, 1, 15, 1, c("stone"))
+            t.line(0, 2, 15, 2, c("stone_dark"))
+        if w:
+            t.line(0, 0, 0, 15, c("outline"))
+            t.line(1, 1 if n else 0, 1, 15, c("stone_dark"))
+        if e:
+            t.line(15, 0, 15, 15, c("outline"))
+            t.line(14, 1 if n else 0, 14, 15, c("stone_dark"))
+        if s_:
+            t.line(0, 14, 15, 14, c("stone"))
+            t.line(0, 15, 15, 15, c("pale"))
+
+    def lab_face(kind: int = 0) -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("stone_light"))
+        t.line(0, 0, 15, 0, c("white"))
+        t.line(0, 1, 15, 1, c("pale"))
+        t.line(0, 4, 15, 4, c("sky"))
+        t.line(0, 5, 15, 5, c("blue"))
+        t.line(0, 6, 15, 6, c("navy"))
+        t.line(0, 7, 0, 12, c("stone"))
+        t.line(8, 7, 8, 12, c("stone"))
+        for x in (2, 6, 10, 14):
+            t.set(x, 2, c("stone"))
+        for y in (12, 13):
+            t.line(0, y, 15, y, c("stone"))
+        t.line(0, 14, 15, 14, c("stone_dark"))
+        t.line(0, 15, 15, 15, c("shadow"))
+        if kind == 1:  # 환기구
+            for y in range(7, 12):
+                t.line(3, y, 12, y, c("stone_dark") if y % 2 else c("outline"))
+            t.line(2, 6, 13, 6, c("stone"))
+        elif kind == 2:  # 화면
+            for y in range(7, 12):
+                t.line(4, y, 11, y, c("navy"))
+            t.line(4, 6, 11, 6, c("outline"))
+            t.line(4, 12, 11, 12, c("outline"))
+            t.line(3, 7, 3, 11, c("outline"))
+            t.line(12, 7, 12, 11, c("outline"))
+            t.line(5, 8, 9, 8, c("cyan"))
+            t.line(5, 10, 7, 10, c("sky"))
+            t.set(10, 10, c("green_light"))
+        elif kind == 3:  # 배관
+            for x0 in (3, 11):
+                t.line(x0, 2, x0, 15, c("stone_dark"))
+                t.line(x0 + 1, 2, x0 + 1, 15, c("pale"))
+                t.line(x0 + 2, 2, x0 + 2, 15, c("stone"))
+                t.line(x0 - 1, 9, x0 + 3, 9, c("outline"))
+        return t
+
+    lab_tiles = [("floor", lab_floor(0)), ("floor_alt", lab_floor(1)), ("floor_alt2", lab_floor(2)),
+                 ("floor_alt3", lab_floor(3)), ("floor_shadow", _shadowed(lab_floor(0), "shadow"))]
+    lab_tiles += _top_variants(lab_top, lab_top_deco)
+    lab_tiles += [("wall_face", lab_face()), ("wall_face_alt1", lab_face(1)), ("wall_face_alt2", lab_face(2)),
+                  ("wall_face_alt3", lab_face(3)), ("pit", tile_pit())]
+    _save_tileset("tiles_lab", lab_tiles)
+
+    # ------------------------------------------------------------------
+    # 광산촌: 흙길(풀·자갈), 벽 = 집 (기와 지붕 + 용마루·처마, 판자벽 + 돌 기초, 문·창문)
+    # ------------------------------------------------------------------
     rng = random.Random(2002)
 
-    def dirt(stones: bool) -> Canvas:
+    def dirt(kind: int) -> Canvas:
         t = Canvas(16, 16)
         t.fill(c("brown"))
-        _speckle(t, rng, "brown_dark", 10)
-        _speckle(t, rng, "tan", 6)
-        if stones:
-            for x, y in ((4, 5), (5, 5), (10, 11), (11, 11), (11, 10)):
+        _speckle(t, rng, "brown_dark", 9)
+        _speckle(t, rng, "tan", 5)
+        if kind == 1:  # 자갈
+            for x, y in ((4, 5), (5, 5), (4, 6), (10, 11), (11, 11), (11, 10)):
                 t.set(x, y, c("stone"))
+            t.set(5, 6, c("stone_dark"))
+            t.set(10, 10, c("stone_light"))
+        elif kind == 2:  # 풀포기
+            for x, y in ((3, 11), (4, 10), (5, 11), (4, 12), (11, 4), (12, 3), (13, 4)):
+                t.set(x, y, c("green"))
+            t.set(4, 11, c("green_light"))
+            t.set(12, 4, c("green_light"))
+        elif kind == 3:  # 수레 자국
+            t.line(0, 6, 15, 6, c("brown_dark"))
+            t.line(0, 11, 15, 11, c("brown_dark"))
+            for x in range(1, 16, 4):
+                t.set(x, 7, c("tan"))
         return t
 
-    roof = Canvas(16, 16)
-    roof.fill(c("crimson"))
-    for y in range(0, 16, 4):
-        roof.line(0, y, 15, y, c("plum"))
-        for x in range((y // 4) % 2 * 4, 16, 8):
-            roof.line(x, y, x, y + 3, c("plum"))
-    plank = Canvas(16, 16)
-    plank.fill(c("tan"))
-    for x in (0, 5, 10, 15):
-        plank.line(x, 0, x, 15, c("brown"))
-    plank.line(0, 0, 15, 0, c("plum"))
-    plank.line(0, 1, 15, 1, c("brown_dark"))
-    plank.line(0, 15, 15, 15, c("brown_dark"))
-    plank.set(7, 8, c("brown_dark"))
-    _save_tileset("tiles_village", [("floor", dirt(False)), ("floor_alt", dirt(True)),
-                                   ("wall_top", roof), ("wall_face", plank), ("pit", tile_pit())])
+    def roof() -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("crimson"))
+        for y in range(0, 16, 4):
+            t.line(0, y + 3, 15, y + 3, c("plum"))
+            off = 0 if (y // 4) % 2 == 0 else 4
+            for x in range(off, 16, 8):
+                t.line(x, y, x, y + 2, c("plum"))
+                t.set((x + 2) % 16, y, c("red"))
+                t.set((x + 5) % 16, y + 1, c("red"))
+        return t
 
-    # 숲: 풀 바닥, 벽 = 나무 (우거진 잎 + 줄기)
+    def roof_deco(t: Canvas, n: bool, s_: bool, w: bool, e: bool) -> None:
+        if n:  # 용마루
+            t.line(0, 0, 15, 0, c("outline"))
+            t.line(0, 1, 15, 1, c("tan"))
+            t.line(0, 2, 15, 2, c("brown"))
+            t.line(0, 3, 15, 3, c("brown_dark"))
+        if w:  # 박공널
+            t.line(0, 0, 0, 15, c("outline"))
+            t.line(1, 1 if n else 0, 1, 15, c("brown"))
+            t.line(2, 4 if n else 0, 2, 15, c("brown_dark"))
+        if e:
+            t.line(15, 0, 15, 15, c("outline"))
+            t.line(14, 1 if n else 0, 14, 15, c("brown"))
+            t.line(13, 4 if n else 0, 13, 15, c("brown_dark"))
+        if s_:  # 처마
+            t.line(0, 13, 15, 13, c("brown"))
+            t.line(0, 14, 15, 14, c("brown_dark"))
+            t.line(0, 15, 15, 15, c("outline"))
+
+    def house_face(kind: str = "") -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("tan"))
+        t.line(0, 0, 15, 0, c("plum"))       # 처마 그림자
+        t.line(0, 1, 15, 1, c("brown_dark"))
+        t.line(0, 2, 15, 2, c("brown"))
+        for x in (3, 7, 11, 15):
+            t.line(x, 3, x, 11, c("brown"))
+        for x, y in ((1, 5), (9, 8), (5, 10), (13, 4)):
+            t.set(x, y, c("skin"))
+        for y in (12, 13, 14):               # 돌 기초
+            t.line(0, y, 15, y, c("stone"))
+        t.line(0, 12, 15, 12, c("stone_light"))
+        for x in (4, 12):
+            t.set(x, 13, c("stone_dark"))
+        t.set(8, 14, c("stone_dark"))
+        t.line(0, 15, 15, 15, c("shadow"))
+        if kind == "l":
+            for x in (0, 1):
+                t.line(x, 2, x, 14, c("brown_dark"))
+            t.line(0, 0, 0, 15, c("outline"))
+        elif kind == "r":
+            for x in (14, 15):
+                t.line(x, 2, x, 14, c("brown_dark"))
+            t.line(15, 0, 15, 15, c("outline"))
+        elif kind == "window":
+            for y in range(4, 10):
+                t.line(4, y, 11, y, c("navy"))
+            t.line(3, 3, 12, 3, c("brown_dark"))
+            t.line(3, 10, 12, 10, c("brown_dark"))
+            t.line(3, 3, 3, 10, c("brown_dark"))
+            t.line(12, 3, 12, 10, c("brown_dark"))
+            t.line(7, 4, 7, 9, c("brown_dark"))
+            t.line(8, 4, 8, 9, c("brown_dark"))
+            t.line(4, 6, 11, 6, c("brown_dark"))
+            t.set(5, 4, c("sky"))
+            t.set(5, 5, c("sky"))
+            t.set(10, 7, c("yellow"))
+            t.set(10, 8, c("orange"))
+            t.line(2, 11, 13, 11, c("brown"))
+        elif kind == "door":
+            for y in range(3, 15):
+                t.line(4, y, 11, y, c("brown"))
+            t.line(3, 2, 12, 2, c("brown_dark"))
+            t.line(3, 2, 3, 14, c("brown_dark"))
+            t.line(12, 2, 12, 14, c("brown_dark"))
+            t.line(6, 3, 6, 14, c("brown_dark"))
+            t.line(9, 3, 9, 14, c("brown_dark"))
+            t.set(10, 9, c("yellow"))
+            t.line(5, 4, 10, 4, c("tan"))
+            t.line(3, 15, 12, 15, c("stone_light"))
+        return t
+
+    vil = [("floor", dirt(0)), ("floor_alt", dirt(1)), ("floor_alt2", dirt(2)), ("floor_alt3", dirt(3)),
+           ("floor_shadow", _shadowed(dirt(0), "brown_dark"))]
+    vil += _top_variants(roof, roof_deco)
+    vil += [("wall_face", house_face()), ("wall_face_l", house_face("l")), ("wall_face_r", house_face("r")),
+            ("wall_face_window", house_face("window")), ("wall_face_door", house_face("door")), ("pit", tile_pit())]
+    _save_tileset("tiles_village", vil)
+
+    # ------------------------------------------------------------------
+    # 숲: 풀 바닥, 벽 = 나무. 수풀 가장자리는 둥글게 뚫려 밑의 풀이 보인다. 베어 내면 그루터기
+    # ------------------------------------------------------------------
     rng = random.Random(2003)
 
-    def grass(flower: bool) -> Canvas:
+    def grass(kind: int) -> Canvas:
         t = Canvas(16, 16)
         t.fill(c("green"))
-        _speckle(t, rng, "green_dark", 10)
-        _speckle(t, rng, "green_light", 6)
-        if flower:
-            t.line(3, 12, 3, 10, c("green_light"))
-            t.line(11, 5, 11, 3, c("green_light"))
-            t.set(12, 4, c("green_light"))
+        _speckle(t, rng, "green_dark", 8)
+        _speckle(t, rng, "green_light", 5)
+        if kind == 1:  # 풀포기
+            for x0, y0 in ((3, 12), (11, 5)):
+                t.line(x0, y0, x0, y0 - 2, c("green_light"))
+                t.set(x0 - 1, y0 - 1, c("green_light"))
+                t.set(x0 + 1, y0 - 1, c("green_light"))
+        elif kind == 2:  # 꽃
+            for x0, y0, col in ((4, 5, "white"), (11, 10, "yellow"), (7, 13, "white")):
+                t.set(x0, y0, c(col))
+                t.set(x0, y0 + 1, c("green_dark"))
+        elif kind == 3:  # 돌멩이
+            for x, y in ((9, 7), (10, 7), (9, 8), (10, 8), (11, 8)):
+                t.set(x, y, c("stone"))
+            t.set(9, 7, c("stone_light"))
+            t.line(9, 9, 11, 9, c("green_dark"))
         return t
 
-    leaves = Canvas(16, 16)
-    leaves.fill(c("green_dark"))
-    lrng = random.Random(2004)
-    for _ in range(14):
-        leaves.set(lrng.randrange(0, 16), lrng.randrange(0, 16), c("green"))
-    for _ in range(8):
-        leaves.set(lrng.randrange(0, 16), lrng.randrange(0, 16), c("shadow"))
-    trunk = Canvas(16, 16)
-    trunk.fill(c("green_dark"))
-    for y in range(0, 6):
+    def canopy() -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("green_dark"))
+        # 잎 뭉치: 왼쪽 위가 밝은 둥근 덩어리 넷
+        for cx, cy in ((4, 4), (12, 3), (3, 12), (11, 11)):
+            for y in range(16):
+                for x in range(16):
+                    d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+                    if d <= 3.2:
+                        t.set(x, y, c("green"))
+            t.set(cx - 1, cy - 2, c("green_light"))
+            t.set(cx - 2, cy - 1, c("green_light"))
+            t.set(cx, cy - 2, c("green_light"))
+        for x, y in ((8, 7), (7, 8), (15, 8), (0, 7), (8, 15), (8, 0)):
+            t.set(x, y, c("shadow"))
+        return t
+
+    # 가장자리 물결: 그 쪽 가장자리에서 얼마나 파내는지 (칸 안 위치별)
+    SCALLOP = [2, 1, 0, 0, 0, 1, 2, 3, 2, 1, 0, 0, 0, 1, 2, 3]
+
+    def canopy_deco(t: Canvas, n: bool, s_: bool, w: bool, e: bool) -> None:
+        for i in range(16):
+            cut = SCALLOP[i]
+            if n:
+                for k in range(cut):
+                    t.set(i, k, None)
+                t.set(i, cut, c("outline"))
+                if cut + 1 < 16:
+                    t.set(i, cut + 1, c("green_light"))
+            if w:
+                for k in range(cut):
+                    t.set(k, i, None)
+                if t.px[i][cut] is not None:
+                    t.set(cut, i, c("outline"))
+            if e:
+                for k in range(cut):
+                    t.set(15 - k, i, None)
+                if t.px[i][15 - cut] is not None:
+                    t.set(15 - cut, i, c("outline"))
+
+    def trunk_face() -> Canvas:
+        t = Canvas(16, 16)
+        # 위쪽: 수관 아랫자락 (아래로 둥글게)
         for x in range(16):
-            if (x + y) % 5 == 0:
-                trunk.set(x, y, c("green"))
-    for y in range(6, 16):
-        trunk.line(0, y, 15, y, c("green"))
-    for x0 in (2, 10):
-        for y in range(4, 15):
-            trunk.line(x0, y, x0 + 3, y, c("brown_dark"))
-            trunk.set(x0 + 1, y, c("brown"))
-        trunk.line(x0 - 1, 15, x0 + 4, 15, c("green_dark"))
-    _save_tileset("tiles_forest", [("floor", grass(False)), ("floor_alt", grass(True)),
-                                  ("wall_top", leaves), ("wall_face", trunk), ("pit", tile_pit())])
+            depth = 8 - SCALLOP[x]
+            for y in range(0, depth):
+                t.set(x, y, c("green_dark"))
+            t.set(x, depth, c("outline"))
+        for x, y in ((3, 2), (4, 1), (11, 3), (12, 2), (7, 4)):
+            t.set(x, y, c("green"))
+        # 줄기
+        for y in range(8, 14):
+            t.line(6, y, 9, y, c("brown_dark"))
+            t.set(7, y, c("brown"))
+            t.set(5, y, c("outline"))
+            t.set(10, y, c("outline"))
+        t.set(8, 10, c("tan"))
+        # 뿌리와 그림자
+        t.line(4, 14, 11, 14, c("brown_dark"))
+        t.set(4, 14, c("outline"))
+        t.set(11, 14, c("outline"))
+        t.line(3, 15, 12, 15, c("green_dark"))
+        return t
+
+    def stump() -> Canvas:
+        t = grass(0)
+        for y in range(8, 12):
+            t.line(5, y, 10, y, c("brown_dark"))
+        t.line(5, 7, 10, 7, c("tan"))
+        t.line(6, 6, 9, 6, c("tan"))
+        t.line(6, 7, 9, 7, c("skin"))
+        t.set(7, 7, c("brown"))
+        t.line(4, 12, 11, 12, c("green_dark"))
+        t.set(4, 9, c("outline"))
+        t.set(11, 9, c("outline"))
+        return t
+
+    forest = [("floor", grass(0)), ("floor_alt", grass(1)), ("floor_alt2", grass(2)), ("floor_alt3", grass(3)),
+              ("floor_stump", stump())]
+    forest += _top_variants(canopy, canopy_deco)
+    forest += [("wall_face", trunk_face()), ("pit", tile_pit())]
+    _save_tileset("tiles_forest", forest, {"wall_over_floor": True})
 
 
 # ---------------------------------------------------------------------------
 # 스토리판: 소품 16×16 — 웨이스톤, 획득물, NPC, 잔해
 # ---------------------------------------------------------------------------
-WAYSTONE = [
-    "................",
-    "......oooo......",
-    ".....osSSso.....",
-    ".....oSggSo.....",
-    "....osSggSso....",
-    "....oSsggsSo....",
-    "....oSSggSSo....",
-    "....oSsggsSo....",
-    "....oSSggSSo....",
-    "....osSggSso....",
-    ".....oSssSo.....",
-    "...oooSSSSooo...",
-    "..osSSSSSSSSso..",
-    "..oSSsSSSSsSSo..",
-    "..oooooooooooo..",
-    "................",
-]
 NPC = [
     "................",
     ".....oooooo.....",
@@ -2151,10 +2384,63 @@ RUBBLE_A = [
 ]
 
 
+# 웨이스톤 탑 16×32: 꼭대기에 마석(g), 돌탑 몸통, 아래에 문
+WAYTOWER = [
+    "................",
+    ".......gg.......",
+    "......gGGg......",
+    "......gGGg......",
+    ".......gg.......",
+    ".....oooooo.....",
+    "....oLLLLLLo....",
+    "...oLSSSSSSLo...",
+    "...ooooooooooo..",
+    "....oSLSSSLSo...",
+    "....oSSSSSSSo...",
+    "....oSgSSSgSo...",
+    "....oSSSLSSSo...",
+    "....oLSSSSSSo...",
+    "....oSSSSSLSo...",
+    "....oSSgggSSo...",
+    "....oSSgGgSSo...",
+    "....oSSgggSSo...",
+    "....oSLSSSSSo...",
+    "....oSSSSSLSo...",
+    "....oSSSSSSSo...",
+    "...oSSLSSSSSSo..",
+    "...oSSSSSSLSSo..",
+    "...oSSSdddSSSo..",
+    "...oSLSdDdSSSo..",
+    "...oSSSdDdSLSo..",
+    "..oSSSSdDdSSSSo.",
+    "..oLSSSdDdSSSSo.",
+    ".osSSSSSSSSSSSso",
+    ".osssssssssssso.",
+    "..oooooooooooo..",
+    "................",
+]
+
+
+def build_waystone() -> None:
+    off = Canvas.from_rows(WAYTOWER, {".": None, "o": "outline", "S": "stone", "L": "stone_light", "s": "stone_dark",
+                                      "g": "stone_dark", "G": "shadow", "d": "brown_dark", "D": "outline"})
+    on1 = Canvas.from_rows(WAYTOWER, {".": None, "o": "outline", "S": "stone_light", "L": "pale", "s": "stone",
+                                      "g": "sky", "G": "cyan", "d": "brown", "D": "navy"})
+    on2 = Canvas.from_rows(WAYTOWER, {".": None, "o": "outline", "S": "stone_light", "L": "pale", "s": "stone",
+                                      "g": "cyan", "G": "white", "d": "brown", "D": "blue"})
+    # 켜진 탑은 꼭대기에서 빛이 번쩍인다
+    for cv, col in ((on1, "cyan"), (on2, "white")):
+        cv.set(7, 0, c(col))
+        cv.set(8, 0, c(col))
+    on2.set(5, 2, c("cyan"))
+    on2.set(10, 3, c("cyan"))
+    save_sheet("waystone", 16, 32, [
+        ("off", [off], 1.0, False),
+        ("on", [on1, on2], 3.0, True),
+    ])
+
+
 def build_story_props() -> None:
-    way_off = Canvas.from_rows(WAYSTONE, {".": None, "o": "outline", "S": "stone", "s": "stone_dark", "g": "stone_dark"})
-    way_on1 = Canvas.from_rows(WAYSTONE, {".": None, "o": "outline", "S": "stone_light", "s": "stone", "g": "sky"})
-    way_on2 = Canvas.from_rows(WAYSTONE, {".": None, "o": "outline", "S": "stone_light", "s": "stone", "g": "cyan"})
 
     def npc(hair: str, cloth: str, pants: str) -> list[Canvas]:
         base = Canvas.from_rows(NPC, {".": None, "o": "outline", "h": hair, "f": "skin", "e": "outline",
@@ -2189,8 +2475,6 @@ def build_story_props() -> None:
         return cv
 
     save_sheet("story_props", 16, 16, [
-        ("waystone_off", [way_off], 1.0, False),
-        ("waystone_on", [way_on1, way_on2], 3.0, True),
         ("pickup", [sparkle("yellow", 0), sparkle("yellow", 1)], 4.0, True),
         ("pickup_doc", [doc(0), doc(1)], 3.0, True),
         ("npc_a", npc("brown_dark", "blue", "navy"), 1.5, True),
@@ -2320,7 +2604,17 @@ def build_item_icons() -> None:
         rect(cv, 9, 8, 11, 9, patch)
         return cv
 
+    wood = icon_frame()
+    for y0 in (4, 9):
+        rect(wood, 3, y0, 12, y0 + 3, "brown")
+        wood.line(3, y0, 12, y0, c("tan"))
+        wood.line(3, y0 + 3, 12, y0 + 3, c("brown_dark"))
+        rect(wood, 11, y0, 12, y0 + 3, "tan")
+        wood.set(11, y0 + 1, c("skin"))
+        wood.set(5, y0 + 2, c("brown_dark"))
+
     icons = [
+        ("wood", wood),
         ("helmet_cap", helmet("yellow", "orange", "white")),
         ("helmet_band", band),
         ("pants_work", pants("blue", "navy")),
@@ -2370,6 +2664,7 @@ def main() -> None:
     build_item_icons()
     build_story_tiles()
     build_story_props()
+    build_waystone()
     build_golem()
     build_icon()
     verify_palette()

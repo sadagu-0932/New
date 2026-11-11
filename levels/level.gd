@@ -44,6 +44,10 @@ var director: TutorialDirector
 ## 스토리판 지역 (있으면 지역 맵·타일·소품 데이터를 여기서 읽는다. 프롤로그는 tutorial 도 함께)
 var area: AreaData
 var area_director: AreaDirector
+## 타일 (LevelBuilder 가 만든 노드: 바닥·벽 레이어)
+var tiles: Node2D
+## 베어 낼 수 있는 벽 관리 (숲)
+var breakable: BreakableWalls
 ## 플레이어가 장착할 스킬
 var skill: SkillData
 ## 현재 디버그 구간 (0 = 시작 지점, 1~7 = 구간)
@@ -57,7 +61,8 @@ func _ready() -> void:
 		map = LevelMap.load_from_file(area.map_file)
 	else:
 		map = LevelMap.load_from_file(map_path)
-	add_child(LevelBuilder.build(map, DB.theme, area.tileset if area != null else "tiles"))
+	tiles = LevelBuilder.build(map, DB.theme, area.tileset if area != null else "tiles")
+	add_child(tiles)
 	if area != null:
 		area_director = AreaDirector.new(self, area)
 	# 같은 종류 소품이 몇 번째인지 (지역 데이터와 짝짓기용)
@@ -113,6 +118,9 @@ func _ready() -> void:
 
 	if area_director != null:
 		add_child(area_director)
+	if area != null and area.breakable_walls:
+		breakable = BreakableWalls.new(self, area)
+		add_child(breakable)
 
 	Events.debug_section_step.connect(_on_debug_section_step)
 

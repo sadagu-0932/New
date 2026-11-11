@@ -11,9 +11,16 @@ extends Resource
 @export_file("*.txt") var map_file: String = ""
 ## 타일 그림 (art 테마의 시트 이름)
 @export var tileset: String = "tiles"
-## 지도 화면에 나오는지, 나온다면 어디에 (지도 화면 좌표, 1칸 = 1px)
+## 지도 화면에 나오는지, 나온다면 넓은 지도의 어디에 (칸 단위, 지역 맵의 왼쪽 위 칸이 놓일 자리)
 @export var on_map: bool = true
 @export var map_pos: Vector2i = Vector2i.ZERO
+## 지도에서의 지형 색 (바닥 / 벽·나무·집)
+@export var map_floor_color: Color = Color(0.56, 0.52, 0.62)
+@export var map_wall_color: Color = Color(0.24, 0.21, 0.3)
+## 벽(나무)을 근접 공격으로 베어 지나갈 수 있는지, 몇 번 쳐야 베어지는지, 벨 때마다 얻는 아이템 id ("" = 없음)
+@export var breakable_walls: bool = false
+@export var break_hits: int = 0
+@export var break_drop_item: String = ""
 ## 보스방: 보스를 쓰러뜨리기(boss_cleared_flag) 전에는 저장·순간이동 불가
 @export var is_boss_room: bool = false
 @export var boss_cleared_flag: String = ""

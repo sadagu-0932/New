@@ -90,6 +90,8 @@ signal dialogue_requested(speaker: String, lines: Array)
 signal dialogue_finished()
 ## 자료(문서)를 읽음
 signal document_read(item_id: String)
+## 벽(나무)을 베어 냄 (칸)
+signal wall_broken(cell: Vector2i)
 ## 인벤토리 내용이 바뀜 (획득·사용·장착·스킬 지정)
 signal inventory_changed()
 ## 장착 무기·갑옷이나 지정 스킬이 바뀜 → 플레이어가 전투 수치를 다시 읽는다
