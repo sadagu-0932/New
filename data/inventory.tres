@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="InventoryConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://items/inventory_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+start_items = {
+"lab_gun": 1,
+"lab_suit": 1,
+"heal_vial": 2,
+"ammo_cell": 1
+}
+start_weapon = "lab_gun"
+start_armor = "lab_suit"
+start_skills = Array[String](["blink", "absorb", "decoy", "shockwave", "mark"])
+start_skill_q = ""
+skill2_unlock_flag = "prologue_done"
+stat_names = {
+"max_hp": "최대 체력",
+"move_speed": "이동 속도",
+"hurt_invuln_ticks": "피격 후 무적",
+"ranged_damage": "사격 데미지",
+"melee_damage": "근접 데미지"
+}
+tab_names = Array[String](["스킬", "무기", "갑옷", "아이템"])
+category_names = Array[String](["무기", "갑옷", "소모품", "재료", "자료"])
+text_in_combat = "전투 중에는 바꿀 수 없다"
+text_skill2_locked = "스킬2 칸은 아직 잠겨 있다"
+text_empty = "가진 것이 없다"
+text_equipped = "장착"
+text_used = "사용했다"
+text_cannot_use = "지금은 쓸 필요가 없다"

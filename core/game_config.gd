@@ -6,6 +6,8 @@ extends Resource
 @export var tick_rate: int = 60
 ## 데모 모드: 스토리 트리거·스킬 교체 지점·보스 2페이즈 전투를 끈다
 @export var demo_mode: bool = true
+## 스토리판: 스피드런 기능(타이머·기록 화면·리플레이·즉시 재시작)을 끄고 스토리 트리거·프롤로그 연출을 켠다
+@export var story_mode: bool = false
 ## 런 고정 시드. 랜덤은 전부 이 시드의 RNG 하나로만 뽑는다
 @export var run_seed: int = 0
 ## 튜토리얼 (use_tutorial 이 켜져 있으면 이걸로 시작)

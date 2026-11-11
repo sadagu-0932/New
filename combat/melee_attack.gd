@@ -46,6 +46,15 @@ func _ready() -> void:
 	_query.collision_mask = Layers.ENEMY_HURTBOX
 
 
+## 무기 교체: 근접·패링 수치를 바꾼다 (휘두르는 중이면 끊는다)
+func set_data(melee_data: MeleeData, parry_data: ParryData) -> void:
+	cancel()
+	data = melee_data
+	parry = parry_data
+	if hitbox != null:
+		(hitbox.shape_node.shape as CircleShape2D).radius = data.radius
+
+
 func is_active() -> bool:
 	return _elapsed >= 0
 

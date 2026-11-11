@@ -1973,6 +1973,336 @@ def build_palette() -> None:
     img.save(OUT / "palette.png", optimize=False)
 
 
+# ---------------------------------------------------------------------------
+# 스토리판: 지역 타일 (연구소·광산촌·숲) — tiles 와 같은 구성(floor, floor_alt, wall_top, wall_face, pit)
+# ---------------------------------------------------------------------------
+def _save_tileset(name: str, tiles: list[tuple[str, Canvas]]) -> None:
+    sheet = Image.new("RGBA", (16 * len(tiles), 16), (0, 0, 0, 0))
+    meta: dict = {"tile_size": 16, "tiles": {}}
+    for i, (tile_name, cv) in enumerate(tiles):
+        sheet.paste(cv.to_image(), (i * 16, 0))
+        meta["tiles"][tile_name] = [i, 0]
+    sheet.save(OUT / f"{name}.png", optimize=False)
+    write_json(OUT / f"{name}.json", meta)
+
+
+def _speckle(t: Canvas, rng: random.Random, col: str, n: int) -> None:
+    for _ in range(n):
+        t.set(rng.randrange(0, 16), rng.randrange(0, 16), c(col))
+
+
+def build_story_tiles() -> None:
+    # 연구소: 금속 판 바닥, 밝은 벽 + 푸른 띠
+    rng = random.Random(2001)
+
+    def lab_floor(mark: bool) -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("stone_dark"))
+        t.line(0, 0, 15, 0, c("shadow"))
+        t.line(0, 0, 0, 15, c("shadow"))
+        t.line(1, 1, 15, 1, c("stone"))
+        for x, y in ((2, 3), (13, 3), (2, 13), (13, 13)):
+            t.set(x, y, c("stone_light"))
+        _speckle(t, rng, "stone", 4)
+        if mark:
+            t.line(4, 8, 11, 8, c("navy"))
+            t.line(4, 9, 11, 9, c("blue"))
+        return t
+
+    lab_top = Canvas(16, 16)
+    lab_top.fill(c("shadow"))
+    lab_top.line(0, 7, 15, 7, c("stone_dark"))
+    lab_top.line(0, 15, 15, 15, c("outline"))
+    lab_face = Canvas(16, 16)
+    lab_face.fill(c("stone_light"))
+    lab_face.line(0, 0, 15, 0, c("pale"))
+    lab_face.line(0, 4, 15, 4, c("blue"))
+    lab_face.line(0, 5, 15, 5, c("navy"))
+    lab_face.line(7, 6, 7, 13, c("stone"))
+    lab_face.line(0, 14, 15, 14, c("stone"))
+    lab_face.line(0, 15, 15, 15, c("shadow"))
+    _save_tileset("tiles_lab", [("floor", lab_floor(False)), ("floor_alt", lab_floor(True)),
+                               ("wall_top", lab_top), ("wall_face", lab_face), ("pit", tile_pit())])
+
+    # 광산촌: 흙길 바닥, 벽 = 집 (지붕 + 판자벽)
+    rng = random.Random(2002)
+
+    def dirt(stones: bool) -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("brown"))
+        _speckle(t, rng, "brown_dark", 10)
+        _speckle(t, rng, "tan", 6)
+        if stones:
+            for x, y in ((4, 5), (5, 5), (10, 11), (11, 11), (11, 10)):
+                t.set(x, y, c("stone"))
+        return t
+
+    roof = Canvas(16, 16)
+    roof.fill(c("crimson"))
+    for y in range(0, 16, 4):
+        roof.line(0, y, 15, y, c("plum"))
+        for x in range((y // 4) % 2 * 4, 16, 8):
+            roof.line(x, y, x, y + 3, c("plum"))
+    plank = Canvas(16, 16)
+    plank.fill(c("tan"))
+    for x in (0, 5, 10, 15):
+        plank.line(x, 0, x, 15, c("brown"))
+    plank.line(0, 0, 15, 0, c("plum"))
+    plank.line(0, 1, 15, 1, c("brown_dark"))
+    plank.line(0, 15, 15, 15, c("brown_dark"))
+    plank.set(7, 8, c("brown_dark"))
+    _save_tileset("tiles_village", [("floor", dirt(False)), ("floor_alt", dirt(True)),
+                                   ("wall_top", roof), ("wall_face", plank), ("pit", tile_pit())])
+
+    # 숲: 풀 바닥, 벽 = 나무 (우거진 잎 + 줄기)
+    rng = random.Random(2003)
+
+    def grass(flower: bool) -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("green"))
+        _speckle(t, rng, "green_dark", 10)
+        _speckle(t, rng, "green_light", 6)
+        if flower:
+            t.line(3, 12, 3, 10, c("green_light"))
+            t.line(11, 5, 11, 3, c("green_light"))
+            t.set(12, 4, c("green_light"))
+        return t
+
+    leaves = Canvas(16, 16)
+    leaves.fill(c("green_dark"))
+    lrng = random.Random(2004)
+    for _ in range(14):
+        leaves.set(lrng.randrange(0, 16), lrng.randrange(0, 16), c("green"))
+    for _ in range(8):
+        leaves.set(lrng.randrange(0, 16), lrng.randrange(0, 16), c("shadow"))
+    trunk = Canvas(16, 16)
+    trunk.fill(c("green_dark"))
+    for y in range(0, 6):
+        for x in range(16):
+            if (x + y) % 5 == 0:
+                trunk.set(x, y, c("green"))
+    for y in range(6, 16):
+        trunk.line(0, y, 15, y, c("green"))
+    for x0 in (2, 10):
+        for y in range(4, 15):
+            trunk.line(x0, y, x0 + 3, y, c("brown_dark"))
+            trunk.set(x0 + 1, y, c("brown"))
+        trunk.line(x0 - 1, 15, x0 + 4, 15, c("green_dark"))
+    _save_tileset("tiles_forest", [("floor", grass(False)), ("floor_alt", grass(True)),
+                                  ("wall_top", leaves), ("wall_face", trunk), ("pit", tile_pit())])
+
+
+# ---------------------------------------------------------------------------
+# 스토리판: 소품 16×16 — 웨이스톤, 획득물, NPC, 잔해
+# ---------------------------------------------------------------------------
+WAYSTONE = [
+    "................",
+    "......oooo......",
+    ".....osSSso.....",
+    ".....oSggSo.....",
+    "....osSggSso....",
+    "....oSsggsSo....",
+    "....oSSggSSo....",
+    "....oSsggsSo....",
+    "....oSSggSSo....",
+    "....osSggSso....",
+    ".....oSssSo.....",
+    "...oooSSSSooo...",
+    "..osSSSSSSSSso..",
+    "..oSSsSSSSsSSo..",
+    "..oooooooooooo..",
+    "................",
+]
+NPC = [
+    "................",
+    ".....oooooo.....",
+    "....ohhhhhho....",
+    "....ohffffho....",
+    "....offeffeo....",
+    "....offffffo....",
+    ".....offffo.....",
+    "....occccco.....",
+    "...occcccccco...",
+    "...ocfccccfco...",
+    "...ocfccccfco...",
+    "....occccco.....",
+    "....opppppo.....",
+    "....opo.opo.....",
+    "....obo.obo.....",
+    "....ooo.ooo.....",
+]
+RUBBLE_A = [
+    "................",
+    "................",
+    "..........oo....",
+    ".....oo..oSSo...",
+    "....oSSo.osSo...",
+    "...oSsSSooSSSo..",
+    "..obSSsSSSsSSo..",
+    "..obbSSSSSSSso..",
+    ".oSbbbsSSsSSSSo.",
+    ".oSSbbSSSSSsSSo.",
+    "oSsSSbbsSSSSSsSo",
+    "oSSSSSbSSsSSSSSo",
+    "oSSsSSSSSSSSsSSo",
+    "oooooooooooooooo",
+    "................",
+    "................",
+]
+
+
+def build_story_props() -> None:
+    way_off = Canvas.from_rows(WAYSTONE, {".": None, "o": "outline", "S": "stone", "s": "stone_dark", "g": "stone_dark"})
+    way_on1 = Canvas.from_rows(WAYSTONE, {".": None, "o": "outline", "S": "stone_light", "s": "stone", "g": "sky"})
+    way_on2 = Canvas.from_rows(WAYSTONE, {".": None, "o": "outline", "S": "stone_light", "s": "stone", "g": "cyan"})
+
+    def npc(hair: str, cloth: str, pants: str) -> list[Canvas]:
+        base = Canvas.from_rows(NPC, {".": None, "o": "outline", "h": hair, "f": "skin", "e": "outline",
+                                      "c": cloth, "p": pants, "b": "brown_dark"})
+        return [base, base.shift_rows(1, 11, 1)]
+
+    rub_a = Canvas.from_rows(RUBBLE_A, {".": None, "o": "outline", "S": "stone", "s": "stone_dark", "b": "brown"})
+    rub_b = Canvas.from_rows([row[::-1] for row in RUBBLE_A], {".": None, "o": "outline", "S": "stone_light", "s": "stone", "b": "brown_dark"})
+
+    def sparkle(core: str, k: int) -> Canvas:
+        cv = Canvas(16, 16)
+        r = 2 + k
+        cv.line(8 - r, 8, 8 + r, 8, c(core))
+        cv.line(8, 8 - r, 8, 8 + r, c(core))
+        cv.set(8, 8, c("white"))
+        for dx, dy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+            cv.set(8 + dx, 8 + dy, c("white") if k else c(core))
+        return cv
+
+    def doc(k: int) -> Canvas:
+        cv = Canvas(16, 16)
+        for y in range(5, 13):
+            cv.line(5, y, 10, y, c("white"))
+        for y in (4, 13):
+            cv.line(5, y, 10, y, c("outline"))
+        cv.line(4, 5, 4, 12, c("outline"))
+        cv.line(11, 5, 11, 12, c("outline"))
+        for y in (7, 9, 11):
+            cv.line(6, y, 9, y, c("stone"))
+        cv.set(12 + k, 3 - k, c("cyan"))
+        cv.set(2 - k, 12, c("cyan"))
+        return cv
+
+    save_sheet("story_props", 16, 16, [
+        ("waystone_off", [way_off], 1.0, False),
+        ("waystone_on", [way_on1, way_on2], 3.0, True),
+        ("pickup", [sparkle("yellow", 0), sparkle("yellow", 1)], 4.0, True),
+        ("pickup_doc", [doc(0), doc(1)], 3.0, True),
+        ("npc_a", npc("brown_dark", "blue", "navy"), 1.5, True),
+        ("npc_b", npc("pale", "green", "green_dark"), 1.5, True),
+        ("npc_c", npc("orange", "tan", "brown"), 1.5, True),
+        ("rubble_a", [rub_a], 1.0, False),
+        ("rubble_b", [rub_b], 1.0, False),
+    ])
+
+
+def build_item_icons() -> None:
+    """아이템 아이콘 16×16 (스토리판 인벤토리). 애니메이션 이름 = ItemData.icon"""
+    def rect(cv: Canvas, x0: int, y0: int, x1: int, y1: int, col: str) -> None:
+        for y in range(y0, y1 + 1):
+            cv.line(x0, y, x1, y, c(col))
+
+    def gun(body: str, barrel: str, length: int, thick: int, gem: str) -> Canvas:
+        cv = icon_frame()
+        # 총열
+        rect(cv, 3, 6, 3 + length, 6 + thick - 1, barrel)
+        cv.line(3, 5, 3 + length, 5, c("outline"))
+        cv.line(3, 6 + thick, 3 + length, 6 + thick, c("outline"))
+        # 몸통·손잡이
+        rect(cv, 3, 6, 7, 8, body)
+        rect(cv, 4, 9, 6, 12, body)
+        cv.line(3, 9, 3, 12, c("outline"))
+        cv.line(7, 10, 7, 12, c("outline"))
+        cv.line(4, 13, 6, 13, c("outline"))
+        # 마석
+        cv.set(6, 7, c(gem))
+        cv.set(3 + length, 6, c(gem))
+        return cv
+
+    def armor(cloth: str, trim: str, plate: str | None) -> Canvas:
+        cv = icon_frame()
+        rect(cv, 5, 3, 10, 12, cloth)
+        rect(cv, 3, 4, 4, 8, cloth)
+        rect(cv, 11, 4, 12, 8, cloth)
+        cv.line(7, 3, 8, 3, c("outline"))
+        cv.line(7, 4, 7, 12, c(trim))
+        cv.line(5, 13, 10, 13, c("outline"))
+        if plate:
+            rect(cv, 5, 5, 6, 8, plate)
+            rect(cv, 9, 5, 10, 8, plate)
+            cv.set(3, 4, c(plate))
+            cv.set(12, 4, c(plate))
+        return cv
+
+    def vial(liquid: str, shine: str) -> Canvas:
+        cv = icon_frame()
+        rect(cv, 7, 3, 8, 4, "tan")
+        rect(cv, 7, 5, 8, 6, "pale")
+        rect(cv, 5, 7, 10, 12, liquid)
+        cv.line(5, 7, 10, 7, c("pale"))
+        cv.line(4, 8, 4, 12, c("outline"))
+        cv.line(11, 8, 11, 12, c("outline"))
+        cv.line(5, 13, 10, 13, c("outline"))
+        cv.set(6, 9, c(shine))
+        cv.set(6, 10, c(shine))
+        return cv
+
+    cell = icon_frame()
+    rect(cell, 5, 3, 10, 12, "stone")
+    rect(cell, 6, 5, 9, 11, "yellow")
+    cell.line(6, 7, 9, 7, c("orange"))
+    cell.line(6, 9, 9, 9, c("orange"))
+    cell.line(6, 2, 9, 2, c("stone_light"))
+    cell.line(5, 13, 10, 13, c("outline"))
+
+    shard = icon_frame()
+    for y, (x0, x1) in enumerate([(7, 8), (6, 9), (5, 10), (5, 10), (6, 10), (6, 9), (7, 9), (7, 8), (8, 8)]):
+        shard.line(x0, 3 + y, x1, 3 + y, c("sky"))
+    shard.line(7, 4, 7, 9, c("cyan"))
+    shard.set(6, 6, c("white"))
+    shard.set(9, 7, c("blue"))
+    shard.set(9, 8, c("blue"))
+
+    scrap = icon_frame()
+    rect(scrap, 3, 8, 8, 11, "stone")
+    rect(scrap, 7, 5, 12, 8, "stone_light")
+    rect(scrap, 9, 9, 12, 12, "stone_dark")
+    scrap.line(3, 12, 8, 12, c("outline"))
+    scrap.set(4, 9, c("pale"))
+    scrap.set(8, 6, c("white"))
+    scrap.set(10, 10, c("brown"))
+
+    paper = icon_frame()
+    rect(paper, 4, 3, 11, 12, "white")
+    paper.line(4, 13, 11, 13, c("outline"))
+    paper.set(11, 3, c("pale"))
+    paper.set(10, 3, c("pale"))
+    paper.set(11, 4, c("pale"))
+    for y in (5, 7, 9):
+        paper.line(5, y, 10, y, c("stone"))
+    paper.line(5, 11, 8, 11, c("stone"))
+
+    icons = [
+        ("gun_lab", gun("stone", "stone_light", 9, 2, "cyan")),
+        ("gun_heavy", gun("stone_dark", "stone", 9, 3, "orange")),
+        ("gun_rapid", gun("blue", "pale", 7, 1, "yellow")),
+        ("armor_suit", armor("shadow", "crimson", None)),
+        ("armor_plate", armor("brown_dark", "tan", "stone_light")),
+        ("armor_light", armor("tan", "white", None)),
+        ("vial_heal", vial("red", "white")),
+        ("cell_ammo", cell),
+        ("shard", shard),
+        ("scrap", scrap),
+        ("paper", paper),
+    ]
+    save_sheet("items", 16, 16, [(name, [cv], 1.0, False) for name, cv in icons])
+
+
 def verify_palette() -> None:
     """생성된 모든 PNG가 팔레트 색만 쓰는지 검사한다."""
     allowed = set(PAL_RGB)
@@ -2000,6 +2330,9 @@ def main() -> None:
     build_ui_icons()
     build_enemies()
     build_skill_icons()
+    build_item_icons()
+    build_story_tiles()
+    build_story_props()
     build_golem()
     build_icon()
     verify_palette()

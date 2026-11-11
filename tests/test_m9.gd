@@ -186,7 +186,8 @@ func test_best_replay_saved() -> void:
 
 
 func test_app_flow() -> void:
-	var app: Node = load("res://main.tscn").instantiate()
+	# 스토리판의 main.tscn 은 story_main.gd 를 쓴다 → 스피드런판 진입점은 스크립트로 직접 만든다
+	var app: Node = (load("res://core/main.gd") as GDScript).new()
 	add_child(app)
 	await step(1)
 	check(app.title.is_showing() and app.run == null, "처음엔 타이틀")

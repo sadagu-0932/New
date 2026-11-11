@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[sub_resource type="Resource" id="fx_1"]
+script = ExtResource("fx")
+kind = "heal"
+amount = 2
+
+[resource]
+script = ExtResource("item")
+id = "heal_vial"
+display_name = "회복 약병"
+description = "체력을 2칸 회복한다."
+category = 2
+icon = &"vial_heal"
+order = 1
+stat_mods = Array[ExtResource("mod")]([])
+use_effects = Array[ExtResource("fx")]([SubResource("fx_1")])
+document_text = ""

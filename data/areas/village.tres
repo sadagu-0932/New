@@ -1,0 +1,82 @@
+[gd_resource type="Resource" script_class="AreaData" format=3]
+
+[ext_resource type="Script" path="res://story/area_data.gd" id="area"]
+[ext_resource type="Script" path="res://story/area_exit_data.gd" id="exit"]
+[ext_resource type="Script" path="res://story/waystone_data.gd" id="way"]
+[ext_resource type="Script" path="res://story/npc_data.gd" id="npc"]
+
+[sub_resource type="Resource" id="exit_0"]
+script = ExtResource("exit")
+target_area = "lab"
+target_spawn = 1
+required_flag = ""
+locked_text = ""
+end_text = ""
+
+[sub_resource type="Resource" id="exit_1"]
+script = ExtResource("exit")
+target_area = "forest"
+target_spawn = 1
+required_flag = ""
+locked_text = ""
+end_text = ""
+
+[sub_resource type="Resource" id="way_0"]
+script = ExtResource("way")
+id = "village"
+display_name = "광산촌"
+reveals = Array[String]([])
+
+[sub_resource type="Resource" id="npc_0"]
+script = ExtResource("npc")
+id = "miner"
+display_name = "늙은 광부"
+sprite = &"npc_a"
+lines = Array[String](["…거기 서라.", "그 옷. 언덕 위 연구소 것이지.", "뭘 하는 곳인지는 모른다. 알고 싶지도 않고.", "볼일 없으면 마을에 오래 머물지 마라."])
+alt_flag = "golem_destroyed"
+alt_lines = Array[String](["숲이 조용해졌더군.", "…네가 한 거냐. 고맙다는 말은 해 두지."])
+
+[sub_resource type="Resource" id="npc_1"]
+script = ExtResource("npc")
+id = "homeless"
+display_name = "집 잃은 주민"
+sprite = &"npc_c"
+lines = Array[String](["지붕째 뜯겨 나갔어.", "돌덩이 같은 게 걸어가더라고. 숲 쪽으로.", "지나간 자리마다 저 꼴이야."])
+alt_flag = ""
+alt_lines = Array[String]([])
+
+[sub_resource type="Resource" id="npc_2"]
+script = ExtResource("npc")
+id = "child"
+display_name = "아이"
+sprite = &"npc_b"
+lines = Array[String](["우와, 총이다! 진짜야?", "어디서 왔어? 위쪽 큰 건물?", "거기 뭐가 있어? 어른들은 아무도 안 알려 줘."])
+alt_flag = "golem_destroyed"
+alt_lines = Array[String](["큰 돌덩이 이제 안 와? 진짜?", "…고마워. 근데 조금 무서워."])
+
+[sub_resource type="Resource" id="npc_3"]
+script = ExtResource("npc")
+id = "afraid"
+display_name = "겁먹은 주민"
+sprite = &"npc_a"
+lines = Array[String](["가, 가까이 오지 마…!", "어젯밤 그 커다란 것도 그쪽에서 내려왔어.", "집이 세 채나… 그건 숲으로 갔어. 따라가지 마."])
+alt_flag = ""
+alt_lines = Array[String]([])
+
+[resource]
+script = ExtResource("area")
+id = "village"
+display_name = "마석 광산촌"
+map_file = "res://levels/areas/village.txt"
+tileset = "tiles_village"
+on_map = true
+map_pos = Vector2i(88, 50)
+is_boss_room = false
+boss_cleared_flag = ""
+enter_story_id = "village_enter"
+enemy_overrides = {}
+exits = Array[ExtResource("exit")]([SubResource("exit_0"), SubResource("exit_1")])
+waystones = Array[ExtResource("way")]([SubResource("way_0")])
+pickups = Array[String](["light_wrap", "mana_shard", "plated_coat"])
+npcs = Array[ExtResource("npc")]([SubResource("npc_0"), SubResource("npc_1"), SubResource("npc_2"), SubResource("npc_3")])
+signs = Array[String](["동쪽 숲길 — 갱도 가는 길"])

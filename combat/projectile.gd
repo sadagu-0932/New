@@ -14,6 +14,8 @@ var damage: int = 0
 var radius: float = 2.0
 var pierce: bool = false
 var lifetime: int = 60
+## 반사될 때의 수명 (재패링 때 다시 채운다)
+var _reflect_lifetime: int = 0
 var kind: HitInfo.Kind = HitInfo.Kind.BULLET
 ## 완벽 패링으로 강화된 반사탄인지
 var perfect: bool = false
@@ -147,6 +149,7 @@ func reflect(dir: Vector2, is_perfect: bool, parry: ParryData) -> void:
 	velocity = dir.normalized() * velocity.length() * parry.reflect_speed_mult
 	damage = parry.reflect_damage
 	lifetime = parry.reflect_lifetime_ticks
+	_reflect_lifetime = lifetime
 	if is_perfect:
 		damage = roundi(damage * parry.perfect_damage_mult)
 		radius *= parry.perfect_radius_mult
@@ -166,7 +169,7 @@ func rechain(dir: Vector2, tech: AdvancedTechData) -> void:
 	velocity = dir.normalized() * velocity.length() * tech.reparry_speed_mult
 	radius += tech.reparry_radius_bonus
 	_shape.radius = radius
-	lifetime = DB.parry.reflect_lifetime_ticks
+	lifetime = _reflect_lifetime if _reflect_lifetime > 0 else DB.parry.reflect_lifetime_ticks
 	_done.clear()
 	_set_anim(&"reflect_perfect")
 	if _sprite:

@@ -103,13 +103,20 @@ func _ready() -> void:
 	_root.visible = false
 
 	# 화면 가운데 두 줄 (한 줄이면 화면 폭을 넘어 오른쪽이 잘린다)
-	_notice = UiText.make_label(UiText.for_device("출발한 뒤에는 스킬을 바꿀 수 없다\nR 길게 눌러 처음부터"))
+	_notice = UiText.make_label(_notice_text())
 	_notice.position = Vector2(0, 70)
 	_notice.size = Vector2(320, 26)
 	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_notice.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_notice.visible = false
 	add_child(_notice)
+
+
+## 스킬 창을 열 수 없을 때 잠깐 보여주는 글
+func _notice_text() -> String:
+	if Game.is_story_mode():
+		return DB.story.skill_locked_notice
+	return UiText.for_device("출발한 뒤에는 스킬을 바꿀 수 없다\nR 길게 눌러 처음부터")
 
 
 func _process(delta: float) -> void:
@@ -121,7 +128,7 @@ func _process(delta: float) -> void:
 ## 지금 스킬 창을 열 수 있는지
 func can_open() -> bool:
 	return run != null and run.mode == RunController.Mode.LIVE and not run.showing_result \
-		and not Game.clock_running and not run.paused
+		and run.can_change_skill() and not run.paused
 
 
 func open() -> bool:
@@ -177,7 +184,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not is_open:
 		if event.is_action_pressed(&"skill_menu") and run != null:
-			if not open() and Game.clock_running and run.mode == RunController.Mode.LIVE:
+			if not open() and not run.can_change_skill() and not run.paused and run.mode == RunController.Mode.LIVE:
+				_notice.text = _notice_text()
 				_notice_left = NOTICE_SECONDS
 				_notice.visible = true
 			get_viewport().set_input_as_handled()

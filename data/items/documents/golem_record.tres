@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[resource]
+script = ExtResource("item")
+id = "golem_record"
+display_name = "이식 실험 기록"
+description = "무너진 골렘의 몸에서 떨어진 금속 판. 글이 새겨져 있다."
+category = 4
+icon = &"paper"
+order = 2
+stat_mods = Array[ExtResource("mod")]([])
+use_effects = Array[ExtResource("fx")]([])
+document_text = "이식 실험 기록 — 대상 G\n\n마석 이식 3차. 대상의 몸이 마석을 받아들이지 못하고 굳어 간다. 출력 폭주. 제어 신호에 응답 없음.\n\n대상은 격리. 전투 시험용 표적으로 전용한다.\n\n동일 사례 보고: 제2 · 제4 연구소.\n성공 사례는 본 연구소의 1건뿐."

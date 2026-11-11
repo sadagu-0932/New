@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="StoryData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://story/story_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+title_subtitle = "스토리판"
+prologue_end_text = "한나절 뒤"
+lines = {
+"tutorial_section_1": ["기록 개시. 실험체 기동 확인", "의식 반응 없음 · 제어 신호 정상"],
+"tutorial_section_2": ["사격 제어 시험으로 이행"],
+"tutorial_section_3": ["탄약 공급 차단 · 근접 반응 확인"],
+"tutorial_section_4": ["반사 반응 시험 · 마석 동조율 측정"],
+"tutorial_section_5": ["은폐 반응 유도 · 탄막 밀도 상승"],
+"tutorial_section_6": ["마석 출력 개방 승인"],
+"tutorial_section_7": ["최종 시험 · 시험용 병기 '골렘' 투입", "…대상 출력 수치 이상 · 시험 속행"],
+"lab_wake": ["…제어 신호 끊김 · 원인 불명", "몸이 움직인다. 누구의 명령도 아니다", "벽이 무너져 있다. 바깥 공기가 들어온다"],
+"village_enter": ["언덕 아래, 불빛. 사람이 사는 곳이다"],
+"forest_enter": ["나무가 길처럼 쓰러져 있다. 저것이 지나간 자리"],
+"lair_enter": ["저것이 있다. 거의 멈춰 가고 있다"],
+"read:golem_record": ["골렘은 — 이식 실험 중 폭주한 실험체였다", "그리고 연구소는 여기 하나가 아니다", "길이 북쪽으로 이어진다"]
+}
+line_ticks = 150
+combat_radius = 140.0
+skill_locked_notice = "전투 중에는 스킬을 바꿀 수 없다"
+after_prologue_area = "lab"
+waystone_radius = 14.0
+pickup_radius = 10.0
+talk_radius = 22.0
+talk_cooldown_ticks = 20
+text_waystone_activated = "웨이스톤 활성화 · %s 지도"
+text_item_picked = "획득: %s"
+text_cannot_teleport = "전투 중·보스방에서는 순간이동할 수 없다"
+text_no_waystone = "활성화한 웨이스톤이 없다"
+map_tile_px = 2
+text_unknown_area = "???"
+end_seconds = 6.0

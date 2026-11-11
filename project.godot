@@ -6,8 +6,8 @@ config_version=5
 
 [application]
 
-config/name="demo"
-config/description="2D 픽셀 탑다운 액션 슈팅 데모 - 튜토리얼 스피드런"
+config/name="demo-story"
+config/description="2D 픽셀 탑다운 액션 슈팅 - 스토리판"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://art/icon.png"
@@ -23,6 +23,7 @@ PlayerInput="*res://core/player_input.gd"
 Debug="*res://core/debug.gd"
 Audio="*res://core/audio_manager.gd"
 Settings="*res://core/settings.gd"
+Story="*res://story/story_state.gd"
 
 [display]
 
@@ -97,6 +98,11 @@ restart={
 pause={
 "deadzone": 0.2,
 "events": [Object(InputEventKey,"physical_keycode":4194305)
+]
+}
+map={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":77)
 ]
 }
 open_settings={

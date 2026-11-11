@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/weapon_data.gd" id="weapon"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Resource" path="res://data/gun.tres" id="gun"]
+[ext_resource type="Resource" path="res://data/melee.tres" id="melee"]
+[ext_resource type="Resource" path="res://data/parry.tres" id="parry"]
+
+[sub_resource type="Resource" id="weapon"]
+script = ExtResource("weapon")
+gun = ExtResource("gun")
+melee = ExtResource("melee")
+parry = ExtResource("parry")
+
+[resource]
+script = ExtResource("item")
+id = "lab_gun"
+display_name = "시험용 마석총"
+description = "연구소가 실험체에게 쥐여 준 표준 총.\n고르게 쓸 만하다."
+category = 0
+icon = &"gun_lab"
+order = 1
+weapon = SubResource("weapon")
+stat_mods = Array[ExtResource("mod")]([])

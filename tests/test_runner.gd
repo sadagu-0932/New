@@ -14,10 +14,19 @@ const SUITES: Array[Script] = [
 	preload("res://tests/test_m8.gd"),
 	preload("res://tests/test_m9.gd"),
 	preload("res://tests/test_m10.gd"),
+	preload("res://tests/test_s1.gd"),
+	preload("res://tests/test_s2.gd"),
+	preload("res://tests/test_s3.gd"),
+	preload("res://tests/test_s4.gd"),
 ]
+## 스토리판 묶음 (story_mode 를 켜고 돈다). 나머지는 공통 코드가 스피드런 규칙으로도 그대로 도는지 확인
+const STORY_SUITES: Array[String] = ["res://tests/test_s1.gd", "res://tests/test_s2.gd", "res://tests/test_s3.gd", "res://tests/test_s4.gd"]
 
 
 func _ready() -> void:
+	# 테스트가 실제 저장 파일을 건드리지 않게
+	StorySave.dir_override = "user://test_saves"
+	StorySave.clear_all()
 	var failures := 0
 	var checks := 0
 	for suite_script in SUITES:
@@ -27,6 +36,7 @@ func _ready() -> void:
 			failures += 1
 			checks += 1
 			continue
+		DB.game_config.story_mode = STORY_SUITES.has(suite_script.resource_path)
 		var suite: TestBase = suite_script.new()
 		add_child(suite)
 		await suite.run_all()

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[resource]
+script = ExtResource("item")
+id = "mana_shard"
+display_name = "마석 조각"
+description = "희미하게 빛나는 마석 부스러기.\n어딘가에 쓸 수 있을 것 같다."
+category = 3
+icon = &"shard"
+order = 1
+stat_mods = Array[ExtResource("mod")]([])
+use_effects = Array[ExtResource("fx")]([])
+document_text = ""

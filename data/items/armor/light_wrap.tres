@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[sub_resource type="Resource" id="mod_1"]
+script = ExtResource("mod")
+stat = "move_speed"
+op = 1
+value = 1.1
+
+[sub_resource type="Resource" id="mod_2"]
+script = ExtResource("mod")
+stat = "max_hp"
+op = 0
+value = -1.0
+
+[resource]
+script = ExtResource("item")
+id = "light_wrap"
+display_name = "가벼운 감개옷"
+description = "몸이 가볍다. 대신 맞으면 아프다."
+category = 1
+icon = &"armor_light"
+order = 3
+stat_mods = Array[ExtResource("mod")]([SubResource("mod_1"), SubResource("mod_2")])
+use_effects = Array[ExtResource("fx")]([])
+document_text = ""

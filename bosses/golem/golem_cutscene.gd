@@ -3,6 +3,7 @@ extends Node
 ## 2페이즈 시작 컷씬 (대사 없음). 골렘 1페이즈 격파 직후 (타이머는 이미 멈춤 → 기록에 영향 없음).
 ## 1. 골렘 각성  2. 필살기 1회  3. 주인공 쓰러짐  4. 암전  5. TO BE CONTINUED → Events.demo_finished (기록 화면, M7)
 ## 첫 회는 끝까지 재생, 두 번째부터 E·Enter 로 건너뛰기 가능 (SaveData "golem_cutscene_seen").
+## 스토리판(프롤로그)은 5 가 "한나절 뒤" → Events.prologue_finished (1지역에서 깨어남).
 ## 데모 모드가 아니면(본편) 3~5 대신 2페이즈 전투로 이어진다.
 
 enum Step { AWAKEN, SPECIAL, COLLAPSE, FADE, TEXT, DONE }
@@ -51,7 +52,8 @@ func _build_overlay() -> void:
 	_black.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_black.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layer.add_child(_black)
-	_text = UiText.make_label("TO BE CONTINUED", UiText.SIZE_LARGE)
+	# 스토리판은 "TO BE CONTINUED" 대신 시간 경과 글 (data/story.tres)
+	_text = UiText.make_label(DB.story.prologue_end_text if Game.is_story_mode() else "TO BE CONTINUED", UiText.SIZE_LARGE)
 	_text.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -142,7 +144,10 @@ func _finish() -> void:
 	step = Step.DONE
 	_shake(0.0)
 	SaveData.set_value(SAVE_KEY, true)
-	Events.demo_finished.emit()
+	if Game.is_story_mode():
+		Events.prologue_finished.emit()
+	else:
+		Events.demo_finished.emit()
 
 
 ## 본편: 쓰러지지 않고 2페이즈 전투로

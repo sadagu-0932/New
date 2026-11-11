@@ -7,7 +7,7 @@ extends Enemy
 ## - 완벽 패링 반사탄을 연속으로 맞히면 그로기 → 모든 공격이 크게 들어가는 딜 구간
 ## - 체력 0 → Events.boss_defeated (타이머 정지) → 2페이즈 시작 컷씬 (GolemCutscene)
 
-enum Mode { DORMANT, INTRO, FIGHT, GROGGY, CUTSCENE }
+enum Mode { DORMANT, INTRO, FIGHT, GROGGY, CUTSCENE, COLLAPSE, WRECK }
 
 var mode: Mode = Mode.DORMANT
 var phase: GolemPhase
@@ -28,6 +28,14 @@ func gd() -> GolemData:
 
 func _on_ready() -> void:
 	Events.section_entered.connect(_on_section_entered)
+	# 스토리판: 이미 쓰러뜨린 골렘은 잔해로 남아 있다
+	if Game.is_story_mode() and not gd().cleared_flag.is_empty() and Story.has_flag(gd().cleared_flag):
+		_become_wreck()
+
+
+## 싸우는 중인지 (깨어나서 아직 쓰러지지 않음) → 전투 중 판정에 쓴다
+func is_fighting() -> bool:
+	return mode == Mode.INTRO or mode == Mode.FIGHT or mode == Mode.GROGGY or mode == Mode.CUTSCENE or mode == Mode.COLLAPSE
 
 
 func _on_section_entered(index: int) -> void:
@@ -54,11 +62,22 @@ func enter_phase(p: GolemPhase) -> void:
 func _tick_ai() -> void:
 	velocity = Vector2.ZERO
 	match mode:
+		Mode.DORMANT:
+			# 스토리 지역: 플레이어가 가까이 오면 깨어난다
+			var player := get_player()
+			if gd().wake_radius > 0.0 and player != null and not player.is_dead() \
+					and player.global_position.distance_to(global_position) <= gd().wake_radius:
+				target_pos = player.global_position
+				wake()
 		Mode.INTRO:
 			_timer -= 1
 			if _timer <= 0:
 				mode = Mode.FIGHT
-				enter_phase(GolemPhase1.new(self))
+				enter_phase(GolemPhase2.new(self) if gd().start_phase == 2 else GolemPhase1.new(self))
+		Mode.COLLAPSE:
+			_timer -= 1
+			if _timer <= 0:
+				_finish_collapse()
 		Mode.FIGHT:
 			phase.tick()
 		Mode.GROGGY:
@@ -84,7 +103,7 @@ func is_groggy() -> bool:
 
 
 func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
-	if dead or defeated or mode == Mode.CUTSCENE:
+	if dead or defeated or mode == Mode.CUTSCENE or mode == Mode.COLLAPSE or mode == Mode.WRECK:
 		return Hurtbox.Result.IGNORED
 	if mode == Mode.DORMANT:
 		return Hurtbox.Result.HIT  # 깨기 전엔 맞아도 무시 (탄은 막음)
@@ -136,11 +155,52 @@ func _count_perfect(perfect: bool) -> void:
 
 ## 1페이즈 격파 → 타이머 정지 → 2페이즈 시작 컷씬
 func _defeat() -> void:
+	if phase != null and phase.number() == 2 and Game.is_story_mode():
+		_start_collapse()
+		return
 	defeated = true
 	mode = Mode.CUTSCENE
 	Events.boss_defeated.emit(self)
 	var cut := GolemCutscene.new(self)
 	get_parent().add_child(cut)
+
+
+## 2페이즈 격파: 코어가 부서져 무너진다 (컷씬 없음). 다 무너지면 몸에서 자료가 떨어진다
+func _start_collapse() -> void:
+	defeated = true
+	mode = Mode.COLLAPSE
+	_timer = gd().collapse_ticks
+	for node in get_tree().get_nodes_in_group(Projectile.GROUP_ENEMY):
+		(node as Projectile).destroy(false)
+	Events.boss_defeated.emit(self)
+	Effect.spawn(&"perfect", global_position, 0.0, 4.0)
+
+
+func _finish_collapse() -> void:
+	if not gd().cleared_flag.is_empty():
+		Story.set_flag(gd().cleared_flag)
+	Effect.spawn(&"enemy_death", global_position, 0.0, 3.0)
+	var d := gd()
+	if not d.drop_item.is_empty():
+		var drop := ItemPickup.new()
+		drop.item_id = d.drop_item
+		drop.taken_flag = "drop:%s" % d.drop_item
+		drop.position = position + Vector2(0, d.body_radius + LevelMap.TILE_SIZE)
+		get_parent().add_child(drop)
+	_become_wreck()
+	Events.boss_collapsed.emit(self)
+
+
+## 무너진 잔해 (움직이지도 맞지도 않는다)
+func _become_wreck() -> void:
+	mode = Mode.WRECK
+	defeated = true
+	dead = true
+	velocity = Vector2.ZERO
+	if sprite != null:
+		sprite.play(&"groggy")
+		sprite.pause()
+		sprite.modulate = Color(0.45, 0.45, 0.5)
 
 
 ## 컷씬이 끝난 뒤 (데모가 아닐 때) 2페이즈 전투 시작
@@ -154,7 +214,7 @@ func start_phase2() -> void:
 
 func _anim() -> StringName:
 	match mode:
-		Mode.GROGGY:
+		Mode.GROGGY, Mode.COLLAPSE, Mode.WRECK:
 			return &"groggy"
 		Mode.CUTSCENE:
 			return sprite.animation

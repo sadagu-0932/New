@@ -21,5 +21,11 @@ func heal(amount: int) -> void:
 	current = mini(current + amount, maximum)
 
 
+## 최대치 변경 (갑옷 장착 등). 현재값은 넘치지 않게만 맞춘다
+func set_maximum(value: int) -> void:
+	maximum = maxi(value, 1)
+	current = mini(current, maximum)
+
+
 func is_dead() -> bool:
 	return current <= 0

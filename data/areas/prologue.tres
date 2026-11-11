@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="AreaData" format=3]
+
+[ext_resource type="Script" path="res://story/area_data.gd" id="area"]
+[ext_resource type="Script" path="res://story/area_exit_data.gd" id="exit"]
+[ext_resource type="Script" path="res://story/waystone_data.gd" id="way"]
+[ext_resource type="Script" path="res://story/npc_data.gd" id="npc"]
+
+[resource]
+script = ExtResource("area")
+id = "prologue"
+display_name = "프롤로그"
+map_file = ""
+tileset = "tiles"
+on_map = false
+map_pos = Vector2i(0, 0)
+is_boss_room = false
+boss_cleared_flag = ""
+enter_story_id = ""
+enemy_overrides = {}
+exits = Array[ExtResource("exit")]([])
+waystones = Array[ExtResource("way")]([])
+pickups = Array[String]([])
+npcs = Array[ExtResource("npc")]([])
+signs = Array[String]([])

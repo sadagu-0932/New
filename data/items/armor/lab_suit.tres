@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[resource]
+script = ExtResource("item")
+id = "lab_suit"
+display_name = "실험체 도포"
+description = "깨어났을 때 입고 있던 옷.\n아무 효과도 없다."
+category = 1
+icon = &"armor_suit"
+order = 1
+stat_mods = Array[ExtResource("mod")]([])
+use_effects = Array[ExtResource("fx")]([])
+document_text = ""

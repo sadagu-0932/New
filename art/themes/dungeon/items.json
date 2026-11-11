@@ -1,0 +1,72 @@
+{
+  "frame_width": 16,
+  "frame_height": 16,
+  "animations": {
+    "gun_lab": {
+      "row": 0,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "gun_heavy": {
+      "row": 1,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "gun_rapid": {
+      "row": 2,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "armor_suit": {
+      "row": 3,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "armor_plate": {
+      "row": 4,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "armor_light": {
+      "row": 5,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "vial_heal": {
+      "row": 6,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "cell_ammo": {
+      "row": 7,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "shard": {
+      "row": 8,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "scrap": {
+      "row": 9,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "paper": {
+      "row": 10,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    }
+  }
+}

@@ -44,6 +44,9 @@ extends Resource
 @export var gun_recoil_px: float = 0.0
 ## 반동이 돌아오는 비율 (매 틱 곱함, 작을수록 빨리 돌아옴)
 @export var gun_recoil_return: float = 0.0
+## 스토리판: 근접 = 총으로 후려치기. 휘두르는 동안 총이 조준 방향을 가로질러 도는 각도(도)와 몸에서의 거리(px)
+@export var gun_swing_arc_deg: float = 0.0
+@export var gun_swing_reach: float = 0.0
 
 @export_group("탄 꼬리")
 ## 탄 꼬리 잔상이 사라지는 시간 (초)

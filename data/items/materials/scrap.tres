@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[resource]
+script = ExtResource("item")
+id = "scrap"
+display_name = "고철"
+description = "부서진 기계에서 나온 쇳조각."
+category = 3
+icon = &"scrap"
+order = 2
+stat_mods = Array[ExtResource("mod")]([])
+use_effects = Array[ExtResource("fx")]([])
+document_text = ""

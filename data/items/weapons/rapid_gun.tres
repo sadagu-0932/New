@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/weapon_data.gd" id="weapon"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://combat/gun_data.gd" id="gun_s"]
+[ext_resource type="Script" path="res://combat/melee_data.gd" id="melee_s"]
+[ext_resource type="Script" path="res://combat/parry_data.gd" id="parry_s"]
+[ext_resource type="Resource" path="res://data/projectiles/rapid_bullet.tres" id="bullet"]
+
+[sub_resource type="Resource" id="gun"]
+script = ExtResource("gun_s")
+magazine_size = 18
+start_ammo = 18
+fire_interval_ticks = 5
+muzzle_height = 2.5
+muzzle_offset = 10.0
+projectile = ExtResource("bullet")
+
+[sub_resource type="Resource" id="melee"]
+script = ExtResource("melee_s")
+active_ticks = 10
+recovery_ticks = 4
+offset = 9.0
+radius = 8.0
+damage = 1
+move_speed_mult = 0.7
+ammo_on_hit = 3
+
+[sub_resource type="Resource" id="parry"]
+script = ExtResource("parry_s")
+ammo_on_parry = 3
+reflect_speed_mult = 1.6
+reflect_damage = 2
+reflect_lifetime_ticks = 180
+perfect_window_ticks = 4
+perfect_damage_mult = 2.0
+perfect_radius_mult = 2.0
+perfect_pierce = true
+
+[sub_resource type="Resource" id="weapon"]
+script = ExtResource("weapon")
+gun = SubResource("gun")
+melee = SubResource("melee")
+parry = SubResource("parry")
+
+[resource]
+script = ExtResource("item")
+id = "rapid_gun"
+display_name = "연사형 마석총"
+description = "가볍고 빠르다. 탄이 많지만 약하고,\n후려치기는 좁고 재빠르다."
+category = 0
+icon = &"gun_rapid"
+order = 3
+weapon = SubResource("weapon")
+stat_mods = Array[ExtResource("mod")]([])

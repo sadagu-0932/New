@@ -9,6 +9,7 @@ const BUTTON_ACTIONS := {
 	InputFrame.DODGE: &"dodge",
 	InputFrame.SKILL: &"skill",
 	InputFrame.INTERACT: &"interact",
+	InputFrame.SKILL2: &"skill2",
 }
 ## 아날로그 이동값 양자화 단계 (리플레이 저장 시 값이 정확히 재현되도록)
 const MOVE_STEPS := 127.0

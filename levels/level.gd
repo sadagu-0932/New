@@ -23,6 +23,12 @@ const SPAWNS := {
 	"c": [preload("res://enemies/charger.gd"), "charger_weak"],
 	"S": [preload("res://enemies/shooter.gd"), "shooter"],
 	"B": [preload("res://enemies/spreader.gd"), "spreader"],
+	# 스토리판 지역용
+	"E": [preload("res://story/props/area_exit.gd"), ""],
+	"Y": [preload("res://story/props/waystone.gd"), ""],
+	"$": [preload("res://story/props/item_pickup.gd"), ""],
+	"N": [preload("res://story/props/npc.gd"), ""],
+	"R": [preload("res://story/props/rubble.gd"), ""],
 }
 
 ## 글자 맵 파일 경로 (tutorial 이 없을 때)
@@ -35,6 +41,9 @@ var props: Node2D
 var projectiles: Node2D
 var effects: Node2D
 var director: TutorialDirector
+## 스토리판 지역 (있으면 지역 맵·타일·소품 데이터를 여기서 읽는다. 프롤로그는 tutorial 도 함께)
+var area: AreaData
+var area_director: AreaDirector
 ## 플레이어가 장착할 스킬
 var skill: SkillData
 ## 현재 디버그 구간 (0 = 시작 지점, 1~7 = 구간)
@@ -44,9 +53,15 @@ var current_section: int = 0
 func _ready() -> void:
 	if tutorial != null:
 		map = LevelMap.parse(tutorial.assemble_text())
+	elif area != null and not area.map_file.is_empty():
+		map = LevelMap.load_from_file(area.map_file)
 	else:
 		map = LevelMap.load_from_file(map_path)
-	add_child(LevelBuilder.build(map, DB.theme))
+	add_child(LevelBuilder.build(map, DB.theme, area.tileset if area != null else "tiles"))
+	if area != null:
+		area_director = AreaDirector.new(self, area)
+	# 같은 종류 소품이 몇 번째인지 (지역 데이터와 짝짓기용)
+	var counts: Dictionary = {}
 
 	props = Node2D.new()
 	props.name = "Props"
@@ -59,7 +74,13 @@ func _ready() -> void:
 			continue
 		var node: Node2D = (spawn[0] as GDScript).new()
 		if node is Enemy:
-			(node as Enemy).data = DB.enemies[spawn[1]]
+			var enemy_key: String = spawn[1]
+			if area != null:
+				enemy_key = String(area.enemy_overrides.get(ch, enemy_key))
+			(node as Enemy).data = DB.enemies[enemy_key]
+		if area_director != null:
+			area_director.configure(node, int(counts.get(ch, 0)))
+			counts[ch] = int(counts.get(ch, 0)) + 1
 		node.position = LevelMap.cell_center(entry["cell"])
 		if node.has_method(&"setup_from_map"):
 			node.call(&"setup_from_map", ch, entry["cell"])
@@ -89,6 +110,9 @@ func _ready() -> void:
 	if tutorial != null:
 		director = TutorialDirector.new(self, tutorial)
 		add_child(director)
+
+	if area_director != null:
+		add_child(area_director)
 
 	Events.debug_section_step.connect(_on_debug_section_step)
 

@@ -7,6 +7,8 @@ var seed_value: int = 0
 var map_path: String = ""
 ## 있으면 튜토리얼로 시작 (map_path 무시)
 var tutorial: TutorialData
+## 스토리판 지역 (없으면 스피드런판처럼 튜토리얼·테스트 맵)
+var area: AreaData
 ## 장착 스킬 (재시작해도 유지)
 var skill: SkillData
 

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[resource]
+script = ExtResource("item")
+id = "lab_memo"
+display_name = "찢어진 시험 기록"
+description = "연구소 바닥에 떨어져 있던 종이."
+category = 4
+icon = &"paper"
+order = 1
+stat_mods = Array[ExtResource("mod")]([])
+use_effects = Array[ExtResource("fx")]([])
+document_text = "시험 기록 (일부 훼손)\n\n…이식 후 거부 반응 없음.\n제어 신호에 정상 응답.\n\n의식 반응: 없음 — 계획대로.\n전투 시험으로 이행한다.\n\n(아래는 찢겨 나갔다)"

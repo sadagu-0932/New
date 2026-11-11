@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[sub_resource type="Resource" id="fx_1"]
+script = ExtResource("fx")
+kind = "ammo"
+amount = 12
+
+[resource]
+script = ExtResource("item")
+id = "ammo_cell"
+display_name = "마석 탄창"
+description = "탄약을 12발 채운다."
+category = 2
+icon = &"cell_ammo"
+order = 2
+stat_mods = Array[ExtResource("mod")]([])
+use_effects = Array[ExtResource("fx")]([SubResource("fx_1")])
+document_text = ""

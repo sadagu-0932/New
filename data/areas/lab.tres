@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="AreaData" format=3]
+
+[ext_resource type="Script" path="res://story/area_data.gd" id="area"]
+[ext_resource type="Script" path="res://story/area_exit_data.gd" id="exit"]
+[ext_resource type="Script" path="res://story/waystone_data.gd" id="way"]
+[ext_resource type="Script" path="res://story/npc_data.gd" id="npc"]
+
+[sub_resource type="Resource" id="exit_0"]
+script = ExtResource("exit")
+target_area = "village"
+target_spawn = 1
+required_flag = ""
+locked_text = ""
+end_text = ""
+
+[sub_resource type="Resource" id="way_0"]
+script = ExtResource("way")
+id = "lab_exit"
+display_name = "연구소 출구"
+reveals = Array[String]([])
+
+[resource]
+script = ExtResource("area")
+id = "lab"
+display_name = "연구소"
+map_file = "res://levels/areas/lab.txt"
+tileset = "tiles_lab"
+on_map = true
+map_pos = Vector2i(8, 50)
+is_boss_room = false
+boss_cleared_flag = ""
+enter_story_id = "lab_wake"
+enemy_overrides = {}
+exits = Array[ExtResource("exit")]([SubResource("exit_0")])
+waystones = Array[ExtResource("way")]([SubResource("way_0")])
+pickups = Array[String](["rapid_gun", "lab_memo"])
+npcs = Array[ExtResource("npc")]([])
+signs = Array[String](["실험동 B · 격리 구역\n출입 금지"])

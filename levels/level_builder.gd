@@ -6,11 +6,11 @@ extends RefCounted
 const SOURCE_ID := 0
 
 
-static func build(map: LevelMap, theme: ThemeData) -> Node2D:
+static func build(map: LevelMap, theme: ThemeData, tileset: String = "tiles") -> Node2D:
 	var root := Node2D.new()
 	root.name = "Tiles"
-	var meta := theme.load_json("tiles")
-	var tile_set := _build_tile_set(theme.load_texture("tiles"), meta)
+	var meta := theme.load_json(tileset)
+	var tile_set := _build_tile_set(theme.load_texture(tileset), meta)
 	var tiles: Dictionary = meta.get("tiles", {})
 
 	var floor_layer := TileMapLayer.new()

@@ -46,6 +46,27 @@ extends EnemyData
 ## 2페이즈(본편) 패턴 속도 배율. 데모에서는 쓰지 않음
 @export var phase2_speed_mult: float = 1.0
 
+@export_group("2페이즈")
+## 2페이즈 패턴 사이에 멈칫하는 틱 (동력이 바닥나 길다)
+@export var p2_rest_ticks: int = 0
+## 조준탄: 한 번에 쏘는 발 수, 간격
+@export var p2_aimed_shots: int = 0
+@export var p2_aimed_interval_ticks: int = 0
+## 성긴 원형 탄 수
+@export var p2_ring_bullets: int = 0
+
+@export_group("스토리 지역")
+## 시작 페이즈 (1 = 프롤로그, 2 = 2지역 숲의 지친 골렘)
+@export var start_phase: int = 1
+## 플레이어가 이 거리(px) 안에 오면 깨어난다 (0 = 튜토리얼 7구간 입장 때)
+@export var wake_radius: float = 0.0
+## 2페이즈에서 체력 0 → 무너지는 데 걸리는 틱
+@export var collapse_ticks: int = 0
+## 무너진 뒤 떨어뜨리는 아이템 id ("" = 없음)
+@export var drop_item: String = ""
+## 쓰러뜨렸다는 스토리 진행도 이름 (다시 들어오면 잔해로 남아 있다)
+@export var cleared_flag: String = ""
+
 @export_group("컷씬")
 ## 2페이즈 시작 컷씬 단계별 틱: 각성 / 필살기 / 쓰러짐 / 암전 / TO BE CONTINUED
 @export var cut_awaken_ticks: int = 0

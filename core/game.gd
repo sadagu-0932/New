@@ -64,5 +64,13 @@ func is_demo_mode() -> bool:
 	return config.demo_mode
 
 
+func is_story_mode() -> bool:
+	return config.story_mode
+
+
+# 주의: 이 스크립트는 DB 가 data 를 preload 하는 도중에 불려 컴파일된다 (dodge.tres → DashDodge → Game).
+# 여기서 Story·Inventory·Player 를 참조하면 내보낸 빌드에서 순환 참조로 스크립트 로드가 깨진다.
+
+
 func _physics_process(_delta: float) -> void:
 	tick += 1

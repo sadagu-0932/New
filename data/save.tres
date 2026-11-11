@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SaveConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://story/save_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+save_dir = "user://saves"
+auto_slots = 5
+autosave_interval_seconds = 300.0
+min_move_distance = 16.0
+toast_seconds = 2.0
+kind_names = {
+"manual": "수동",
+"auto": "자동"
+}
+text_saved_manual = "저장했다"
+text_saved_auto = "자동저장"
+text_cannot_save = "전투 중에는 저장할 수 없다"
+text_no_saves = "저장이 없다"

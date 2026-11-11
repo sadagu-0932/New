@@ -372,7 +372,14 @@ func _release_all() -> void:
 
 ## 아직 쓸 수 없는 버튼 (스킬2 칸은 game_config.skill2_enabled 가 켜져야 쓴다)
 func _is_locked(b: Dictionary) -> bool:
-	return b.action == &"skill2" and not Game.config.skill2_enabled
+	# 스토리판에는 즉시 재시작이 없다
+	# TODO(스토리판 터치 지원): 재시작 버튼 자리를 지도·인벤토리 버튼으로 교체
+	if b.action == &"restart" and Game.is_story_mode():
+		return true
+	if b.action != &"skill2":
+		return false
+	# 스킬2(F) 칸: 스토리판은 프롤로그가 끝나면 열린다
+	return not (Story.inventory.skill2_unlocked() if Game.is_story_mode() else Game.config.skill2_enabled)
 
 
 func _press_button(b: Dictionary) -> void:

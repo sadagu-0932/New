@@ -1,0 +1,60 @@
+{
+  "frame_width": 16,
+  "frame_height": 16,
+  "animations": {
+    "waystone_off": {
+      "row": 0,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "waystone_on": {
+      "row": 1,
+      "frames": 2,
+      "fps": 3.0,
+      "loop": true
+    },
+    "pickup": {
+      "row": 2,
+      "frames": 2,
+      "fps": 4.0,
+      "loop": true
+    },
+    "pickup_doc": {
+      "row": 3,
+      "frames": 2,
+      "fps": 3.0,
+      "loop": true
+    },
+    "npc_a": {
+      "row": 4,
+      "frames": 2,
+      "fps": 1.5,
+      "loop": true
+    },
+    "npc_b": {
+      "row": 5,
+      "frames": 2,
+      "fps": 1.5,
+      "loop": true
+    },
+    "npc_c": {
+      "row": 6,
+      "frames": 2,
+      "fps": 1.5,
+      "loop": true
+    },
+    "rubble_a": {
+      "row": 7,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "rubble_b": {
+      "row": 8,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    }
+  }
+}

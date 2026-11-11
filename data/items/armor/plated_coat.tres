@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[sub_resource type="Resource" id="mod_1"]
+script = ExtResource("mod")
+stat = "max_hp"
+op = 0
+value = 1.0
+
+[sub_resource type="Resource" id="mod_2"]
+script = ExtResource("mod")
+stat = "move_speed"
+op = 1
+value = 0.9
+
+[resource]
+script = ExtResource("item")
+id = "plated_coat"
+display_name = "덧댄 철판 외투"
+description = "고철을 덧대 무겁지만 든든하다."
+category = 1
+icon = &"armor_plate"
+order = 2
+stat_mods = Array[ExtResource("mod")]([SubResource("mod_1"), SubResource("mod_2")])
+use_effects = Array[ExtResource("fx")]([])
+document_text = ""

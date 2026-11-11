@@ -27,6 +27,13 @@ func add(amount: int) -> void:
 	_emit()
 
 
+## 탄창 크기 변경 (무기 교체). 현재 탄약은 넘치지 않게만 맞춘다
+func set_maximum(value: int) -> void:
+	maximum = maxi(value, 0)
+	current = mini(current, maximum)
+	_emit()
+
+
 func set_current(value: int) -> void:
 	current = clampi(value, 0, maximum)
 	_emit()

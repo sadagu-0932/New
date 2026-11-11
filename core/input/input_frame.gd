@@ -10,6 +10,8 @@ const MELEE := 1 << 1
 const DODGE := 1 << 2
 const SKILL := 1 << 3
 const INTERACT := 1 << 4
+## 스킬2 (F). 스토리판에서 칸이 열린 뒤에만 쓴다
+const SKILL2 := 1 << 5
 
 ## 이동 입력 (길이 1 이하)
 var move: Vector2 = Vector2.ZERO

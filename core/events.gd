@@ -69,8 +69,33 @@ signal boss_hp_changed(current: int, maximum: int)
 signal boss_groggy()
 ## 보스 1페이즈 격파 (타이머 정지)
 signal boss_defeated(boss: Node2D)
+## 스토리판: 골렘이 2페이즈에서 완전히 무너짐
+signal boss_collapsed(boss: Node2D)
 ## 데모 끝 (2페이즈 시작 컷씬 종료) → 기록 화면
 signal demo_finished()
+## 스토리판: 프롤로그 끝 (골렘 컷씬의 "한나절 뒤" 암전까지 끝남) → 1지역으로
+signal prologue_finished()
+## 스토리판: 죽은 뒤 마지막 저장 지점에서 부활 요청
+signal story_respawn_requested()
+## 스토리 지역에 들어옴 (지역 id)
+signal area_entered(area_id: String)
+## 지역 출입구를 밟음 (AreaExitData)
+signal area_exit_entered(exit: Resource)
+## 비활성 웨이스톤에 닿음 (Waystone 노드)
+signal waystone_touched(waystone: Node2D)
+## 아이템을 주움
+signal item_picked(item_id: String)
+## 대사창 요청 (말하는 이, 대사 목록) / 대사가 끝남
+signal dialogue_requested(speaker: String, lines: Array)
+signal dialogue_finished()
+## 자료(문서)를 읽음
+signal document_read(item_id: String)
+## 인벤토리 내용이 바뀜 (획득·사용·장착·스킬 지정)
+signal inventory_changed()
+## 장착 무기·갑옷이나 지정 스킬이 바뀜 → 플레이어가 전투 수치를 다시 읽는다
+signal loadout_changed()
+## 화면 오른쪽 위에 잠깐 뜨는 알림 글 (저장됨 등)
+signal toast(text: String)
 ## 리플레이(어트랙트) 재생이 끝남 → 타이틀로
 signal replay_finished()
 ## 타이틀로 돌아가기 요청

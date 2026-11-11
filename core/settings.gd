@@ -6,10 +6,11 @@ extends Node
 
 const PATH := "user://settings.json"
 ## 바꿀 수 있는 액션과 화면에 보일 이름 (이 순서로 키 설정 창에 나온다)
+## 스토리판에는 즉시 재시작이 없어 재시작 키는 목록에 없다
 const REBINDABLE: Array = [
 	[&"move_up", "위로 이동"], [&"move_down", "아래로 이동"], [&"move_left", "왼쪽 이동"], [&"move_right", "오른쪽 이동"],
 	[&"shoot", "사격"], [&"melee", "근접·패링"], [&"dodge", "회피"], [&"skill", "스킬1"], [&"skill2", "스킬2"],
-	[&"interact", "상호작용"], [&"skill_menu", "스킬 설정"], [&"restart", "재시작(길게)"],
+	[&"interact", "상호작용"], [&"skill_menu", "인벤토리"], [&"map", "지도"],
 ]
 const MOUSE_NAMES := {
 	MOUSE_BUTTON_LEFT: "좌클릭", MOUSE_BUTTON_RIGHT: "우클릭", MOUSE_BUTTON_MIDDLE: "휠클릭",

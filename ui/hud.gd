@@ -19,6 +19,10 @@ var _heart_empty: Texture2D
 var _skill_icons: SpriteFrames
 var _player: Player
 var _q_label: Label
+## 스킬2(F) 키 이름 (스토리판에서 칸이 열린 뒤에만 보인다)
+var _f_label: Label
+## 스킬 아이콘 사이 간격 (키 이름 글자 자리 포함, px)
+const SKILL_GAP := 12
 
 
 func _ready() -> void:
@@ -37,9 +41,12 @@ func _ready() -> void:
 	# 터치 기기에서는 키 이름(Q)을 보여주지 않는다
 	_q_label = UiText.make_label("" if TouchControls.is_enabled() else Settings.key_name(&"skill"))
 	# 키 설정을 바꾸면 스킬 키 이름도 따라 바뀐다
+	_f_label = UiText.make_label("" if TouchControls.is_enabled() else Settings.key_name(&"skill2"))
+	add_child(_f_label)
 	Settings.changed.connect(func() -> void:
 		if not TouchControls.is_enabled():
-			_q_label.text = Settings.key_name(&"skill"))
+			_q_label.text = Settings.key_name(&"skill")
+			_f_label.text = Settings.key_name(&"skill2"))
 	_q_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	_q_label.position = Vector2(320 - MARGIN.x - 16 - 8, 180 - MARGIN.y - 12)
 	add_child(_q_label)
@@ -87,17 +94,24 @@ func _draw_hud() -> void:
 	_draw_skill(size)
 
 
-## 오른쪽 아래 스킬 아이콘. 쿨타임 중엔 위에서부터 어둡게 덮는다
+## 오른쪽 아래 스킬 아이콘. 쿨타임 중엔 위에서부터 어둡게 덮는다. 스킬2 는 그 왼쪽
 func _draw_skill(size: Vector2) -> void:
 	_q_label.visible = false
-	if not is_instance_valid(_player) or _player.skill == null:
+	_f_label.visible = false
+	if not is_instance_valid(_player):
 		return
-	var skill := _player.skill
 	var pos := size - MARGIN - Vector2(16, 16)
+	if _player.skill != null:
+		_draw_skill_icon(_player.skill, pos, _q_label)
+	if _player.skill2 != null:
+		_draw_skill_icon(_player.skill2, pos - Vector2(16 + SKILL_GAP, 0), _f_label)
+
+
+func _draw_skill_icon(skill: Skill, pos: Vector2, key_label: Label) -> void:
 	_canvas.draw_texture(_skill_icons.get_frame_texture(skill.data.icon, 0), pos)
 	var ratio := skill.ready_ratio()
 	if ratio < 1.0:
 		var h := roundf(16.0 * (1.0 - ratio))
 		_canvas.draw_rect(Rect2(pos, Vector2(16, h)), Color(0, 0, 0, 0.65))
-	_q_label.visible = true
-	_q_label.position = pos + Vector2(-8, 4)
+	key_label.visible = true
+	key_label.position = pos + Vector2(-8, 4)

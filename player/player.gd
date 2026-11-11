@@ -20,6 +20,15 @@ var health: Health
 var melee: MeleeAttack
 ## 장착 스킬 (없을 수 있음)
 var skill: Skill
+## 스킬2 (F, 스토리판에서 칸이 열린 뒤)
+var skill2: Skill
+## 장착한 무기의 전투 수치 (사격·근접·패링). Loadout 에서 읽는다
+var weapon: WeaponData
+## 장착 효과가 반영된 수치 (apply_loadout 에서 계산)
+var _move_speed: float = 0.0
+var _hurt_invuln_ticks: int = 0
+var _ranged_mult: float = 1.0
+var _melee_mult: float = 1.0
 ## 조준 방향 (길이 1)
 var aim_dir: Vector2 = Vector2.RIGHT
 var camera: Camera2D
@@ -75,15 +84,31 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	data = DB.player
 	dodge = DB.dodge.create_ability()
-	gun = Gun.new(DB.gun)
-	ammo = Ammo.new(DB.gun.magazine_size, DB.gun.start_ammo)
+	weapon = Loadout.weapon()
+	ammo = Ammo.new(weapon.gun.magazine_size, weapon.gun.start_ammo)
 	health = Health.new(data.max_hp)
+	apply_loadout()
 	combo = Combo.new(DB.advanced)
 	collision_layer = Layers.PLAYER
 	collision_mask = Layers.WORLD | Layers.ENEMY | Layers.PIT
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	_build_children()
 	Events.player_spawned.emit(self)
+
+
+## 장착(무기·갑옷)에서 전투 수치를 다시 읽는다. 시작할 때와 장착이 바뀔 때 부른다
+func apply_loadout() -> void:
+	weapon = Loadout.weapon()
+	gun = Gun.new(weapon.gun)
+	ammo.set_maximum(weapon.gun.magazine_size)
+	health.set_maximum(roundi(Loadout.stat("max_hp", data.max_hp)))
+	_move_speed = Loadout.stat("move_speed", data.move_speed)
+	_hurt_invuln_ticks = roundi(Loadout.stat("hurt_invuln_ticks", data.hurt_invuln_ticks))
+	_ranged_mult = Loadout.stat("ranged_damage", 1.0)
+	_melee_mult = Loadout.stat("melee_damage", 1.0)
+	if melee != null:
+		melee.set_data(weapon.melee, weapon.parry)
+	Events.player_hp_changed.emit(health.current, health.maximum)
 
 
 func _build_children() -> void:
@@ -138,7 +163,7 @@ func _build_children() -> void:
 	_hurtbox.handler = _on_hurt
 	add_child(_hurtbox)
 
-	melee = MeleeAttack.new(DB.melee, DB.parry)
+	melee = MeleeAttack.new(weapon.melee, weapon.parry)
 	melee.parried.connect(_on_parried)
 	melee.reparried.connect(_on_reparried)
 	add_child(melee)
@@ -175,7 +200,7 @@ func _physics_process(_delta: float) -> void:
 	_update_aim(input)
 	melee.aim_dir = aim_dir
 	combo.tick()
-	melee.damage_mult = combo.damage_mult()
+	melee.damage_mult = combo.damage_mult() * _melee_mult
 	dodge.tick_cooldown()
 	gun.tick_cooldown()
 	_tick_stealth()
@@ -190,9 +215,11 @@ func _physics_process(_delta: float) -> void:
 			_tick_dash_slash()
 	if skill:
 		skill.tick()
+	if skill2:
+		skill2.tick()
 	var hits := melee.tick()
 	if hits > 0:
-		ammo.add(hits * DB.melee.ammo_on_hit)
+		ammo.add(hits * weapon.melee.ammo_on_hit)
 		Events.melee_hit.emit(hits)
 	move_and_slide()
 	_update_visual(input)
@@ -213,14 +240,16 @@ func _tick_normal(input: InputFrame) -> void:
 		return
 	if input.is_pressed(InputFrame.SKILL) and skill:
 		skill.try_use()
+	if input.is_pressed(InputFrame.SKILL2) and skill2:
+		skill2.try_use()
 	if input.is_pressed(InputFrame.MELEE) and melee.can_start():
 		melee.start(aim_dir)
 		Events.melee_started.emit()
 	elif input.is_held(InputFrame.SHOOT) and not melee.is_active():
 		_try_shoot(input)
-	var speed := data.move_speed * combo.speed_mult()
+	var speed := _move_speed * combo.speed_mult()
 	if melee.is_active():
-		speed *= DB.melee.move_speed_mult
+		speed *= weapon.melee.move_speed_mult
 	velocity = input.move * speed
 
 
@@ -231,8 +260,8 @@ func _try_shoot(input: InputFrame) -> void:
 		return
 	var container := get_tree().get_first_node_in_group(Level.GROUP_PROJECTILES)
 	# 어깨 높이에서 마우스 쪽으로 쏜다 (총구에서 탄이 나가 보이게)
-	if gun.try_fire(ammo, container, _shot_origin(), _shot_dir, combo.damage_mult()):
-		_shoot_anim_ticks = DB.gun.fire_interval_ticks
+	if gun.try_fire(ammo, container, _shot_origin(), _shot_dir, combo.damage_mult() * _ranged_mult):
+		_shoot_anim_ticks = weapon.gun.fire_interval_ticks
 		_gun_kick = DB.feel.gun_recoil_px
 		_muzzle_flash.visible = true
 		_muzzle_flash.play(&"flash")
@@ -266,7 +295,7 @@ func _start_dash_slash() -> void:
 
 func _tick_dash_slash() -> void:
 	velocity = _dash_dir * _dash_speed
-	melee.position = _dash_dir * DB.melee.offset
+	melee.position = _dash_dir * weapon.melee.offset
 	_dash_left -= 1
 	if _dash_left <= 0:
 		state = State.NORMAL
@@ -333,14 +362,15 @@ func _update_aim(input: InputFrame) -> void:
 
 ## 탄이 나가는 기준점 (어깨 높이)
 func _shot_origin() -> Vector2:
-	return global_position + Vector2(0.0, -DB.gun.muzzle_height)
+	return global_position + Vector2(0.0, -weapon.gun.muzzle_height)
 
 
 ## 지금 무적인지 (회피 무적, 피격 후 무적, 디버그 무적)
 func is_invulnerable() -> bool:
 	return Debug.god_mode or cutscene_lock or dodge.is_invulnerable() or hurt_invuln_left > 0 \
 		or (state == State.DASH_SLASH and DB.advanced.dash_slash_invuln) \
-		or (skill != null and skill.grants_invulnerability())
+		or (skill != null and skill.grants_invulnerability()) \
+		or (skill2 != null and skill2.grants_invulnerability())
 
 
 func is_dead() -> bool:
@@ -370,7 +400,7 @@ func _on_hurt(hit: HitInfo) -> Hurtbox.Result:
 	if health.is_dead():
 		_die()
 	else:
-		hurt_invuln_left = data.hurt_invuln_ticks
+		hurt_invuln_left = _hurt_invuln_ticks
 	return Hurtbox.Result.HIT
 
 
@@ -404,9 +434,24 @@ func set_skill(data: SkillData) -> void:
 	add_child(skill)
 
 
+## 스킬2(F) 칸에 스킬을 넣는다 (null = 비움)
+func set_skill2(data: SkillData) -> void:
+	if skill2:
+		skill2.cleanup()
+		skill2.queue_free()
+		skill2 = null
+	if data == null:
+		return
+	skill2 = data.create_skill()
+	skill2.player = self
+	add_child(skill2)
+
+
 func _exit_tree() -> void:
 	if skill:
 		skill.cleanup()
+	if skill2:
+		skill2.cleanup()
 
 
 func _die() -> void:
@@ -432,7 +477,7 @@ func _start_stealth() -> void:
 
 
 func _on_parried(projectile: Projectile, perfect: bool) -> void:
-	ammo.add(DB.parry.ammo_on_parry)
+	ammo.add(weapon.parry.ammo_on_parry)
 	Events.parried.emit(perfect)
 	Effect.spawn(&"hit_parry", projectile.global_position, 0.0, 1.5)
 	if perfect:
@@ -441,7 +486,7 @@ func _on_parried(projectile: Projectile, perfect: bool) -> void:
 
 
 func _on_reparried(projectile: Projectile) -> void:
-	ammo.add(DB.parry.ammo_on_parry)
+	ammo.add(weapon.parry.ammo_on_parry)
 	Events.reparried.emit(projectile.reflect_count - 1)
 
 
@@ -550,15 +595,26 @@ func _apply_draw_order() -> void:
 
 ## 총: 캐릭터 둘레에 떠서 사격 방향으로 돈다 (그림 하나를 통째로 돌림). 회피·근접·사망 중에는 숨김 (화면 표시 전용)
 func _update_gun() -> void:
+	# 스토리판: 근접 공격은 들고 있는 총으로 후려치는 동작 → 휘두르는 동안 총이 호를 그리며 돈다
+	var swinging := Game.is_story_mode() and melee.is_active() and state == State.NORMAL
 	var hidden_now := state == State.DODGE or state == State.DASH_SLASH or state == State.DEAD \
-		or melee.is_active() or _sprite.animation == &"death"
+		or (melee.is_active() and not swinging) or _sprite.animation == &"death"
 	_gun.visible = not hidden_now
 	if hidden_now:
+		return
+	if swinging:
+		var t := clampf(float(melee.elapsed_ticks()) / float(maxi(weapon.melee.active_ticks, 1)), 0.0, 1.0)
+		var arc := deg_to_rad(DB.feel.gun_swing_arc_deg)
+		var swing_dir := melee.position.normalized().rotated(lerpf(-arc * 0.5, arc * 0.5, t))
+		_gun.position = Vector2(0.0, -weapon.gun.muzzle_height) + swing_dir * DB.feel.gun_swing_reach
+		_gun.rotation = swing_dir.angle()
+		_gun.flip_v = swing_dir.x < 0.0
+		_gun.modulate = _sprite.modulate
 		return
 	# 총은 손에 들지 않고 가슴 높이 둘레에 떠서 조준 방향에 머문다. 살짝 위아래로 떠다님
 	var f := DB.feel
 	var hover := sin(TAU * float(Game.tick) / maxf(f.gun_hover_period_ticks, 1.0)) * f.gun_hover_px
-	_gun.position = Vector2(0.0, -DB.gun.muzzle_height + hover) + _shot_dir * (f.gun_orbit_radius - _gun_kick)
+	_gun.position = Vector2(0.0, -weapon.gun.muzzle_height + hover) + _shot_dir * (f.gun_orbit_radius - _gun_kick)
 	_gun_kick *= DB.feel.gun_recoil_return
 	_gun.rotation = _shot_dir.angle()
 	_gun.flip_v = _shot_dir.x < 0.0
