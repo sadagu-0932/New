@@ -5,7 +5,9 @@ extends Resource
 @export_group("조이스틱")
 ## 왼쪽 이동 조이스틱 중심
 @export var move_stick_center: Vector2 = Vector2.ZERO
-## 오른쪽 조준 조이스틱 중심
+## 켜면 조준 조이스틱 없이, 움직이는 방향이 곧 조준 방향
+@export var aim_with_move: bool = false
+## 오른쪽 조준 조이스틱 중심 (aim_with_move 가 꺼져 있을 때만)
 @export var aim_stick_center: Vector2 = Vector2.ZERO
 ## 손잡이가 움직일 수 있는 최대 거리 (px)
 @export var stick_radius: float = 0.0

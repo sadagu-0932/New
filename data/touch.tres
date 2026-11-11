@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1")
 move_stick_center = Vector2(40, 136)
+aim_with_move = true
 aim_stick_center = Vector2(236, 140)
 stick_radius = 14.0
 stick_grab_radius = 44.0
@@ -23,7 +24,7 @@ locked_alpha = 0.25
 text_map = {
 "WASD 이동": "왼쪽 스틱 이동",
 "Space 회피": "[회피] 버튼",
-"마우스로 조준": "오른쪽 스틱 조준",
+"마우스로 조준": "움직이는 방향으로 조준",
 "좌클릭 사격": "[사격] 버튼",
 "우클릭 근접 공격": "[근접] 버튼 공격",
 "우클릭": "[근접]",

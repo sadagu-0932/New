@@ -4,7 +4,7 @@ extends CanvasLayer
 ## PC(Windows·리눅스)와 PC 브라우저의 웹 버전에는 나오지 않는다.
 ##
 ## - 왼쪽 조이스틱: 이동 (메뉴에서는 방향 선택)
-## - 오른쪽 조이스틱: 조준만 (놓아도 마지막 방향 유지)
+## - 조준: 움직이는 방향이 곧 조준 방향 (멈춰도 마지막 방향 유지). data/touch.tres 의 aim_with_move 를 끄면 오른쪽 조준 조이스틱이 따로 나온다
 ## - 둥근 버튼: 사격(누르고 있으면 연사), 근접(=패링), 회피, 스킬1, 사용, 스킬2(지금은 잠김)
 ## - 위쪽 작은 버튼: 일시정지, 재시작(누르고 있기), 스킬 설정
 ## - 메뉴가 열려 있으면: 확인, 뒤로
@@ -168,7 +168,7 @@ func _process(_delta: float) -> void:
 	if edit_mode:
 		# 배치 모드: 옮길 수 있는 것 전부 + 완료·초기화만 보여준다
 		_set_stick_visible(_move_stick, true)
-		_set_stick_visible(_aim_stick, true)
+		_set_stick_visible(_aim_stick, not _data.aim_with_move)
 		for b: Dictionary in _buttons:
 			var node: Sprite2D = b.node
 			node.visible = b.movable or b.group == "edit"
@@ -176,7 +176,7 @@ func _process(_delta: float) -> void:
 		return
 	var paused := _pause_showing()
 	_set_stick_visible(_move_stick, play or menu)
-	_set_stick_visible(_aim_stick, play)
+	_set_stick_visible(_aim_stick, play and not _data.aim_with_move)
 	for b: Dictionary in _buttons:
 		var show: bool = play and b.movable
 		if b.group == "menu":
@@ -215,7 +215,9 @@ func set_edit_mode(value: bool) -> void:
 
 ## 옮길 수 있는 것 전부 (스틱 2개 + 게임 중 버튼)
 func _movables() -> Array[Dictionary]:
-	var out: Array[Dictionary] = [_move_stick, _aim_stick]
+	var out: Array[Dictionary] = [_move_stick]
+	if not _data.aim_with_move:
+		out.append(_aim_stick)
 	for b: Dictionary in _buttons:
 		if b.movable:
 			out.append(b)
@@ -402,6 +404,9 @@ func _send_action(action: StringName, pressed: bool, strength: float = 1.0) -> v
 
 func _set_move(v: Vector2) -> void:
 	move_vec = v
+	# 바라보는(움직이는) 방향이 곧 조준 방향. 멈춰도 마지막 방향을 유지한다
+	if _data.aim_with_move and v != Vector2.ZERO:
+		aim_dir = v.normalized()
 	var parts := [maxf(-v.x, 0.0), maxf(v.x, 0.0), maxf(-v.y, 0.0), maxf(v.y, 0.0)]
 	for i in MOVE_ACTIONS.size():
 		var action := MOVE_ACTIONS[i]
