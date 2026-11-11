@@ -195,9 +195,11 @@ func test_key_settings() -> void:
 	check(ev.is_action(&"dodge") and Settings.key_name(&"dodge") == "Shift", "회피를 Shift 로 바꿈")
 	var hint: String = DB.game_config.tutorial.sections[0].hint
 	check(UiText.for_device(hint).contains("Shift 회피") and not UiText.for_device(hint).contains("Space"), "안내 글도 바뀐 키로 (%s)" % UiText.for_device(hint))
+	check(UiText.for_device("E 건너뛰기") == "E 건너뛰기", "컷씬 건너뛰기 글: 기본은 E")
 	# 스킬1(Q)에 E(상호작용이 쓰던 키)를 주면 서로 맞바뀐다
 	Settings.rebind(&"skill", {"t": "k", "c": KEY_E})
 	check(Settings.key_name(&"skill") == "E" and Settings.key_name(&"interact") == "Q", "겹치는 키는 맞바꿈")
+	check(UiText.for_device("E 건너뛰기") == "Q 건너뛰기", "컷씬 건너뛰기 글이 설정된 상호작용 키를 따라감")
 	var esc := InputEventKey.new()
 	esc.physical_keycode = KEY_ESCAPE
 	esc.pressed = true

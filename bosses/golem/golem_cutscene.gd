@@ -57,8 +57,11 @@ func _build_overlay() -> void:
 	_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_text.visible = false
 	_layer.add_child(_text)
-	_skip_label = UiText.make_label("E 건너뛰기")
-	_skip_label.position = Vector2(320 - 60, 180 - 16)
+	# 상호작용 키로 건너뛴다 → 지금 설정된 키 이름(터치 기기는 버튼 이름)으로 보여준다
+	_skip_label = UiText.make_label(UiText.for_device("E 건너뛰기"))
+	_skip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_skip_label.size = Vector2(150, 12)
+	_skip_label.position = Vector2(320 - 154, 180 - 16)
 	_skip_label.modulate.a = 0.7
 	_skip_label.visible = skippable
 	_layer.add_child(_skip_label)

@@ -20,7 +20,7 @@ static func make_label(text: String = "", size: int = SIZE_SMALL) -> Label:
 
 ## 안내 글 속 키 이름 → 그 키가 맡은 액션 (키 설정을 바꾸면 글도 따라 바뀐다). "" 는 이동 키 네 개 묶음
 const KEY_WORDS: Array = [["WASD", ""], ["Space", "dodge"], ["좌클릭", "shoot"], ["우클릭", "melee"],
-	["Q 스킬", "skill"], ["Tab", "skill_menu"], ["R 길게", "restart"]]
+	["Q 스킬", "skill"], ["Tab", "skill_menu"], ["R 길게", "restart"], ["E 건너뛰기", "interact"]]
 
 
 ## 안내 글을 지금 기기·키 설정에 맞게 바꾼다.
