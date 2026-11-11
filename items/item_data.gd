@@ -12,6 +12,8 @@ enum Category { WEAPON, ARMOR, CONSUMABLE, MATERIAL, DOCUMENT }
 @export var icon: StringName = &""
 ## 목록에서의 순서 (작을수록 위)
 @export var order: int = 0
+## 갑옷류: 어느 칸에 끼는지 (helmet 투구 · armor 갑옷 · pants 바지)
+@export var armor_slot: String = "armor"
 ## 무기: 전투 수치
 @export var weapon: WeaponData
 ## 무기·갑옷: 장착하고 있는 동안의 스탯 수정

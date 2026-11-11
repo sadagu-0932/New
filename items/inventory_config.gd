@@ -5,7 +5,10 @@ extends Resource
 ## 새 게임 때 갖고 시작하는 아이템 (id → 개수)
 @export var start_items: Dictionary = {}
 @export var start_weapon: String = ""
-@export var start_armor: String = ""
+## 처음에 입고 있는 것 (아이템 id 들. 칸은 아이템의 armor_slot 을 따른다)
+@export var start_armor: Array[String] = []
+## 갑옷류 칸 이름 (칸 id → 화면에 보일 이름). 이 순서로 장착 칸이 놓인다
+@export var armor_slot_names: Dictionary = {}
 ## 처음부터 보유한 스킬 id
 @export var start_skills: Array[String] = []
 ## 처음에 Q 에 지정된 스킬 ("" = game_config 의 default_skill_id)

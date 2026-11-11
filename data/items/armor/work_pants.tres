@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[sub_resource type="Resource" id="mod_1"]
+script = ExtResource("mod")
+stat = "move_speed"
+op = 1
+value = 1.05
+
+[resource]
+script = ExtResource("item")
+id = "work_pants"
+display_name = "질긴 작업 바지"
+description = "무릎을 덧댄 바지. 발이 조금 빨라진다."
+category = 1
+icon = &"pants_work"
+order = 21
+armor_slot = "pants"
+stat_mods = Array[ExtResource("mod")]([SubResource("mod_1")])
+use_effects = Array[ExtResource("fx")]([])
+document_text = ""

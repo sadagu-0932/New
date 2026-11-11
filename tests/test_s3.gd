@@ -60,7 +60,7 @@ func test_item_data() -> void:
 	for cat in ItemData.Category.values():
 		var n := int(per_cat.get(cat, 0))
 		# 자료는 골렘이 떨어뜨리는 것(S7)이 더해진다
-		check(n >= 1 and n <= 3, "분류 %s: 임시 아이템 %d개" % [DB.inventory.category_names[cat], n])
+		check(n >= 1 and n <= 7, "분류 %s: 임시 아이템 %d개" % [DB.inventory.category_names[cat], n])
 	var ordered := true
 	var list := DB.items_sorted()
 	for i in list.size() - 1:
@@ -109,7 +109,7 @@ func _p() -> Player:
 
 func test_start_inventory() -> void:
 	var inv := Story.inventory
-	check(inv.weapon_id == "lab_gun" and inv.armor_id == "lab_suit", "시작 장착: 시험용 마석총 + 실험체 도포")
+	check(inv.weapon_id == "lab_gun" and inv.armor_id("armor") == "lab_suit" and inv.armor_id("helmet") == "" and inv.armor_id("pants") == "", "시작 장착: 시험용 마석총 + 실험체 도포")
 	check(inv.owned_skills.size() == 5, "스킬 5종을 처음부터 전부 보유")
 	check(inv.skill_ids[0] == DB.game_config.default_skill_id and _p().skill.data.id == inv.skill_ids[0], "Q 에는 기본 스킬")
 	check(not inv.skill2_unlocked() and _p().skill2 == null, "스킬2(F) 칸은 프롤로그가 끝나기 전엔 잠김")
@@ -164,7 +164,19 @@ func test_armor() -> void:
 	inv.equip("light_wrap")
 	check(p.health.maximum == base_hp - 1 and p.health.current == base_hp - 1, "가벼운 감개옷: 최대 체력 -1, 넘치는 체력은 깎임")
 	check_near(p._move_speed, DB.player.move_speed * 1.1, 0.01, "가벼운 감개옷: 이동 속도 ×1.1")
-	check(inv.equip("light_wrap") and inv.armor_id == "", "입은 갑옷을 다시 고르면 벗음")
+	# 투구·바지는 갑옷과 다른 칸이라 함께 입는다
+	inv.add("miner_cap")
+	inv.add("work_pants")
+	inv.add("sight_band")
+	check(inv.equip("miner_cap") and inv.equip("work_pants") and inv.armor_id("armor") == "light_wrap", "투구·바지를 입어도 갑옷은 그대로 (칸이 따로)")
+	check(inv.equipped_armors().size() == 3, "투구 + 갑옷 + 바지 세 가지를 함께 장착")
+	check_near(p._move_speed, DB.player.move_speed * 1.1 * 1.05, 0.01, "여러 칸의 효과가 함께 적용")
+	check(p._hurt_invuln_ticks == DB.player.hurt_invuln_ticks + 20, "투구 효과: 피격 후 무적 +20틱")
+	check(inv.equip("sight_band") and inv.armor_id("helmet") == "sight_band", "같은 칸의 다른 투구를 고르면 바꿔 낌")
+	inv.equip("sight_band")
+	inv.equip("work_pants")
+	check(inv.armor_id("helmet") == "" and inv.armor_id("pants") == "", "입은 것을 다시 고르면 벗음")
+	check(inv.equip("light_wrap") and inv.armor_id("armor") == "", "입은 갑옷을 다시 고르면 벗음")
 	check(p.health.maximum == base_hp and is_equal_approx(p._move_speed, DB.player.move_speed), "벗으면 기본 수치")
 	inv.equip("lab_suit")
 
@@ -252,7 +264,12 @@ func test_panel() -> void:
 		if not Rect2(0, 0, 320, 180).encloses(slot["rect"]):
 			in_screen = false
 	check(in_screen, "모든 칸이 화면 안에 있음")
-	check(panel.ids(InventoryPanel.KIND_WEAPON) == (["lab_gun"] as Array[String]) and panel.ids(InventoryPanel.KIND_ARMOR) == (["lab_suit"] as Array[String]), "장착 칸: 무기 한 칸 + 갑옷 한 칸")
+	check(panel.ids(InventoryPanel.KIND_WEAPON) == (["lab_gun"] as Array[String]) and panel.ids(InventoryPanel.KIND_ARMOR) == (["lab_suit"] as Array[String]), "장착 칸: 무기 한 칸 + 입은 갑옷")
+	var armor_slots: Array = []
+	for slot in panel.slots:
+		if slot["kind"] == InventoryPanel.KIND_ARMOR:
+			armor_slots.append(slot["slot"])
+	check(armor_slots == ["helmet", "armor", "pants"], "갑옷류 장착 칸 세 개: 투구·갑옷·바지 %s" % [armor_slots])
 	check(not panel.ids(InventoryPanel.KIND_BAG).has("lab_gun") and panel.ids(InventoryPanel.KIND_BAG).has("heavy_gun"), "장착한 것은 장착 칸에, 나머지는 소지품 칸에")
 	check(panel.ids(InventoryPanel.KIND_SKILL).size() == 5 and panel.ids(InventoryPanel.KIND_SKILL_Q) == (["shockwave"] as Array[String]), "보유 스킬 5칸 + Q 칸에 지정된 스킬")
 	# 칸을 고르면(마우스를 올리면) 이름·능력치 글상자가 뜬다
@@ -278,12 +295,12 @@ func test_panel() -> void:
 	check(panel.ids(InventoryPanel.KIND_BAG).has("lab_gun"), "빼낸 무기는 소지품 칸으로")
 	panel.select(InventoryPanel.KIND_BAG, "lab_gun")
 	panel.activate()
-	panel.select(InventoryPanel.KIND_ARMOR)
+	panel.select(InventoryPanel.KIND_ARMOR, "lab_suit")
 	panel.activate()
-	check(inv.armor_id == "" and panel.ids(InventoryPanel.KIND_BAG).has("lab_suit"), "입은 갑옷 칸을 누르면 벗음")
+	check(inv.armor_id("armor") == "" and panel.ids(InventoryPanel.KIND_BAG).has("lab_suit"), "입은 갑옷 칸을 누르면 벗음")
 	panel.select(InventoryPanel.KIND_BAG, "lab_suit")
 	panel.activate()
-	check(inv.armor_id == "lab_suit", "다시 입음")
+	check(inv.armor_id("armor") == "lab_suit", "다시 입음")
 	var vial := -1
 	for i in panel.slots.size():
 		if InventoryPanel.entry_id(panel.slots[i]["entry"]) == "heal_vial":
@@ -299,7 +316,7 @@ func test_panel() -> void:
 	panel.move(Vector2.RIGHT)
 	check(panel.slots[panel.selected]["kind"] == InventoryPanel.KIND_ARMOR, "방향키로 옆 칸 이동")
 	panel.move(Vector2.DOWN)
-	check(panel.slots[panel.selected]["kind"] == InventoryPanel.KIND_SKILL, "방향키로 아래 칸 이동")
+	check(panel.slots[panel.selected]["kind"] == InventoryPanel.KIND_SKILL_F or panel.slots[panel.selected]["kind"] == InventoryPanel.KIND_SKILL_Q, "방향키로 아래 칸 이동")
 	# 글상자가 화면 밖으로 나가지 않는지, 글이 폭을 넘지 않는지
 	var label := UiText.make_label()
 	var font := label.get_theme_font(&"font")
@@ -331,6 +348,8 @@ func test_save_roundtrip() -> void:
 	var inv := Story.inventory
 	inv.equip("heavy_gun")
 	inv.equip("plated_coat")
+	inv.add("miner_cap")
+	inv.equip("miner_cap")
 	inv.set_skill(Inventory.SLOT_Q, "decoy")
 	var vials := inv.count("heal_vial")
 	check(main.saves.save_manual(), "장착을 바꾼 뒤 저장")
@@ -343,7 +362,7 @@ func test_save_roundtrip() -> void:
 	await step(4)
 	inv = Story.inventory
 	var p := _p()
-	check(inv.weapon_id == "heavy_gun" and inv.armor_id == "plated_coat" and inv.count("heal_vial") == vials, "불러오기: 인벤토리·장착 복원")
+	check(inv.weapon_id == "heavy_gun" and inv.armor_id("armor") == "plated_coat" and inv.armor_id("helmet") == "miner_cap" and inv.count("heal_vial") == vials, "불러오기: 인벤토리·장착 복원")
 	check(p.weapon == DB.item("heavy_gun").weapon and p.health.maximum == DB.player.max_hp + 1, "불러오기: 장착 효과가 플레이어에 반영")
 	check(p.skill.data.id == "decoy" and p.skill2 != null and p.skill2.data.id == "blink", "불러오기: Q·F 스킬 복원")
 

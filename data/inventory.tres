@@ -11,7 +11,12 @@ start_items = {
 "ammo_cell": 1
 }
 start_weapon = "lab_gun"
-start_armor = "lab_suit"
+start_armor = Array[String](["lab_suit"])
+armor_slot_names = {
+"helmet": "투구",
+"armor": "갑옷",
+"pants": "바지"
+}
 start_skills = Array[String](["blink", "absorb", "decoy", "shockwave", "mark"])
 start_skill_q = ""
 skill2_unlock_flag = "prologue_done"

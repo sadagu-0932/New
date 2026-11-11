@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="item"]
+[ext_resource type="Script" path="res://items/stat_mod.gd" id="mod"]
+[ext_resource type="Script" path="res://items/item_effect.gd" id="fx"]
+
+[sub_resource type="Resource" id="mod_1"]
+script = ExtResource("mod")
+stat = "hurt_invuln_ticks"
+op = 0
+value = 20.0
+
+[resource]
+script = ExtResource("item")
+id = "miner_cap"
+display_name = "광부 안전모"
+description = "단단한 모자. 맞은 뒤 조금 더 오래 버틴다."
+category = 1
+icon = &"helmet_cap"
+order = 11
+armor_slot = "helmet"
+stat_mods = Array[ExtResource("mod")]([SubResource("mod_1")])
+use_effects = Array[ExtResource("fx")]([])
+document_text = ""

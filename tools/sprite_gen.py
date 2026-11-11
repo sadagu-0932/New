@@ -2287,7 +2287,44 @@ def build_item_icons() -> None:
         paper.line(5, y, 10, y, c("stone"))
     paper.line(5, 11, 8, 11, c("stone"))
 
+    def helmet(shell: str, band: str, lamp: str | None) -> Canvas:
+        cv = icon_frame()
+        for y, (x0, x1) in enumerate([(6, 9), (5, 10), (4, 11), (4, 11), (4, 11)]):
+            cv.line(x0, 4 + y, x1, 4 + y, c(shell))
+        cv.line(3, 9, 12, 9, c(band))
+        cv.line(3, 10, 12, 10, c("outline"))
+        cv.line(6, 3, 9, 3, c("outline"))
+        cv.set(5, 5, c("white"))
+        if lamp:
+            cv.set(7, 6, c(lamp))
+            cv.set(8, 6, c(lamp))
+        return cv
+
+    band = icon_frame()
+    rect(band, 3, 6, 12, 8, "crimson")
+    band.line(3, 5, 12, 5, c("outline"))
+    band.line(3, 9, 12, 9, c("outline"))
+    rect(band, 7, 6, 8, 8, "cyan")
+    band.line(12, 9, 13, 12, c("crimson"))
+    band.line(11, 9, 11, 11, c("red"))
+
+    def pants(cloth: str, patch: str) -> Canvas:
+        cv = icon_frame()
+        rect(cv, 4, 3, 11, 5, cloth)
+        rect(cv, 4, 6, 6, 12, cloth)
+        rect(cv, 9, 6, 11, 12, cloth)
+        cv.line(4, 3, 11, 3, c("tan"))
+        cv.line(4, 13, 6, 13, c("outline"))
+        cv.line(9, 13, 11, 13, c("outline"))
+        rect(cv, 4, 8, 6, 9, patch)
+        rect(cv, 9, 8, 11, 9, patch)
+        return cv
+
     icons = [
+        ("helmet_cap", helmet("yellow", "orange", "white")),
+        ("helmet_band", band),
+        ("pants_work", pants("blue", "navy")),
+        ("pants_pad", pants("brown", "tan")),
         ("gun_lab", gun("stone", "stone_light", 9, 2, "cyan")),
         ("gun_heavy", gun("stone_dark", "stone", 9, 3, "orange")),
         ("gun_rapid", gun("blue", "pale", 7, 1, "yellow")),

@@ -2,7 +2,7 @@ class_name Inventory
 extends RefCounted
 ## 인벤토리·장착 (스토리판). Story 오토로드가 하나 갖고 있고 저장 파일에 들어간다.
 ##  - 아이템: id → 개수
-##  - 장착: 원거리 무기 한 칸, 갑옷 한 칸
+##  - 장착: 원거리 무기 한 칸 + 갑옷류 세 칸 (투구·갑옷·바지)
 ##  - 스킬: 보유 스킬 중 Q(0번 칸)·F(1번 칸)에 지정
 ## 바뀌면 Events.inventory_changed, 전투 수치에 영향을 주는 변경이면 Events.loadout_changed 도 낸다.
 
@@ -11,7 +11,8 @@ const SLOT_F := 1
 
 var items: Dictionary = {}
 var weapon_id: String = ""
-var armor_id: String = ""
+## 갑옷류 장착: 칸 id(helmet·armor·pants) → 아이템 id
+var armor_ids: Dictionary = {}
 ## 보유 스킬
 var owned_skills: Array[String] = []
 ## 칸별 지정 스킬 id ("" = 비어 있음)
@@ -25,7 +26,11 @@ func reset_to_start() -> void:
 	for id: String in cfg.start_items:
 		items[id] = int(cfg.start_items[id])
 	weapon_id = cfg.start_weapon
-	armor_id = cfg.start_armor
+	armor_ids = {}
+	for id: String in cfg.start_armor:
+		var item := DB.item(id)
+		if item != null and item.category == ItemData.Category.ARMOR:
+			armor_ids[item.armor_slot] = id
 	owned_skills = cfg.start_skills.duplicate()
 	var q := cfg.start_skill_q if not cfg.start_skill_q.is_empty() else DB.game_config.default_skill_id
 	skill_ids = [q, ""]
@@ -69,15 +74,30 @@ func equipped_weapon() -> ItemData:
 	return DB.item(weapon_id)
 
 
-func equipped_armor() -> ItemData:
-	return DB.item(armor_id)
+## 그 칸(helmet·armor·pants)에 입은 것의 id ("" = 없음)
+func armor_id(slot: String) -> String:
+	return String(armor_ids.get(slot, ""))
+
+
+func equipped_armor(slot: String) -> ItemData:
+	return DB.item(armor_id(slot))
+
+
+## 입고 있는 갑옷류 전부
+func equipped_armors() -> Array[ItemData]:
+	var out: Array[ItemData] = []
+	for slot: String in DB.inventory.armor_slot_names:
+		var item := equipped_armor(slot)
+		if item != null:
+			out.append(item)
+	return out
 
 
 func is_equipped(id: String) -> bool:
-	return not id.is_empty() and (id == weapon_id or id == armor_id)
+	return not id.is_empty() and (id == weapon_id or armor_ids.values().has(id))
 
 
-## 장착. 무기는 바꿔 끼우기만 되고, 갑옷은 입은 것을 다시 고르면 벗는다. 바뀌었으면 true
+## 장착. 무기는 바꿔 끼우기만 되고, 갑옷류는 자기 칸에 들어가며 입은 것을 다시 고르면 벗는다. 바뀌었으면 true
 func equip(id: String) -> bool:
 	var item := DB.item(id)
 	if item == null or not has(id):
@@ -88,7 +108,12 @@ func equip(id: String) -> bool:
 				return false
 			weapon_id = id
 		ItemData.Category.ARMOR:
-			armor_id = "" if armor_id == id else id
+			if not DB.inventory.armor_slot_names.has(item.armor_slot):
+				return false
+			if armor_id(item.armor_slot) == id:
+				armor_ids.erase(item.armor_slot)
+			else:
+				armor_ids[item.armor_slot] = id
 		_:
 			return false
 	Events.inventory_changed.emit()
@@ -166,7 +191,7 @@ func to_dict() -> Dictionary:
 	return {
 		"items": items.duplicate(),
 		"weapon": weapon_id,
-		"armor": armor_id,
+		"armor": armor_ids.duplicate(),
 		"owned_skills": owned_skills.duplicate(),
 		"skills": skill_ids.duplicate(),
 	}
@@ -181,7 +206,12 @@ func from_dict(d: Dictionary) -> void:
 		if DB.item(id) != null:
 			items[id] = int(d["items"][id])
 	weapon_id = String(d.get("weapon", weapon_id))
-	armor_id = String(d.get("armor", ""))
+	armor_ids = {}
+	var saved_armor: Variant = d.get("armor", {})
+	if saved_armor is Dictionary:
+		for slot: String in saved_armor:
+			if DB.item(String(saved_armor[slot])) != null:
+				armor_ids[slot] = String(saved_armor[slot])
 	if DB.item(weapon_id) == null:
 		weapon_id = DB.inventory.start_weapon
 	var owned_list: Array = d.get("owned_skills", [])

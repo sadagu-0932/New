@@ -1,7 +1,7 @@
 class_name Loadout
 extends RefCounted
 ## 지금 장착한 것에서 전투 수치를 꺼낸다. 전투 코드는 장비를 직접 보지 않고 여기만 본다.
-##  - 스토리판: 인벤토리의 장착 무기·갑옷
+##  - 스토리판: 인벤토리의 장착 무기·갑옷류(투구·갑옷·바지)
 ##  - 스피드런판(인벤토리 없음): data/gun.tres · melee.tres · parry.tres 그대로, 스탯 수정 없음
 
 static var _default_weapon: WeaponData
@@ -11,9 +11,10 @@ static func _equipped() -> Array[ItemData]:
 	var out: Array[ItemData] = []
 	if not Game.is_story_mode():
 		return out
-	for item: ItemData in [Story.inventory.equipped_weapon(), Story.inventory.equipped_armor()]:
-		if item != null:
-			out.append(item)
+	var weapon_item := Story.inventory.equipped_weapon()
+	if weapon_item != null:
+		out.append(weapon_item)
+	out.append_array(Story.inventory.equipped_armors())
 	return out
 
 

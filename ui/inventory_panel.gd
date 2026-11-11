@@ -2,7 +2,7 @@ class_name InventoryPanel
 extends CanvasLayer
 ## 인벤토리 화면 (스토리판). 키 하나(기본 Tab)로 열고, 열려 있는 동안 게임이 멈춘다.
 ## 네모 칸에 아이콘이 놓이고, 칸에 마우스를 올리면(또는 방향키로 고르면) 이름·설명·능력치 글상자가 뜬다.
-##  - 왼쪽: 장착 칸(무기·갑옷), 스킬 칸(Q·F), 보유 스킬
+##  - 왼쪽: 장착 칸(무기 + 투구·갑옷·바지), 스킬 칸(Q·F), 보유 스킬
 ##  - 오른쪽: 소지품 칸 (장착한 것은 장착 칸으로 옮겨져 여기엔 없다)
 ##  - 클릭·Enter: 장착 / 사용 / 읽기 / 스킬을 Q 에 지정.  우클릭·F: 스킬을 F 에 지정.  입은 갑옷 칸을 누르면 벗는다
 ##  - 방향키·WASD 로 칸 이동, Esc·Tab 닫기
@@ -27,6 +27,8 @@ const BAG_ROWS := 5
 const LEFT_X := 12.0
 const BAG_X := 132.0
 const TOP_Y := 34.0
+## 왼쪽 묶음(장착 / 스킬 / 보유 스킬) 사이 세로 간격
+const ROW_STEP := 40.0
 ## 글상자 폭 (px)
 const TIP_WIDTH := 150.0
 const COLOR_SLOT := Color(0.13, 0.11, 0.17)
@@ -83,8 +85,8 @@ func _ready() -> void:
 	_root.add_child(dim)
 	_add_caption("인벤토리", Vector2(LEFT_X, 6), COLOR_SELECTED)
 	_add_caption("장착", Vector2(LEFT_X, TOP_Y - 13))
-	_add_caption("스킬", Vector2(LEFT_X + 56, TOP_Y - 13))
-	_add_caption("보유 스킬", Vector2(LEFT_X, TOP_Y + 31))
+	_add_caption("스킬", Vector2(LEFT_X, TOP_Y + ROW_STEP - 13))
+	_add_caption("보유 스킬", Vector2(LEFT_X, TOP_Y + ROW_STEP * 2 - 13))
 	_add_caption("소지품", Vector2(BAG_X, TOP_Y - 13))
 	_canvas = Control.new()
 	_canvas.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -215,13 +217,18 @@ func _build_slots() -> void:
 	var step := SLOT + GAP
 	slots = []
 	slots.append({"kind": KIND_WEAPON, "rect": _slot_rect(LEFT_X, TOP_Y), "entry": inv.equipped_weapon()})
-	slots.append({"kind": KIND_ARMOR, "rect": _slot_rect(LEFT_X + step, TOP_Y), "entry": inv.equipped_armor()})
-	slots.append({"kind": KIND_SKILL_Q, "rect": _slot_rect(LEFT_X + 56, TOP_Y), "entry": inv.skill_data(Inventory.SLOT_Q)})
-	slots.append({"kind": KIND_SKILL_F, "rect": _slot_rect(LEFT_X + 56 + step, TOP_Y), "entry": inv.skill_data(Inventory.SLOT_F)})
+	# 갑옷류 칸: 투구·갑옷·바지 (data/inventory.tres 의 armor_slot_names 순서)
+	var n_armor := 1
+	for armor_slot: String in DB.inventory.armor_slot_names:
+		slots.append({"kind": KIND_ARMOR, "slot": armor_slot, "rect": _slot_rect(LEFT_X + n_armor * step, TOP_Y),
+			"entry": inv.equipped_armor(armor_slot)})
+		n_armor += 1
+	slots.append({"kind": KIND_SKILL_Q, "rect": _slot_rect(LEFT_X, TOP_Y + ROW_STEP), "entry": inv.skill_data(Inventory.SLOT_Q)})
+	slots.append({"kind": KIND_SKILL_F, "rect": _slot_rect(LEFT_X + step, TOP_Y + ROW_STEP), "entry": inv.skill_data(Inventory.SLOT_F)})
 	var i := 0
 	for s in DB.skills:
 		if inv.owned_skills.has(s.id):
-			slots.append({"kind": KIND_SKILL, "rect": _slot_rect(LEFT_X + i * step, TOP_Y + 44), "entry": s})
+			slots.append({"kind": KIND_SKILL, "rect": _slot_rect(LEFT_X + i * step, TOP_Y + ROW_STEP * 2), "entry": s})
 			i += 1
 	var bag: Array[ItemData] = []
 	for item in inv.owned(ItemData.Category.values()):
@@ -322,6 +329,9 @@ func _update_view() -> void:
 	var text := tooltip_text(slot["entry"])
 	if slot["entry"] == null and slot["kind"] == KIND_SKILL_F and not Story.inventory.skill2_unlocked():
 		text = DB.inventory.text_skill2_locked
+	elif slot["entry"] == null and slot["kind"] == KIND_ARMOR:
+		# 빈 장착 칸: 무슨 칸인지
+		text = "%s 칸" % DB.inventory.armor_slot_names[slot["slot"]]
 	_tip.visible = not text.is_empty()
 	if _tip.visible:
 		_tip_label.text = text
@@ -404,6 +414,9 @@ func _tag_of(slot: Dictionary) -> String:
 				return Settings.key_name(&"skill")
 			if inv.skill_ids[Inventory.SLOT_F] == id and inv.skill2_unlocked():
 				return Settings.key_name(&"skill2")
+		KIND_ARMOR:
+			# 빈 칸에는 칸 이름 첫 글자 (투·갑·바)
+			return String(DB.inventory.armor_slot_names[slot["slot"]]).left(1) if slot["entry"] == null else ""
 		KIND_SKILL_Q:
 			return Settings.key_name(&"skill") if slot["entry"] == null else ""
 		KIND_SKILL_F:
