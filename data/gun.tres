@@ -8,6 +8,6 @@ script = ExtResource("1")
 magazine_size = 12
 start_ammo = 12
 fire_interval_ticks = 8
-muzzle_height = 4.5
+muzzle_height = 2.5
 muzzle_offset = 10.0
 projectile = ExtResource("2")

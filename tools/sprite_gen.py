@@ -186,70 +186,81 @@ def write_json(path: Path, data: dict) -> None:
 # ---------------------------------------------------------------------------
 # 플레이어 (16x16, 오른쪽을 보는 기준. 왼쪽은 게임에서 좌우 반전)
 # ---------------------------------------------------------------------------
+# 주인공: 레퍼런스 디자인(검은 한복풍 도포)을 16x24 로 옮긴 것.
+#   큰 머리(삐죽한 검은 머리 + 은 머리장식·붉은 술), 흰 동정, 붉은 고름, 자수·흰 안감의 넓은 소매,
+#   허리띠와 고리·흰 술, 발목까지 오는 긴 옷자락(붉은 안감이 비침), 버클 달린 부츠.
+#   등 뒤로 휘날리는 붉은 리본 두 가닥은 별도 층(player_cloak).
 PLAYER_CMAP: dict[str, str | None] = {
     ".": None,
     "o": "outline",
-    "W": "white",        # 흰 동정(깃)
-    "P": "pale",         # 동정 그늘·허리 장식 고리
-    "l": "stone_light",
-    "n": "stone",
     "t": "shadow",       # 검은 머리카락
     "d": "stone_dark",   # 머리카락 윤기
     "s": "skin",
-    "e": "brown_dark",   # 눈 (짙은 갈색)
+    "e": "plum",         # 눈
     "y": "pale",         # 은 머리장식
     "Y": "white",        # 머리장식 빛
-    "r": "crimson",      # 붉은 고름·리본·술
-    "R": "red",          # 고름 빛 받는 곳
-    "m": "tan",          # 소매·치맛단 자수
-    "c": "stone_dark",   # 검은 저고리
-    "C": "shadow",       # 저고리 그늘
-    "T": "shadow",       # 허리띠
-    "N": "shadow",       # 바지 (먼 다리)
-    "L": "stone_dark",   # 가까운 다리 바지
-    "K": "stone",        # 가까운 다리 부츠
-    "h": "skin",         # 손
-    "g": "stone_light",
-    "G": "stone_dark",
+    "r": "crimson",      # 붉은 고름·안감·술
+    "R": "red",          # 붉은 천 빛 받는 곳
+    "W": "white",        # 동정·소매 안감·속치마
+    "P": "pale",         # 허리 고리·흰 술
+    "c": "shadow",       # 검은 옷
+    "C": "stone_dark",   # 옷 밝은 면 (소매)
+    "m": "tan",          # 자수
+    "T": "stone",        # 허리띠
     "k": "stone_dark",   # 부츠
+    "b": "pale",         # 부츠 버클
 }
-# 플레이어 옷 색 (팔·다리를 코드로 그릴 때 쓰는 색)
-PLAYER_SLEEVE_NEAR = "stone_dark"   # 가까운 팔 소매
-PLAYER_SLEEVE_FAR = "shadow"        # 먼 팔 소매
-PLAYER_HAND = "skin"
-PLAYER_PANTS_NEAR = "stone_dark"
-PLAYER_PANTS_FAR = "shadow"
-PLAYER_BOOT_NEAR = "stone"
-PLAYER_BOOT_FAR = "stone_dark"
-# 레퍼런스 디자인: 검은 머리 + 은 머리장식·붉은 술, 검은 저고리에 흰 동정, 붉은 고름, 허리띠, 자수 놓인 치맛단, 부츠.
-# 16x24 (키 1.5칸, 오른쪽을 봄). 등 뒤로 휘날리는 붉은 리본 두 가닥은 별도 층(player_cloak).
+FB_CMAP = PLAYER_CMAP
+PLAYER_BOOT_NEAR = "stone_dark"
+PLAYER_BOOT_FAR = "shadow"
+PLAYER_BUCKLE = "pale"
+PLAYER_ROBE = "shadow"
+# 옆모습 (오른쪽을 봄). 0~20행 = 머리·옷(밑단까지), 21~23행 = 부츠 (걷기는 코드로 그린다)
 PLAYER_BASE = [
-    "................",
-    ".....oooo.o.....",
-    "....otttdoto....",
-    "...ottdttttto...",
-    "..oYttdtttttto..",
-    "..oytttttdstto..",
-    ".orotdttsstsso..",
-    ".orottdsssseso..",
-    "..o.odtsssssso..",
-    "....ocWWWsso....",
-    "....occWPWco....",
-    "....occcWPro....",
-    "....oCccRrro....",
-    "....oCcccrco....",
-    "....oCcccrco....",
-    "....oTTPTTTo....",
-    "....oCmcmcCo....",
-    "....oNNNNNo.....",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
+    "......oo........",
+    "....ootdooo.....",
+    "...otttttttto...",
+    "..ottdttttttto..",
+    "..otdtttttttto..",
+    ".oyottttttstso..",
+    ".oYottttssesto..",
+    ".oroottsssssso..",
+    ".oro.ottsssso...",
+    "..o...oosWWo....",
+    ".....ocWWrcco...",
+    "....occcWrRco...",
+    "....ocCCcrcco...",
+    "...ocCCCCcrco...",
+    "...oCCCCCCTPo...",
+    "...ommCCmmcPo...",
+    "...oWWWWWWcRo...",
+    "....occcccRRo...",
+    "...occccccRrco..",
+    "...ocmccccrRco..",
+    "...oWWWccrrWWo..",
+    ".....okko.okko..",
+    ".....okkbookkbo.",
+    ".....oooo.ooooo.",
 ]
-# 쓰러져 누운 모습 (머리 왼쪽, 발 오른쪽, 망토가 몸 아래 깔림)
+# 옆모습에서 소매를 뺀 몸통 (12~16행). 걷을 때 소매가 따로 앞뒤로 흔들린다
+PLAYER_SIDE_TORSO = [
+    "....occccrcco...",
+    "....occccrcco...",
+    "....occcTTTPo...",
+    "....occccccPo...",
+    "....occccccRo...",
+]
+# 가까운 소매 (왼쪽 위 = 몸 그림의 (3, 12)). 자수 띠와 흰 안감
+PLAYER_SIDE_SLEEVE = [
+    ".oCCo...",
+    "oCCCCo..",
+    "oCCCCCCo",
+    "ommCCmmo",
+    "oWWWWWWo",
+    ".oooooo.",
+]
+PLAYER_SLEEVE_AT = (3, 12)
+# 쓰러져 누운 모습 (머리 왼쪽, 발 오른쪽)
 PLAYER_LYING = [
     "................",
     "................",
@@ -268,243 +279,109 @@ PLAYER_LYING = [
     "................",
     "................",
     "................",
-    "..oooo..........",
-    ".ottttooooooo...",
-    "odttssWPcccTNNoo",
-    "odtsesPlcccTNNko",
-    "oddsssoocccoNNoo",
-    ".ooooo..ooo.ooo.",
     "................",
+    "..ooooo.........",
+    ".otttttoooooooo.",
+    "oyttdssWccrccckk",
+    "ortttseWCmcRrckb",
+    "orottsoWccccrooo",
+    ".o.ooo.ooooooo..",
 ]
 # 키 (프레임 높이). 발 위치는 16x16 시절과 같게 게임에서 위로 (높이-16)/2 만큼 올려 그린다
 PLAYER_H = 24
-# 상체(머리~엉덩이) 마지막 줄, 총구 높이
-PLAYER_BODY_LAST = 17
+# 옷 밑단 마지막 줄 (이 아래는 부츠), 총구 높이
+PLAYER_HEM_ROW = 20
 PLAYER_GUN_Y = 12
-# 이 줄부터 아래의 등 뒤 망토는 별도 층으로 그린다
-CLOAK_FROM_ROW = 11
-# (예전) 등 뒤 망토 밑단 — 지금은 쓰지 않음, 망토 층(build_player_cloak) 참고
-PLAYER_HEMS = [
-    ("oPoPl", ".o.Po", "..o.o"),
-    ("oPPoP", "o.oPo", ".o..o"),
-    ("ooPPl", ".oPo.", "..o.."),
-]
-# 다리 (x 5~12, 18~23행)
-# 다리 자세: (앞다리 무릎, 앞다리 발, 뒷다리 무릎, 뒷다리 발) — 절대 좌표 (x, y). 엉덩이는 (8,18)/(7,18)
-# 앞다리(보는 쪽에 가까운 다리)는 밝게, 뒷다리는 어둡게 칠해 두 다리를 구분한다.
-PLAYER_LEG_POSES = {
-    "stand": ((8, 20), (9, 23), (7, 20), (6, 23)),
-    # 걷기 6프레임: 디딤 → 내려앉음 → 교차(뒷다리 듦) → 반대 디딤 → 내려앉음 → 교차(앞다리 듦)
-    "walk_contact": ((9, 20), (10, 23), (6, 20), (5, 23)),
-    "walk_down": ((9, 20), (10, 23), (6, 21), (6, 23)),
-    "walk_pass": ((8, 20), (8, 23), (9, 20), (8, 22)),
-    "walk_contact2": ((7, 20), (6, 23), (8, 20), (10, 23)),
-    "walk_down2": ((7, 21), (7, 23), (8, 20), (10, 23)),
-    "walk_pass2": ((9, 20), (9, 22), (7, 20), (7, 23)),
-    # 달리기 6프레임: 디딤(몸 낮음) → 차고 나감 → 공중(두 발 다 뜸) → 반대쪽 반복
-    "run_contact": ((10, 20), (11, 23), (6, 21), (4, 22)),
-    "run_push": ((8, 21), (7, 23), (9, 20), (9, 22)),
-    "run_flight": ((11, 19), (11, 21), (6, 20), (4, 21)),
-    "run_contact2": ((6, 21), (4, 22), (10, 20), (11, 23)),
-    "run_push2": ((9, 20), (9, 22), (8, 21), (7, 23)),
-    "run_flight2": ((6, 20), (4, 21), (11, 19), (11, 21)),
-    # 공격·회피용
-    "spread": ((9, 20), (11, 23), (6, 20), (4, 23)),
-    "tuck": ((9, 20), (9, 21), (6, 20), (6, 21)),
-}
-# 옆모습 걷기 (17~23행을 손으로 찍음). L·K = 가까운 다리, N·k = 먼 다리.
-# 디딤(앞다리 앞으로) → 내려앉음(뒷발 듦) → 지나감(뒷다리가 무릎 굽혀 앞으로) → 반대쪽은 색만 바꿔 반복
-# 걷기 8프레임: 다리마다 (무릎, 발목, 발 모양). 가까운 다리 기준이며 먼 다리는 4프레임 늦게 같은 동작.
-#   발 모양: heel 뒤꿈치 착지(발끝 들림) / flat 디딤 / toe 발끝으로 밀기(뒤꿈치 들림) / hang 공중에서 늘어짐
-# 디딤 → 체중 실음 → 몸 아래 → 뒤로 밂 → 발끝 떼기 → 무릎 굽혀 앞으로 → 지나감 → 앞으로 뻗음
-SIDE_WALK_LEGS = [
-    ((9, 19), (10, 21), "heel"),
-    ((9, 19), (8, 21), "flat"),
-    ((7, 19), (7, 21), "flat"),
-    ((6, 19), (5, 21), "flat"),
-    ((5, 19), (3, 21), "toe"),
-    ((7, 19), (4, 20), "hang"),
-    ((9, 19), (7, 20), "hang"),
-    ((10, 19), (11, 20), "hang"),
-]
-# 상체: 체중을 실을 때(내려앉음) 1px 내려간다. 먼 팔(총 안 든 팔)은 가까운 다리와 같이 앞뒤로 흔들린다
+# 옆모습 걷기 8프레임: 가까운 발의 (x, 든 높이). 먼 발은 4프레임 늦게 같은 동작
+#   앞에 디딤 → 몸 아래 → 뒤로 밀림 → 들어서 앞으로
+SIDE_WALK_FEET = [(11, 0), (10, 0), (8, 0), (6, 0), (5, 0), (6, 1), (8, 1), (10, 1)]
+SIDE_STAND_FEET = ((10, 0), (6, 0))     # (가까운 발, 먼 발)
+SIDE_SPREAD_FEET = ((11, 0), (4, 0))    # 공격·회피 때 벌린 발
+# 상체: 체중을 실을 때 1px 내려앉는다. 소매는 발과 엇갈려 앞뒤로 흔들린다
 SIDE_WALK_BOB = [0, 1, 0, 0, 0, 1, 0, 0]
-SIDE_ARM_SHOULDER = (7, 12)
-SIDE_ARM_HANDS = [(11, 15), (10, 16), (8, 16), (5, 16), (2, 15), (3, 16), (6, 16), (9, 16)]
-SIDE_HIP = {"near": (7, 17), "far": (5, 17)}
-# 발 모양: 발목 기준 (dx, dy) 칸들
-SIDE_FEET = {
-    "flat": [(0, 0), (1, 0), (0, 1), (1, 1), (2, 1)],
-    "heel": [(0, 0), (1, 0), (2, -1), (0, 1), (1, 1)],
-    "toe": [(0, 0), (1, 0), (1, 1), (2, 1)],
-    "hang": [(0, 0), (1, 0), (1, 1)],
-}
+SIDE_WALK_SLEEVE = [-1, -1, 0, 1, 1, 1, 0, -1]
 
 
-def _thick_line(x0: int, y0: int, x1: int, y1: int) -> set[tuple[int, int]]:
-    cells = set()
-    for x, y in _line_points(x0, y0, x1, y1):
-        cells.add((x, y))
-        cells.add((x + 1, y))
-    return cells
-
-
-def _back_arm(cv: Canvas, shoulder: tuple[int, int], hand: tuple[int, int]) -> None:
-    """몸 뒤에 있는 팔: 빈 칸에만 칠해 몸통에 가려지게 한다 (소매 남색 + 장갑)."""
-    cells = _thick_line(shoulder[0], shoulder[1], hand[0], hand[1] - 1)
-    hand_cells = {(hand[0], hand[1]), (hand[0] + 1, hand[1])}
-    drawn = set()
-    for (x, y) in sorted(cells | hand_cells):
-        if 0 <= x < cv.w and 0 <= y < PLAYER_BODY_LAST and cv.px[y][x] is None:
-            cv.set(x, y, c(PLAYER_HAND) if (x, y) in hand_cells else c(PLAYER_SLEEVE_FAR))
-            drawn.add((x, y))
-    for (x, y) in list(drawn):
+def _outline_empty(cv: Canvas, cells: set[tuple[int, int]], min_y: int = 0) -> None:
+    """cells 둘레의 빈 칸에 테두리를 친다."""
+    for (x, y) in cells:
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             nx, ny = x + dx, y + dy
-            if 0 <= nx < cv.w and 0 <= ny < PLAYER_BODY_LAST and cv.px[ny][nx] is None:
+            if 0 <= nx < cv.w and min_y <= ny < cv.h and (nx, ny) not in cells and cv.px[ny][nx] is None:
                 cv.set(nx, ny, c("outline"))
 
 
-# 가까운 팔이 쉬는 자리 (서 있을 때)
-SIDE_NEAR_HAND_REST = (8, 16)
+def _draw_boot(cv: Canvas, x: int, lift: int, color: str, toe: int = 1, width: int = 2) -> set[tuple[int, int]]:
+    """부츠 한 짝 (width x 2 + 발끝 버클 1칸). lift 만큼 들면 윗부분은 옷자락에 가려진다. toe: +1 오른쪽, 0 없음(정면)."""
+    cells: set[tuple[int, int]] = set()
+    top = PLAYER_HEM_ROW + 1 - lift
+    for dy in range(2):
+        for dx in range(width):
+            cells.add((x + dx, top + dy))
+    for (px, py) in cells:
+        if py > PLAYER_HEM_ROW:
+            cv.set(px, py, c(color))
+    if toe:
+        tx, ty = x + 2 * toe if toe > 0 else x - 1, top + 1
+        cv.set(tx, ty, c(PLAYER_BUCKLE))
+        cells.add((tx, ty))
+    return {p for p in cells if p[1] > PLAYER_HEM_ROW}
 
 
-def _near_arm(cv: Canvas, shoulder: tuple[int, int], hand: tuple[int, int]) -> None:
-    """몸 앞에 있는 팔: 몸통 위에 덧그리고 테두리로 몸통과 구분한다 (소매 파랑 + 장갑)."""
-    cells = _thick_line(shoulder[0], shoulder[1], hand[0], hand[1] - 1)
-    hand_cells = {(hand[0], hand[1]), (hand[0] + 1, hand[1])}
-    arm = {p for p in cells | hand_cells if 0 <= p[0] < cv.w and p[1] < PLAYER_BODY_LAST}
-    for (x, y) in arm:
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            nx, ny = x + dx, y + dy
-            if (nx, ny) in arm or ny <= shoulder[1] or not (0 <= nx < cv.w and ny < PLAYER_BODY_LAST):
-                continue
-            cv.set(nx, ny, c("outline"))
-    for (x, y) in arm:
-        cv.set(x, y, c(PLAYER_HAND) if (x, y) in hand_cells else c(PLAYER_SLEEVE_NEAR))
+def side_body(sleeve_dx: int = 0) -> Canvas:
+    """옆모습 머리·옷 (부츠 없음). 소매를 sleeve_dx 만큼 앞(+)·뒤(-)로 옮겨 그린다."""
+    rows = PLAYER_BASE[:12] + PLAYER_SIDE_TORSO + PLAYER_BASE[17:PLAYER_HEM_ROW + 1] + ["." * 16] * 3
+    cv = Canvas.from_rows(rows, PLAYER_CMAP)
+    sleeve = Canvas.from_rows(PLAYER_SIDE_SLEEVE, PLAYER_CMAP)
+    ox, oy = PLAYER_SLEEVE_AT
+    for y in range(sleeve.h):
+        for x in range(sleeve.w):
+            v = sleeve.px[y][x]
+            if v is not None:
+                cv.set(ox + sleeve_dx + x, oy + y, v)
+    return cv
 
 
-def with_near_arm(base: Canvas) -> Canvas:
-    out = base.copy()
-    _near_arm(out, SIDE_ARM_SHOULDER, SIDE_NEAR_HAND_REST)
+def press(cv: Canvas, k: int) -> Canvas:
+    """몸을 k 줄 낮춘다 (웅크림): 머리~옷을 아래로 밀고 밑단 두 줄과 부츠는 그대로 둔다."""
+    if k <= 0:
+        return cv.copy()
+    out = cv.copy()
+    keep_from = PLAYER_HEM_ROW - 1
+    for y in range(keep_from):
+        src = y - k
+        out.px[y] = cv.px[src][:] if src >= 0 else [None] * cv.w
     return out
 
 
-def side_walk_frames(base: Canvas) -> list[Canvas]:
-    """옆모습 걷기: 허벅지·정강이가 무릎에서 꺾이고, 발이 뒤꿈치 착지 → 디딤 → 발끝 밀기 → 늘어짐으로 바뀐다."""
-    n = len(SIDE_WALK_LEGS)
+def side_frame(feet=SIDE_STAND_FEET, sleeve_dx: int = 0, down: int = 0) -> Canvas:
+    """옆모습 한 프레임: 부츠(먼 발 → 가까운 발) 위에 몸을 얹는다."""
+    cv = Canvas(16, PLAYER_H)
+    (nx, nl), (fx, fl) = feet
+    cells = _draw_boot(cv, fx, fl, PLAYER_BOOT_FAR)
+    near = _draw_boot(cv, nx, nl, PLAYER_BOOT_NEAR)
+    # 두 발이 겹치면 가까운 발 뒤쪽에 경계선
+    for (x, y) in near:
+        if (x - 1, y) in cells and (x - 1, y) not in near:
+            cv.set(x - 1, y, c("outline"))
+    cells |= near
+    _outline_empty(cv, cells, PLAYER_HEM_ROW + 1)
+    body = press(side_body(sleeve_dx), down)
+    for y in range(PLAYER_HEM_ROW + 1):
+        for x in range(16):
+            v = body.px[y][x]
+            if v is not None:
+                cv.set(x, y, v)
+    return cv
+
+
+def side_walk_frames() -> list[Canvas]:
+    n = len(SIDE_WALK_FEET)
     frames = []
     for i in range(n):
-        out = base.copy()
-        for y in range(PLAYER_BODY_LAST, PLAYER_H):
-            out.px[y] = [None] * out.w
-        _back_arm(out, SIDE_ARM_SHOULDER, SIDE_ARM_HANDS[i])
-        # 가까운 팔은 먼 팔과 반대로 흔든다 (앞뒤 폭은 조금 좁게)
-        hx, hy = SIDE_ARM_HANDS[(i + n // 2) % n]
-        _near_arm(out, SIDE_ARM_SHOULDER, (max(4, min(10, hx)), hy))
-        if SIDE_WALK_BOB[i]:
-            out = out.shift_rows(0, PLAYER_BODY_LAST - 1, SIDE_WALK_BOB[i])
-        leg_cells = {}
-        for side, phase, pants, boot in (("far", (i + n // 2) % n, PLAYER_PANTS_FAR, PLAYER_BOOT_FAR), ("near", i, PLAYER_PANTS_NEAR, PLAYER_BOOT_NEAR)):
-            knee, ankle, foot = SIDE_WALK_LEGS[phase]
-            hip = SIDE_HIP[side]
-            if side == "far":
-                knee, ankle = (knee[0] - 1, knee[1]), (ankle[0] - 1, ankle[1])
-            cells = {}
-            for p in _thick_line(hip[0], hip[1], knee[0], knee[1]) | _thick_line(knee[0], knee[1], ankle[0], ankle[1]):
-                cells[p] = pants
-            for dx, dy in SIDE_FEET[foot]:
-                cells[(ankle[0] + dx, ankle[1] + dy)] = boot
-            leg_cells[side] = cells
-        # 엉덩이 줄
-        for x in range(5, 10):
-            out.set(x, PLAYER_BODY_LAST, c(PLAYER_PANTS_FAR))
-        far, near = leg_cells["far"], leg_cells["near"]
-        for (x, y), col in far.items():
-            out.set(x, y, c(col))
-        # 먼 다리와 가까운 다리 사이 경계선 (가까운 다리 바로 뒤쪽 칸)
-        for (x, y) in near:
-            if (x - 1, y) in far and (x - 1, y) not in near and y > PLAYER_BODY_LAST:
-                out.set(x - 1, y, c("outline"))
-        for (x, y), col in near.items():
-            out.set(x, y, c(col))
-        allc = set(far) | set(near) | {(x, PLAYER_BODY_LAST) for x in range(5, 10)}
-        for (x, y) in list(allc):
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                nx, ny = x + dx, y + dy
-                if (nx, ny) in allc or ny < PLAYER_BODY_LAST or not (0 <= nx < 16 and ny < PLAYER_H):
-                    continue
-                if out.px[ny][nx] is None:
-                    out.set(nx, ny, c("outline"))
-        frames.append(out)
+        fx, fl = SIDE_WALK_FEET[(i + n // 2) % n]
+        frames.append(side_frame((SIDE_WALK_FEET[i], (fx - 1, fl)), SIDE_WALK_SLEEVE[i], SIDE_WALK_BOB[i]))
     return frames
-
-
-PLAYER_HIP_NEAR = (8, 18)
-PLAYER_HIP_FAR = (7, 18)
-
-
-def _put(cv: Canvas, x0: int, y: int, part: str) -> None:
-    for i, ch in enumerate(part):
-        name = PLAYER_CMAP[ch]
-        cv.set(x0 + i, y, None if name is None else c(name))
-
-
-def hem(cv: Canvas, pose: int) -> Canvas:
-    """몸 그림에서 등 뒤 망토(어깨 아래 x 0~4)를 떼어낸다. 망토는 별도 층(player_cloak)이 움직임에 따라 그린다.
-    pose 는 예전 호환용 (쓰지 않음)."""
-    return cv.copy()  # 망토가 없어져 떼어낼 것 없음 (목도리 꼬리는 별도 층)
-
-
-def legs(cv: Canvas, key: str, hip_dx: int = 0, hip_dy: int = 0) -> Canvas:
-    """다리를 엉덩이 → 무릎 → 발 두 마디 선(굵기 2)으로 그린다. 뒷다리 먼저, 앞다리를 위에. 발끝 2칸은 장화."""
-    out = cv.copy()
-    for y in range(PLAYER_BODY_LAST + 1 + min(hip_dy, 0), PLAYER_H):
-        for x in range(3, 14):
-            if y > PLAYER_BODY_LAST + min(hip_dy, 0) + (0 if hip_dy >= 0 else 0):
-                out.set(x, y, None)
-    near_knee, near_foot, far_knee, far_foot = PLAYER_LEG_POSES[key]
-    mask: set[tuple[int, int]] = set()
-
-    def draw_leg(hip, knee, foot, pants: str, boot: str) -> None:
-        for (x0, y0), (x1, y1) in ((hip, knee), (knee, foot)):
-            for x, y in _line_points(x0, y0, x1, y1):
-                for dx in (0, 1):
-                    px, py = x + dx, y
-                    if py <= PLAYER_BODY_LAST + hip_dy:
-                        continue
-                    col = boot if py >= foot[1] - 1 else pants
-                    out.set(px, py, c(col))
-                    mask.add((px, py))
-        # 발끝: 보는 쪽으로 한 칸
-        out.set(foot[0] + 2, foot[1], c(boot))
-        mask.add((foot[0] + 2, foot[1]))
-
-    far_mask_start = len(mask)
-    hip_far = (PLAYER_HIP_FAR[0] + hip_dx, PLAYER_HIP_FAR[1] + hip_dy)
-    hip_near = (PLAYER_HIP_NEAR[0] + hip_dx, PLAYER_HIP_NEAR[1] + hip_dy)
-    draw_leg(hip_far, far_knee, far_foot, PLAYER_PANTS_FAR, PLAYER_BOOT_FAR)
-    far_pixels = set(mask)
-    draw_leg(hip_near, near_knee, near_foot, PLAYER_PANTS_NEAR, PLAYER_BOOT_NEAR)
-    near_pixels = mask - far_pixels
-    # 앞다리와 뒷다리가 맞닿는 곳에는 테두리 한 줄 (두 다리가 갈라져 보이게)
-    for (x, y) in near_pixels:
-        for dx in (-1, 1):
-            if (x + dx, y) in far_pixels and (x + dx, y) not in near_pixels:
-                out.set(x + dx, y, c("outline"))
-    # 바깥 테두리: 빈 칸 중 다리에 닿은 곳. 단, 두 다리 사이 1칸 틈은 비워 둔다
-    for (x, y) in list(mask):
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            nx, ny = x + dx, y + dy
-            if (nx, ny) in mask or ny <= PLAYER_BODY_LAST + hip_dy or not (0 <= ny < PLAYER_H) or not (0 <= nx < 16):
-                continue
-            if out.px[ny][nx] is not None:
-                continue
-            between = ((nx - 1, ny) in near_pixels and (nx + 1, ny) in far_pixels) or \
-                      ((nx + 1, ny) in near_pixels and (nx - 1, ny) in far_pixels)
-            if not between:
-                out.set(nx, ny, c("outline"))
-    return out
 
 
 # ---------------------------------------------------------------------------
@@ -593,7 +470,7 @@ def _in_poly(px: float, py: float, poly: list[tuple[float, float]]) -> bool:
 
 def cloak_frame(lean: str, flutter: int) -> Canvas:
     """옆모습 목도리 꼬리: 목 뒤(몸 x 3, 9행)에서 등 뒤로."""
-    return scarf_tails((CLOAK_BODY_X + 3, 9), lean, flutter)
+    return scarf_tails((CLOAK_BODY_X + 4, 13), lean, flutter)
 
 
 def _line_points(x0: int, y0: int, x1: int, y1: int):
@@ -618,121 +495,112 @@ def _line_points(x0: int, y0: int, x1: int, y1: int):
 #   정면: 망토는 몸 뒤 (양옆으로 보임) / 뒷모습: 망토가 몸 앞을 덮음 (게임에서 그리는 순서를 바꿈)
 # ---------------------------------------------------------------------------
 PLAYER_SIDE_DEATH: list = []
-FB_CMAP = dict(PLAYER_CMAP)
-FB_CMAP.update({"E": "brown", "Q": "stone_dark"})
 PLAYER_FRONT = [
+    ".......oo.......",
+    "....oootdooo....",
+    "...ottttdtttto..",
+    "..otttdtttttyYo.",
+    "..ottdttttttoro.",
+    "..otttsttsttoro.",
+    "..otssssssssor..",
+    "..otsesssseso...",
+    "...oossssssoo...",
+    "....ooWssWoo....",
+    "...occWWWWcco...",
+    "..occccRrcccco..",
+    ".occCccrRccCcco.",
+    ".ocmCcTTPTTcCmo.",
+    ".ommcocPccocmmo.",
+    ".oWWoccPcRcoWWo.",
+    ".ooo.occcRRo.oo.",
+    "....occccRrco...",
+    "...occcccrRcco..",
+    "...ocmccccrmco..",
+    "...oWWWccrWWWo..",
     "................",
-    ".....oooooo.....",
-    "....otttdtto....",
-    "...ottdttttto...",
-    "..oYtttttdttto..",
-    "..oytdttttttdo..",
-    "..ottssttsstto..",
-    ".rodsessssesdo..",
-    ".r.odssssssdo...",
-    "...ocWWsssWco...",
-    "..occcWWWWccco..",
-    ".occoocWWcocco..",
-    ".occoocRrRocco..",
-    ".ohooccCrcCcoho.",
-    ".oooTTTPTTTTooo.",
-    "...ocmcCcmcco...",
-    "...orcmCcmcro...",
-    "....oNNNoNNNo...",
-    "....oNNo.oNNo...",
-    "....oNNo.oNNo...",
-    "....oNNo.oNNo...",
-    "....oNNo.oNNo...",
-    "....okko.okko...",
-    "....oooo.oooo...",
+    "................",
+    "................",
 ]
 PLAYER_BACK = [
+    ".......oo.......",
+    "....oootdooo....",
+    "...ottttttttto..",
+    ".oYyttdttttttto.",
+    "orotttdttttttto.",
+    "orootttttdtttto.",
+    ".r.otttttttdtto.",
+    "...ottdtttttto..",
+    "...otttdttttto..",
+    "....ootttttoo...",
+    "...occWWWWcco...",
+    "..occcccccccco..",
+    ".occCccccccCcco.",
+    ".ocmCcTTTTTcCmo.",
+    ".ommcoccccocmmo.",
+    ".oWWoccrrccoWWo.",
+    ".ooo.ocrRrco.oo.",
+    "....occrcrcco...",
+    "...occcrccrcco..",
+    "...ocmcccccmco..",
+    "...oWWWccccWWo..",
     "................",
-    ".....oooooo.....",
-    "....ottdttto....",
-    "...otttttdtto...",
-    "..otttdtttttYo..",
-    "..odttttttttyo..",
-    "..otttdttdttoro.",
-    "..oddttttdtdoro.",
-    "...odttdtttdo.r.",
-    "..occcWWWWccco..",
-    ".ooccccccccccoo.",
-    ".occcccccccccco.",
-    ".ohoccccccccoho.",
-    ".oooTTTTTTTTooo.",
-    "...ocmcccmcco...",
-    "...orccccccro...",
-    "...occmcmccco...",
-    "....oNNNoNNNo...",
-    "....oNNo.oNNo...",
-    "....oNNo.oNNo...",
-    "....oNNo.oNNo...",
-    "....oNNo.oNNo...",
-    "....okko.okko...",
-    "....oooo.oooo...",
+    "................",
+    "................",
 ]
-# 정면·뒷모습 다리 (18~23행): 서기 / 왼발 듦 / 오른발 듦 / 웅크림
-FB_LEGS = {
-    "stand": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.oNNo...",
-              "....okko.okko...", "....oooo.oooo..."],
-    "lift_l": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....okko.oNNo...", "....oooo.oNNo...",
-               ".........okko...", ".........oooo..."],
-    "lift_r": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.okko...", "....oNNo.oooo...",
-               "....okko........", "....oooo........"],
-    "half_l": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.oNNo...", "....okko.oNNo...",
-               "....oooo.okko...", ".........oooo..."],
-    "half_r": ["....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.oNNo...", "....oNNo.okko...",
-               "....okko.oooo...", "....oooo........"],
-    "tuck": ["....oNNo.oNNo...", "....okko.okko...", "....oooo.oooo...", "................",
-             "................", "................"],
-}
-
-
-def fb_legs(cv: Canvas, key: str) -> Canvas:
-    out = cv.copy()
-    part = Canvas.from_rows(FB_LEGS[key], FB_CMAP)
-    for i in range(6):
-        out.px[PLAYER_H - 6 + i] = part.px[i][:]
-    return out
+# 정면·뒷모습 부츠 위치 (왼발 x, 오른발 x)와 소매 범위 (x 시작, x 끝)
+FB_FEET_X = (4, 9)
+FB_SLEEVES = ((0, 4), (11, 15))
+FB_SLEEVE_ROWS = (12, 16)
 
 
 def fb_arms(cv: Canvas, dy_left: int, dy_right: int) -> Canvas:
-    """양팔(화면 왼쪽 x1~2, 오른쪽 x13~14)을 위아래로 흔든다."""
+    """양 소매를 위아래로 흔든다. 소매가 비킨 자리의 몸 쪽 칸은 옷 색으로 메운다."""
     out = cv.copy()
-    for (x0, x1), dy in (((1, 2), dy_left), ((13, 14), dy_right)):
+    y0, y1 = FB_SLEEVE_ROWS
+    for (x0, x1), dy, inner in ((FB_SLEEVES[0], dy_left, FB_SLEEVES[0][1]), (FB_SLEEVES[1], dy_right, FB_SLEEVES[1][0])):
         if dy == 0:
             continue
-        rows = range(11, 16)
-        block = {(x, y): cv.px[y][x] for y in rows for x in range(x0, x1 + 1)}
+        block = {(x, y): cv.px[y][x] for y in range(y0, y1 + 1) for x in range(x0, x1 + 1)}
         for (x, y) in block:
-            out.set(x, y, None)
+            out.set(x, y, c(PLAYER_ROBE) if x == inner and y < y1 else None)
         for (x, y), v in block.items():
             if v is not None:
                 out.set(x, y + dy, v)
     return out
 
 
+def fb_frame(base: Canvas, lift_l: int = 0, lift_r: int = 0, down: int = 0, arms: tuple[int, int] = (0, 0)) -> Canvas:
+    """정면·뒷모습 한 프레임: 부츠 위에 몸을 얹는다."""
+    cv = Canvas(16, PLAYER_H)
+    cells: set[tuple[int, int]] = set()
+    for x0, lift in ((FB_FEET_X[0], lift_l), (FB_FEET_X[1], lift_r)):
+        boot = _draw_boot(cv, x0, lift, PLAYER_BOOT_NEAR, toe=0, width=3)
+        # 버클: 부츠 윗줄 가운데 (발을 들어 윗줄이 가려지면 안 보인다)
+        if (x0 + 1, PLAYER_HEM_ROW + 1) in boot and lift == 0:
+            cv.set(x0 + 1, PLAYER_HEM_ROW + 1, c(PLAYER_BUCKLE))
+        cells |= boot
+    _outline_empty(cv, cells, PLAYER_HEM_ROW + 1)
+    body = press(fb_arms(base, *arms), down)
+    for y in range(PLAYER_HEM_ROW + 1):
+        for x in range(16):
+            v = body.px[y][x]
+            if v is not None:
+                cv.set(x, y, v)
+    return cv
+
+
 def build_player_view(name: str, rows: list[str], back: bool) -> None:
     base = Canvas.from_rows(rows, FB_CMAP)
-    top = PLAYER_BODY_LAST
-
-    def body(dy: int = 0) -> Canvas:
-        return base.shift_rows(0, top, dy) if dy else base.copy()
-
-    idle = [fb_legs(body(), "stand"), fb_legs(body(), "stand"), fb_legs(body(1), "stand"), fb_legs(body(1), "stand")]
-    # 달리기 6프레임: 다리를 번갈아 들고, 몸이 튀어 오르고, 팔을 흔든다
-    # 걷기 6프레임: 왼발 살짝 듦(2프레임) → 디딤(상체 1px 내려앉음) → 오른발 반복. 양팔은 엇갈려 흔든다
-    def arms(d: int) -> tuple[int, int]:
-        return (d, -d)   # 양팔을 엇갈려 흔든다 (총은 손에 들지 않고 떠 있음)
-    run_plan = [("half_l", 0, *arms(1)), ("half_l", 0, *arms(1)), ("stand", 1, *arms(0)),
-                ("half_r", 0, *arms(-1)), ("half_r", 0, *arms(-1)), ("stand", 1, *arms(0))]
-    move = [fb_legs(fb_arms(body(dy), al, ar), leg) for leg, dy, al, ar in run_plan]
+    idle = [fb_frame(base), fb_frame(base), fb_frame(base, down=1), fb_frame(base, down=1)]
+    # 걷기 6프레임: 왼발 듦(2프레임) → 디딤(상체 1px 내려앉음) → 오른발 반복. 양 소매는 엇갈려 흔든다
+    # (왼발 든 높이, 오른발 든 높이, 상체 내려앉음, 소매 흔들림)
+    walk_plan = [(1, 0, 0, 1), (1, 0, 0, 1), (0, 0, 1, 0), (0, 1, 0, -1), (0, 1, 0, -1), (0, 0, 1, 0)]
+    move = [fb_frame(base, ll, lr, dy, (d, -d)) for ll, lr, dy, d in walk_plan]
     # 사격: 몸은 그대로 (총은 따로 그림)
-    shoot = [fb_legs(body(), "stand"), fb_legs(body(), "stand")]
+    shoot = [fb_frame(base), fb_frame(base)]
     # 근접: 단검이 앞(정면은 아래, 뒷모습은 위)으로 호를 그림
     blade, tip = c("pale"), c("white")
-    m0, m1, m2 = (fb_legs(body(), "stand") for _ in range(3))
+    m0, m1, m2 = (fb_frame(base) for _ in range(3))
     yy = (lambda y: 23 - y) if not back else (lambda y: y)
     m0.line(13, yy(12), 15, yy(9), blade)
     for x, y in ((3, 2), (5, 1), (8, 1), (11, 1), (13, 2)):
@@ -741,12 +609,12 @@ def build_player_view(name: str, rows: list[str], back: bool) -> None:
         m1.set(x, yy(y), blade)
     m2.line(0, yy(9), 2, yy(12), blade)
     melee = [m0, m1, m2]
-    dodge = [fb_legs(body(2), "tuck"), fb_legs(body(4), "tuck"), fb_legs(body(2), "tuck")]
-    for y in (6, 11):
+    dodge = [fb_frame(base, down=2), fb_frame(base, down=4), fb_frame(base, down=2)]
+    for y in (8, 13):
         dodge[1].line(0, y, 1, y, c("pale"))
         dodge[1].line(14, y, 15, y, c("pale"))
     outline = {c("outline")}
-    standing = fb_legs(body(), "stand")
+    standing = fb_frame(base)
     hurt = [standing.recolor(outline, c("white")), standing.recolor(outline, c("red"))]
     death = [cv.copy() for cv in PLAYER_SIDE_DEATH]
     save_sheet(name, 16, PLAYER_H, [
@@ -759,7 +627,7 @@ def build_player_view(name: str, rows: list[str], back: bool) -> None:
         ("death", death, 6.0, False),
     ], extra={"shoulder": [2.5, 11.5] if not back else [13.5, 11.5], "body_offsets": {
         "idle": [[0, 0], [0, 0], [0, 1], [0, 1]],
-        "move": [[0, dy] for _, dy, _, _ in run_plan],
+        "move": [[0, dy] for _, _, dy, _ in walk_plan],
         "dodge": [[0, 2], [0, 4], [0, 2]],
         "death": [[0, 2], [0, 4], [0, 0], [0, 0]],
     }})
@@ -768,8 +636,8 @@ def build_player_view(name: str, rows: list[str], back: bool) -> None:
 def fb_cloak_frame(back: bool, lean: str, flutter: int) -> Canvas:
     """정면: 목 옆에서 몸 뒤로 (휘날릴 때만 옆으로 보임) / 뒷모습: 목 뒤 매듭에서 등 위로 늘어짐 (몸 앞에 그림)."""
     if back:
-        return scarf_tails((4 + 6, 10), lean, flutter, spread=-10.0, angle_scale=0.7)
-    return scarf_tails((4 + 3, 9), lean, flutter)
+        return scarf_tails((4 + 7, 15), lean, flutter, spread=-10.0, angle_scale=0.7)
+    return scarf_tails((4 + 3, 13), lean, flutter)
 
 
 # 총 (손 없이 총만. 게임에서 캐릭터 주위에 떠서 마우스 쪽으로 돈다). 오른쪽을 겨눈 기준, 회전축 = 몸체 가운데
@@ -841,91 +709,43 @@ def build_player_cloak() -> None:
     ])
 
 
-def shift_upper(cv: Canvas, dx: int, dy: int) -> Canvas:
-    """상체(머리~엉덩이, 0~PLAYER_BODY_LAST 행)를 통째로 옮긴다. 달리기 기울기·튀어 오름용."""
-    out = Canvas(cv.w, cv.h)
-    for y in range(cv.h):
-        for x in range(cv.w):
-            v = cv.px[y][x]
-            if v is None:
-                continue
-            if y <= PLAYER_BODY_LAST:
-                out.set(x + dx, y + dy, v)
-            else:
-                out.set(x, y, v)
-    return out
-
-
-def swing_arm(cv: Canvas, dy: int) -> Canvas:
-    """총 든 팔(가슴 높이, 오른쪽 부분)을 위아래로 흔든다."""
-    if dy == 0:
-        return cv
-    out = cv.copy()
-    x0, x1 = 10, 15
-    rows = range(PLAYER_GUN_Y - 1, PLAYER_GUN_Y + 2)
-    block = {(x, y): cv.px[y][x] for y in rows for x in range(x0, x1 + 1)}
-    for (x, y) in block:
-        out.set(x, y, None)
-    # 팔 아래로 드러나는 몸통 자리는 튜닉 색으로 메움
-    for (x, y), v in block.items():
-        if v is not None:
-            out.set(x, y + dy, v)
-    for y in rows:
-        if out.px[y][10] is None and cv.px[y][9] is not None:
-            out.set(10, y, c("outline"))
-    return out
-
-
 def build_player() -> None:
-    base = Canvas.from_rows(PLAYER_BASE, PLAYER_CMAP)
-    top = PLAYER_BODY_LAST
     gy = PLAYER_GUN_Y
-    bob = base.shift_rows(0, top, 1)  # 상체 1px 내려앉음 (숨쉬기). 다리는 그대로
-
-    def pose(body: Canvas, h: int, leg: str) -> Canvas:
-        return legs(hem(body, h), leg)
-
-    idle = [pose(base, 0, "stand"), pose(base, 1, "stand"), pose(bob, 1, "stand"), pose(bob, 0, "stand")]
-    # 달리기 6프레임: 몸 전체가 움직인다
-    #   상체를 앞으로 1px 기울이고, 디딜 때 1px 내려앉고, 공중에서 1px 떠오른다.
-    #   총 든 팔은 걸음에 맞춰 위아래로 흔들리고, 다리는 보폭을 크게 (공중 프레임엔 두 발 다 뜸)
-    # 걷기 6프레임: 손으로 찍은 다리 + 내려앉을 때 상체 1px
-    move = side_walk_frames(base)
-    base = with_near_arm(base)   # 걷기 말고는 가까운 팔이 옆에 늘어져 있다
-
+    idle = [side_frame(), side_frame(), side_frame(down=1), side_frame(down=1)]
+    # 걷기 8프레임: 부츠가 옷자락 아래에서 번갈아 나오고, 디딜 때 상체가 1px 내려앉고, 소매가 앞뒤로 흔들린다
+    move = side_walk_frames()
     # 사격: 몸은 서 있는 그대로 (총구 불꽃·반동은 따로 그린 총이 맡는다)
-    shoot = [pose(base, 0, "stand"), pose(base, 0, "stand")]
+    shoot = [side_frame(), side_frame()]
 
-    # 근접: 단검 (위 → 앞 → 아래)
+    # 근접: 단검 (위 → 앞 → 아래), 발을 벌리고 소매가 따라 움직인다
     blade, tip = c("pale"), c("white")
-    m0 = pose(base, 2, "spread")
+    m0 = side_frame(SIDE_SPREAD_FEET, sleeve_dx=-1)
     m0.line(12, gy - 1, 15, gy - 6, blade)
     m0.set(15, gy - 7, tip)
-    m1 = pose(base, 0, "spread")
+    m1 = side_frame(SIDE_SPREAD_FEET, sleeve_dx=1)
     for x, y in [(12, gy - 6), (13, gy - 5), (14, gy - 3), (15, gy - 1), (14, gy + 1), (13, gy + 3)]:
         m1.set(x, y, tip)
     for x, y in [(12, gy - 5), (13, gy - 3), (14, gy - 1), (13, gy + 1), (12, gy + 2)]:
         m1.set(x, y, blade)
-    m2 = pose(base, 1, "spread")
+    m2 = side_frame(SIDE_SPREAD_FEET, sleeve_dx=1)
     m2.line(12, gy + 1, 15, gy + 5, blade)
     m2.set(15, gy + 6, tip)
     melee = [m0, m1, m2]
 
-    # 회피: 몸을 낮추고 망토가 뒤로 쏠림 + 잔상 선
-    squash = pose(base.shift_rows(0, top, 2), 2, "spread")
-    ball = pose(base.shift_rows(0, top, 4), 2, "tuck")
+    # 회피: 몸을 낮추고 소매가 뒤로 쏠림 + 잔상 선
+    squash = side_frame(SIDE_SPREAD_FEET, sleeve_dx=-1, down=2)
+    ball = side_frame(SIDE_SPREAD_FEET, sleeve_dx=-1, down=4)
     for y in (8, 13, 18):
         ball.line(0, y, 1, y, c("pale"))
     dodge = [squash, ball, squash]
 
     outline = {c("outline")}
-    standing = pose(base, 0, "stand")
+    standing = side_frame()
     hurt = [standing.recolor(outline, c("white")), standing.recolor(outline, c("red"))]
 
-    # 쓰러짐: 무릎 꿇기 → 옆으로 쓰러져 누움 (따로 그린 프레임)
+    # 쓰러짐: 주저앉기 → 옆으로 쓰러져 누움 (따로 그린 프레임)
     lying = Canvas.from_rows(PLAYER_LYING, PLAYER_CMAP)
-    death = [pose(base.shift_rows(0, top, 2), 1, "tuck"), pose(base.shift_rows(0, top, 4), 0, "tuck"),
-             lying.moved(0, -1), lying]
+    death = [side_frame(down=2), side_frame(down=4), lying.moved(0, -1), lying]
     PLAYER_SIDE_DEATH.clear()
     PLAYER_SIDE_DEATH.extend(death)
 
@@ -938,9 +758,8 @@ def build_player() -> None:
         ("hurt", hurt, 12.0, False),
         ("death", death, 6.0, False),
     ], extra={
-        # 총 든 어깨 (프레임 좌표, 오른쪽을 볼 때). 게임이 총을 여기에 붙여 조준 방향으로 돌린다
         "shoulder": [7.5, 11.5],
-        # 프레임별 상체 이동 [dx(보는 쪽 +), dy(아래 +)] — 게임이 망토 층을 같이 움직이는 데 쓴다
+        # 프레임별 상체 이동 [dx(보는 쪽 +), dy(아래 +)] — 게임이 리본 층을 같이 움직이는 데 쓴다
         "body_offsets": {
             "idle": [[0, 0], [0, 0], [0, 1], [0, 1]],
             "move": [[0, dy] for dy in SIDE_WALK_BOB],
