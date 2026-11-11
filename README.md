@@ -27,6 +27,7 @@
 - Godot 4.7, 설계 문서는 [CLAUDE.md](CLAUDE.md)
 - 테스트: `godot --headless --path . res://tests/test_runner.tscn`
 - 스프라이트 다시 만들기: `python3 tools/sprite_gen.py`
+- 바깥 세상 맵 다시 만들기: `python3 tools/build_world.py` (조각 맵 `levels/world/*.txt` + 스크립트 안의 배치 → `levels/areas/world.txt`, `data/areas/world.tres`)
 - 효과음 다시 만들기: `python3 tools/sound_gen.py`
 - Windows exe 만들기: `tools/build_story.sh` → `export/demo-story.exe` (Godot 4.7 과 Windows 내보내기 템플릿 필요. 내보내기만 하고 어디에도 올리지 않는다)
 - `tools/publish.sh` 등 배포 스크립트는 main(스피드런판) 전용이라 이 브랜치에서는 실행되지 않는다

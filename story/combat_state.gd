@@ -8,8 +8,11 @@ extends RefCounted
 ## 저장·순간이동·장착 변경을 막아야 하는지: 전투 중이거나, 보스를 쓰러뜨리기 전의 보스방
 static func is_restricted(tree: SceneTree) -> bool:
 	var area := DB.area(Story.area)
-	if Game.is_story_mode() and area != null and area.is_restricted():
-		return true
+	var player := tree.get_first_node_in_group(Player.GROUP) as Node2D
+	if Game.is_story_mode() and area != null and player != null:
+		var zone := area.zone_at_pos(player.global_position)
+		if zone != null and zone.is_restricted():
+			return true
 	return in_combat(tree)
 
 

@@ -1,0 +1,157 @@
+[gd_resource type="Resource" script_class="AreaData" format=3]
+
+[ext_resource type="Script" path="res://story/area_data.gd" id="area"]
+[ext_resource type="Script" path="res://story/area_exit_data.gd" id="exit"]
+[ext_resource type="Script" path="res://story/waystone_data.gd" id="way"]
+[ext_resource type="Script" path="res://story/npc_data.gd" id="npc"]
+[ext_resource type="Script" path="res://story/zone_data.gd" id="zone"]
+
+[sub_resource type="Resource" id="exit_0"]
+script = ExtResource("exit")
+target_area = ""
+target_spawn = 0
+required_flag = "read:golem_record"
+locked_text = "아직 떠날 수 없다. 저것을 그냥 두고는."
+end_text = "3지역으로 가는 길\n\n이번 이야기는 여기까지"
+
+[sub_resource type="Resource" id="way_5"]
+script = ExtResource("way")
+id = "lab_exit"
+display_name = "연구소 탑"
+reveals = Array[String]([])
+
+[sub_resource type="Resource" id="npc_8"]
+script = ExtResource("npc")
+id = "miner"
+display_name = "늙은 광부"
+sprite = &"npc_a"
+lines = Array[String](["…거기 서라.", "그 옷. 언덕 위 연구소 것이지.", "뭘 하는 곳인지는 모른다. 알고 싶지도 않고.", "볼일 없으면 마을에 오래 머물지 마라."])
+alt_flag = "golem_destroyed"
+alt_lines = Array[String](["숲이 조용해졌더군.", "…네가 한 거냐. 고맙다는 말은 해 두지."])
+
+[sub_resource type="Resource" id="way_9"]
+script = ExtResource("way")
+id = "village"
+display_name = "광산촌 탑"
+reveals = Array[String]([])
+
+[sub_resource type="Resource" id="npc_10"]
+script = ExtResource("npc")
+id = "homeless"
+display_name = "집 잃은 주민"
+sprite = &"npc_c"
+lines = Array[String](["지붕째 뜯겨 나갔어.", "돌덩이 같은 게 걸어가더라고. 숲 쪽으로.", "지나간 자리마다 저 꼴이야."])
+alt_flag = ""
+alt_lines = Array[String]([])
+
+[sub_resource type="Resource" id="npc_12"]
+script = ExtResource("npc")
+id = "child"
+display_name = "아이"
+sprite = &"npc_b"
+lines = Array[String](["우와, 총이다! 진짜야?", "어디서 왔어? 위쪽 큰 건물?", "거기 뭐가 있어? 어른들은 아무도 안 알려 줘."])
+alt_flag = "golem_destroyed"
+alt_lines = Array[String](["큰 돌덩이 이제 안 와? 진짜?", "…고마워. 근데 조금 무서워."])
+
+[sub_resource type="Resource" id="way_13"]
+script = ExtResource("way")
+id = "forest_gate"
+display_name = "숲 입구 탑"
+reveals = Array[String]([])
+
+[sub_resource type="Resource" id="way_14"]
+script = ExtResource("way")
+id = "boss_gate"
+display_name = "골렘 터 앞 탑"
+reveals = Array[String](["forest", "golem_lair"])
+
+[sub_resource type="Resource" id="npc_15"]
+script = ExtResource("npc")
+id = "afraid"
+display_name = "겁먹은 주민"
+sprite = &"npc_a"
+lines = Array[String](["가, 가까이 오지 마…!", "어젯밤 그 커다란 것도 그쪽에서 내려왔어.", "집이 세 채나… 그건 숲으로 갔어. 따라가지 마."])
+alt_flag = ""
+alt_lines = Array[String]([])
+
+[sub_resource type="Resource" id="zone_lab"]
+script = ExtResource("zone")
+id = "lab"
+display_name = "연구소"
+rect = Rect2i(4, 4, 36, 20)
+tileset = "tiles_lab"
+breakable_walls = false
+is_boss_room = false
+boss_cleared_flag = ""
+enter_story_id = "lab_wake"
+enemy_overrides = {}
+map_floor_color = Color(0.5, 0.52, 0.62, 1)
+map_wall_color = Color(0.22, 0.22, 0.32, 1)
+
+[sub_resource type="Resource" id="zone_village"]
+script = ExtResource("zone")
+id = "village"
+display_name = "마석 광산촌"
+rect = Rect2i(48, 14, 40, 20)
+tileset = "tiles_village"
+breakable_walls = false
+is_boss_room = false
+boss_cleared_flag = ""
+enter_story_id = "village_enter"
+enemy_overrides = {}
+map_floor_color = Color(0.62, 0.45, 0.3, 1)
+map_wall_color = Color(0.48, 0.17, 0.27, 1)
+
+[sub_resource type="Resource" id="zone_forest"]
+script = ExtResource("zone")
+id = "forest"
+display_name = "외곽 숲"
+rect = Rect2i(94, 20, 44, 12)
+tileset = "tiles_forest"
+breakable_walls = true
+is_boss_room = false
+boss_cleared_flag = ""
+enter_story_id = "forest_enter"
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest"
+}
+map_floor_color = Color(0.3, 0.52, 0.32, 1)
+map_wall_color = Color(0.13, 0.27, 0.2, 1)
+
+[sub_resource type="Resource" id="zone_golem_lair"]
+script = ExtResource("zone")
+id = "golem_lair"
+display_name = "골렘 터"
+rect = Rect2i(140, 8, 20, 14)
+tileset = "tiles_forest"
+breakable_walls = true
+is_boss_room = true
+boss_cleared_flag = "golem_destroyed"
+enter_story_id = "lair_enter"
+enemy_overrides = {
+"Z": "golem_worn"
+}
+map_floor_color = Color(0.36, 0.5, 0.34, 1)
+map_wall_color = Color(0.13, 0.27, 0.2, 1)
+
+[resource]
+script = ExtResource("area")
+id = "world"
+display_name = "들판"
+map_file = "res://levels/areas/world.txt"
+tileset = "tiles_forest"
+on_map = true
+zones = Array[ExtResource("zone")]([SubResource("zone_lab"), SubResource("zone_village"), SubResource("zone_forest"), SubResource("zone_golem_lair")])
+map_floor_color = Color(0.36, 0.56, 0.36, 1)
+map_wall_color = Color(0.16, 0.32, 0.22, 1)
+breakable_walls = true
+break_hits = 2
+break_drop_item = "wood"
+enemy_overrides = {}
+exits = Array[ExtResource("exit")]([SubResource("exit_0")])
+waystones = Array[ExtResource("way")]([SubResource("way_5"), SubResource("way_9"), SubResource("way_13"), SubResource("way_14")])
+pickups = Array[String](["miner_cap", "rapid_gun", "padded_pants", "light_wrap", "lab_memo", "scrap", "mana_shard", "heavy_gun", "work_pants", "plated_coat", "sight_band"])
+npcs = Array[ExtResource("npc")]([SubResource("npc_8"), SubResource("npc_10"), SubResource("npc_12"), SubResource("npc_15")])
+signs = Array[String](["실험동 B · 격리 구역\n출입 금지", "이 앞, 큰 것이 지나간 자리", "동쪽 숲길 — 갱도 가는 길"])

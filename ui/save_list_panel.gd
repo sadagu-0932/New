@@ -82,8 +82,12 @@ static func row_text(save: Dictionary) -> String:
 	var state: Dictionary = save.get("state", {})
 	var story: Dictionary = state.get("story", {})
 	var area := String(story.get("area", ""))
+	# 저장한 곳: 구역 이름(연구소·광산촌 …), 없으면 지역 이름
+	var place := String(state.get("place", ""))
+	if place.is_empty():
+		place = DB.area(area).display_name if DB.area(area) != null else area
 	return "[%s] %s  %s  체력 %d" % [DB.save.kind_names.get(save.get("kind", ""), "?"), save.get("saved_at", ""),
-		DB.area(area).display_name if DB.area(area) != null else area, int(state.get("hp", 0))]
+		place, int(state.get("hp", 0))]
 
 
 func _refresh() -> void:

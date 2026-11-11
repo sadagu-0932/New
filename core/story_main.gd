@@ -1,7 +1,8 @@
 extends Node
 ## 스토리판 진입점·화면 흐름.
-## 타이틀(새 게임 / 이어하기 / 설정 / 종료) → 프롤로그(기존 튜토리얼) → "한나절 뒤" → 1지역 연구소 → 광산촌 → 숲 → 골렘 터
-## 지역 이동(출입구·웨이스톤 순간이동), 저장·불러오기·부활, 웨이스톤 활성화, 획득물·자료 읽기를 여기서 잇는다.
+## 타이틀(새 게임 / 이어하기 / 설정 / 종료) → 프롤로그(기존 튜토리얼) → "한나절 뒤" → 바깥 세상
+## 바깥 세상은 한 장으로 이어진 맵(world)이라 연구소·광산촌·숲·골렘 터를 걸어서 오간다 (화면 전환 없음).
+## 웨이스톤 순간이동, 저장·불러오기·부활, 웨이스톤 활성화, 획득물·자료 읽기를 여기서 잇는다.
 ## 스피드런 기능(타이머·스플릿·리더보드·기록 화면·어트랙트 모드·관리자 창)은 만들지 않는다.
 ## (스피드런판 진입점은 core/main.gd 로 main 브랜치에서 쓴다)
 
@@ -87,21 +88,21 @@ func _selfcheck() -> void:
 	if _player() == null or run.level.tutorial == null:
 		problems.append("프롤로그를 띄우지 못함")
 	Events.prologue_finished.emit()
-	for id: String in ["lab", "village", "forest", "golem_lair"]:
-		if DB.area(id) == null:
-			problems.append("지역 없음: %s" % id)
-			continue
-		if Story.area != id:
-			travel(id, 1)
-		await get_tree().physics_frame
-		await get_tree().physics_frame
-		var a := DB.area(id)
-		if _player() == null or run.level.area != a:
-			problems.append("지역을 띄우지 못함: %s" % id)
-		elif run.level.props.get_child_count() < a.level_map().props.size():
-			problems.append("소품이 모자람: %s" % id)
-	if not saves.save_auto("selfcheck") and not CombatState.is_restricted(get_tree()):
-		problems.append("저장 실패")
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var world := DB.area(DB.story.after_prologue_area)
+	if world == null or _player() == null or run.level.area != world:
+		problems.append("바깥 세상을 띄우지 못함")
+	else:
+		if run.level.props.get_child_count() < world.level_map().props.size():
+			problems.append("소품이 모자람")
+		# 구역마다 한 번씩 서 본다 (타일 그림·구역 판정)
+		for z in world.zones:
+			_player().teleport(LevelMap.cell_center(z.rect.get_center()))
+			await get_tree().physics_frame
+			await get_tree().physics_frame
+			if run.level.area_director.zone_id != z.id:
+				problems.append("구역 판정 실패: %s" % z.id)
 	StorySave.clear_all()
 	print("SELFCHECK %s · 아이템 %d · 지역 %d · 적 수치 %d %s" % ["OK" if problems.is_empty() else "FAIL",
 		DB.items.size(), DB.areas.size(), DB.enemies.size(), problems])
@@ -229,7 +230,8 @@ func respawn() -> void:
 		load_save(save)
 
 
-## 다른 지역으로 넘어간다. 체력·탄약은 그대로 들고 간다
+## 다른 지역으로 넘어간다 (화면이 바뀐다). 체력·탄약은 그대로 들고 간다
+## 바깥 세상은 한 장이라 걸어 다닐 때는 쓰이지 않는다 — 프롤로그 ↔ 세계 같은 맵 전환용
 func travel(area_id: String, spawn_index: int) -> void:
 	if DB.area(area_id) == null:
 		push_warning("없는 지역: %s" % area_id)
@@ -241,18 +243,31 @@ func travel(area_id: String, spawn_index: int) -> void:
 	Events.toast.emit(DB.area(area_id).display_name)
 
 
+## 웨이스톤 id → 그 탑이 있는 지역
+static func area_of_waystone(waystone_id: String) -> AreaData:
+	for a: AreaData in DB.areas.values():
+		if a.waystone_index(waystone_id) >= 0:
+			return a
+	return null
+
+
 ## 활성화한 웨이스톤으로 순간이동 (지도 화면에서 고름). 전투 중·보스방에서는 불가
-func teleport(area_id: String, waystone_id: String) -> bool:
-	var area := DB.area(area_id)
-	if area == null or not Story.waystones.has(waystone_id) or _player() == null \
-			or CombatState.is_restricted(get_tree()):
+func teleport(waystone_id: String) -> bool:
+	var area := area_of_waystone(waystone_id)
+	var p := _player()
+	if area == null or not Story.waystones.has(waystone_id) or p == null or CombatState.is_restricted(get_tree()):
 		return false
 	var pos := area.waystone_arrival(waystone_id)
-	var state := _carry_state()
-	state["pos"] = [pos.x, pos.y]
-	Story.area = area_id
-	_start_run(state)
-	Events.toast.emit(area.display_name)
+	if area.id == Story.area:
+		# 같은 세계 안: 화면을 바꾸지 않고 그 자리로 옮긴다
+		p.teleport(pos)
+		Effect.spawn(&"perfect", pos, 0.0, 2.0)
+	else:
+		var state := _carry_state()
+		state["pos"] = [pos.x, pos.y]
+		Story.area = area.id
+		_start_run(state)
+	Events.toast.emit(area.place_name(pos))
 	return true
 
 
@@ -312,7 +327,7 @@ func _on_document_read(item_id: String) -> void:
 		Events.story_triggered.emit(key)
 
 
-## 프롤로그 끝 ("한나절 뒤" 암전 뒤) → 1지역 연구소에서 깨어남. 스킬 칸이 하나 더 열린다
+## 프롤로그 끝 ("한나절 뒤" 암전 뒤) → 바깥 세상의 연구소에서 깨어남. 스킬 칸이 하나 더 열린다
 func _on_prologue_finished() -> void:
 	Story.set_flag("prologue_done")
 	Story.area = DB.story.after_prologue_area

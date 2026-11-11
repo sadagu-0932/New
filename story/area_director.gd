@@ -2,7 +2,8 @@ class_name AreaDirector
 extends Node
 ## 스토리 지역 진행 관리 (레벨의 자식, 튜토리얼의 TutorialDirector 자리).
 ##  - 맵의 출입구·웨이스톤·획득물·NPC·표지판에 지역 데이터(AreaData)를 순서대로 짝지어 준다
-##  - 처음 들어온 지역이면 들어오는 글을 흘려 보낸다
+##  - 플레이어가 어느 구역(연구소·광산촌·숲 …)에 있는지 지켜보고, 구역에 들어서면 이름을 보여준다.
+##    처음 들어선 구역이면 들어오는 글을 흘려 보낸다
 
 var level: Level
 var area: AreaData
@@ -40,9 +41,31 @@ static func _at(list: Array, index: int, fallback: Variant = null) -> Variant:
 
 func _ready() -> void:
 	Events.area_entered.emit(area.id)
-	var seen_flag := "entered:%s" % area.id
-	if not area.enter_story_id.is_empty() and not Story.has_flag(seen_flag):
-		Events.story_triggered.emit(area.enter_story_id)
+
+
+## 플레이어가 지금 든 구역 id ("" = 들판, "?" = 아직 모름)
+var zone_id: String = "?"
+
+
+func _physics_process(_delta: float) -> void:
+	var player := level.player
+	if player == null:
+		return
+	var zone := area.zone_at_pos(player.global_position)
+	var now := zone.id if zone != null else ""
+	if now == zone_id:
+		return
+	var first_tick := zone_id == "?"
+	zone_id = now
+	Events.zone_entered.emit(now)
+	if zone == null:
+		return
+	# 구역에 걸어 들어오면 이름을 잠깐 보여주고, 처음이면 글이 흘러간다
+	if not first_tick:
+		Events.toast.emit(zone.display_name)
+	var seen_flag := "entered:%s" % zone.id
+	if not zone.enter_story_id.is_empty() and not Story.has_flag(seen_flag):
+		Events.story_triggered.emit(zone.enter_story_id)
 	Story.set_flag(seen_flag)
 
 

@@ -32,6 +32,7 @@ func capture() -> Dictionary:
 	var p := _player()
 	return {
 		"pos": [p.global_position.x, p.global_position.y],
+		"place": DB.area(Story.area).place_name(p.global_position) if DB.area(Story.area) != null else "",
 		"hp": p.health.current,
 		"ammo": p.ammo.current,
 		"story": Story.to_dict(),

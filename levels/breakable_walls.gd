@@ -1,6 +1,7 @@
 class_name BreakableWalls
 extends Node
-## 베어 낼 수 있는 벽 (숲의 나무). 지역 데이터(AreaData.breakable_walls)가 켜져 있으면 레벨에 붙는다.
+## 베어 낼 수 있는 벽 (나무). 그 칸이 든 구역(없으면 들판)의 breakable_walls 가 켜져 있어야 벨 수 있다
+## (숲·들판의 나무는 되고, 연구소 벽·마을 집은 안 된다).
 ## 근접 공격(총으로 후려치기) 판정이 닿은 나무 칸은 몇 번 맞으면 베어져 지나갈 수 있게 된다.
 ##  - 맵 테두리 칸은 베어지지 않는다 (맵 밖으로 나가지 않게)
 ##  - 한 번 휘두를 때 같은 칸은 한 번만 맞는다
@@ -23,7 +24,8 @@ func _init(owner_level: Level, area_data: AreaData) -> void:
 ## 벨 수 있는 칸인지
 func can_break(cell: Vector2i) -> bool:
 	var m := level.map
-	return m.is_wall(cell) and cell.x > 0 and cell.y > 0 and cell.x < m.width - 1 and cell.y < m.height - 1
+	return m.is_wall(cell) and area.breakable_at(cell) \
+		and cell.x > 0 and cell.y > 0 and cell.x < m.width - 1 and cell.y < m.height - 1
 
 
 func _physics_process(_delta: float) -> void:

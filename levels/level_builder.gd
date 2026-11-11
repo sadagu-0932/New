@@ -10,19 +10,26 @@ extends RefCounted
 ##   벽 앞면 wall_face · wall_face_l · wall_face_r (줄의 양 끝) · wall_face_door (줄 가운데) · wall_face_window
 ##          wall_face_alt1~3 (문이 없는 타일셋에서 칸 좌표로 섞음)
 ##   meta "wall_over_floor": true 면 벽 칸 밑에도 바닥을 깐다 (나무처럼 가장자리가 뚫린 그림용)
+## 한 맵에 타일 그림을 여러 개 섞어 쓸 수 있다 (구역마다 다른 그림): 칸마다 pick 이 고른다.
 
-const SOURCE_ID := 0
 const FLOOR := "Floor"
 const WALLS := "Walls"
 
 
-static func build(map: LevelMap, theme: ThemeData, tileset: String = "tiles") -> Node2D:
+## tilesets: 쓸 타일 그림들 (첫 번째가 기본). pick: 칸(Vector2i) → 타일 그림 이름 (없으면 전부 기본)
+static func build(map: LevelMap, theme: ThemeData, tilesets: Array[String] = ["tiles"], pick: Callable = Callable()) -> Node2D:
 	var root := Node2D.new()
 	root.name = "Tiles"
-	var meta := theme.load_json(tileset)
-	var tile_set := _build_tile_set(theme.load_texture(tileset), meta)
-	root.set_meta(&"tiles", meta.get("tiles", {}))
-	root.set_meta(&"wall_over_floor", bool(meta.get("wall_over_floor", false)))
+	var tile_set := _new_tile_set(int(theme.load_json(tilesets[0]).get("tile_size", LevelMap.TILE_SIZE)))
+	# 타일 그림 이름 → { "source": 소스 번호, "tiles": 이름 → 좌표, "over_floor": 벽 밑에도 바닥을 까는지 }
+	var sets: Dictionary = {}
+	for i in tilesets.size():
+		var meta := theme.load_json(tilesets[i])
+		_add_source(tile_set, i, theme.load_texture(tilesets[i]), meta)
+		sets[tilesets[i]] = {"source": i, "tiles": meta.get("tiles", {}), "over_floor": bool(meta.get("wall_over_floor", false))}
+	root.set_meta(&"sets", sets)
+	root.set_meta(&"default_set", tilesets[0])
+	root.set_meta(&"pick", pick)
 
 	var floor_layer := TileMapLayer.new()
 	floor_layer.name = FLOOR
@@ -41,24 +48,31 @@ static func build(map: LevelMap, theme: ThemeData, tileset: String = "tiles") ->
 	return root
 
 
+static func _set_for(root: Node2D, cell: Vector2i) -> Dictionary:
+	var sets: Dictionary = root.get_meta(&"sets")
+	var pick: Callable = root.get_meta(&"pick")
+	var set_name := String(pick.call(cell)) if pick.is_valid() else ""
+	return sets.get(set_name, sets[root.get_meta(&"default_set")])
+
+
 ## 칸 하나를 (다시) 그린다. 맵이 바뀌었을 때(나무를 벰) 그 칸과 둘레 칸에 부른다
 static func paint(root: Node2D, map: LevelMap, cell: Vector2i, stump: bool = false) -> void:
-	var tiles: Dictionary = root.get_meta(&"tiles")
+	var tile_info := _set_for(root, cell)
+	var tiles: Dictionary = tile_info["tiles"]
+	var source: int = tile_info["source"]
 	var floor_layer := root.get_node(FLOOR) as TileMapLayer
 	var wall_layer := root.get_node(WALLS) as TileMapLayer
-	var x := cell.x
-	var y := cell.y
 	if map.is_floor(cell):
 		wall_layer.erase_cell(cell)
-		floor_layer.set_cell(cell, SOURCE_ID, _coords(tiles, _floor_name(tiles, map, cell, stump)))
+		floor_layer.set_cell(cell, source, _coords(tiles, _floor_name(tiles, map, cell, stump)))
 	elif map.is_wall(cell):
-		if bool(root.get_meta(&"wall_over_floor")):
-			floor_layer.set_cell(cell, SOURCE_ID, _coords(tiles, "floor"))
-		wall_layer.set_cell(cell, SOURCE_ID, _coords(tiles, _wall_name(tiles, map, cell)))
+		if bool(tile_info["over_floor"]):
+			floor_layer.set_cell(cell, source, _coords(tiles, "floor"))
+		wall_layer.set_cell(cell, source, _coords(tiles, _wall_name(tiles, map, cell)))
 	elif map.is_pit(cell):
-		wall_layer.set_cell(cell, SOURCE_ID, _coords(tiles, "pit"))
+		wall_layer.set_cell(cell, source, _coords(tiles, "pit"))
 	else:
-		wall_layer.erase_cell(Vector2i(x, y))
+		wall_layer.erase_cell(cell)
 
 
 static func _floor_name(tiles: Dictionary, map: LevelMap, cell: Vector2i, stump: bool) -> String:
@@ -132,8 +146,7 @@ static func _coords(tiles: Dictionary, tile_name: String) -> Vector2i:
 	return Vector2i(int(c[0]), int(c[1]))
 
 
-static func _build_tile_set(texture: Texture2D, meta: Dictionary) -> TileSet:
-	var size := int(meta.get("tile_size", LevelMap.TILE_SIZE))
+static func _new_tile_set(size: int) -> TileSet:
 	var tile_set := TileSet.new()
 	tile_set.tile_size = Vector2i(size, size)
 	tile_set.add_physics_layer()
@@ -142,12 +155,16 @@ static func _build_tile_set(texture: Texture2D, meta: Dictionary) -> TileSet:
 	tile_set.add_physics_layer()
 	tile_set.set_physics_layer_collision_layer(1, Layers.PIT)
 	tile_set.set_physics_layer_collision_mask(1, 0)
+	return tile_set
 
+
+## 타일 그림 하나를 소스로 넣는다 (벽 = WORLD 충돌, 구덩이 = PIT 충돌)
+static func _add_source(tile_set: TileSet, source_id: int, texture: Texture2D, meta: Dictionary) -> void:
+	var size := tile_set.tile_size.x
 	var source := TileSetAtlasSource.new()
 	source.texture = texture
 	source.texture_region_size = Vector2i(size, size)
-	tile_set.add_source(source, SOURCE_ID)
-
+	tile_set.add_source(source, source_id)
 	var half := size * 0.5
 	var square := PackedVector2Array([
 		Vector2(-half, -half), Vector2(half, -half), Vector2(half, half), Vector2(-half, half),
@@ -165,4 +182,3 @@ static func _build_tile_set(texture: Texture2D, meta: Dictionary) -> TileSet:
 			var tile_data := source.get_tile_data(coords, 0)
 			tile_data.add_collision_polygon(physics_layer)
 			tile_data.set_collision_polygon_points(physics_layer, 0, square)
-	return tile_set

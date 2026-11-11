@@ -222,8 +222,9 @@ func test_main_flow() -> void:
 	Events.prologue_finished.emit()
 	await step(2)
 	check(Story.has_flag("prologue_done") and Story.area == DB.story.after_prologue_area, "프롤로그 끝 → 진행도 기록, 다음 지역은 %s" % Story.area)
-	check(main.run != null and main.run.level.area != null and main.run.level.area.id == "lab" and main.run.level.tutorial == null,
-		"\"한나절 뒤\" → 1지역 연구소에서 깨어남")
+	check(main.run != null and main.run.level.area != null and main.run.level.area.id == "world" and main.run.level.tutorial == null
+		and main.run.level.area.zone_at_pos(main.run.level.player.global_position).id == "lab",
+		"\"한나절 뒤\" → 바깥 세상의 연구소에서 깨어남")
 	main.queue_free()
 	PlayerInput.source = ScriptedInputSource.new()
 	await step(2)

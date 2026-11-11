@@ -61,7 +61,11 @@ func _ready() -> void:
 		map = LevelMap.load_from_file(area.map_file)
 	else:
 		map = LevelMap.load_from_file(map_path)
-	tiles = LevelBuilder.build(map, DB.theme, area.tileset if area != null else "tiles")
+	if area != null:
+		# 구역마다 타일 그림이 다르다 (연구소·광산촌·숲이 한 맵에 이어져 있다)
+		tiles = LevelBuilder.build(map, DB.theme, area.tilesets(), area.tileset_at)
+	else:
+		tiles = LevelBuilder.build(map, DB.theme)
 	add_child(tiles)
 	if area != null:
 		area_director = AreaDirector.new(self, area)
@@ -81,7 +85,7 @@ func _ready() -> void:
 		if node is Enemy:
 			var enemy_key: String = spawn[1]
 			if area != null:
-				enemy_key = String(area.enemy_overrides.get(ch, enemy_key))
+				enemy_key = area.enemy_key_at(entry["cell"], ch, enemy_key)
 			(node as Enemy).data = DB.enemies[enemy_key]
 		if area_director != null:
 			area_director.configure(node, int(counts.get(ch, 0)))
@@ -118,7 +122,7 @@ func _ready() -> void:
 
 	if area_director != null:
 		add_child(area_director)
-	if area != null and area.breakable_walls:
+	if area != null:
 		breakable = BreakableWalls.new(self, area)
 		add_child(breakable)
 

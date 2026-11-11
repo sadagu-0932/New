@@ -30,6 +30,8 @@ extends Resource
 @export var text_no_waystone: String = ""
 ## 지도 화면에서 맵 한 칸의 크기 (px)
 @export var map_tile_px: int = 1
+## 탑을 켜면 그 구역 둘레 몇 칸까지 지도에서 밝혀지는지 (주변 지형)
+@export var map_reveal_margin: int = 0
 ## 지도에서 아직 밝혀지지 않은 지역의 이름
 @export var text_unknown_area: String = ""
 ## 이번 범위의 끝 글(AreaExitData.end_text)이 떠 있는 시간 (초). 그 뒤 타이틀로
