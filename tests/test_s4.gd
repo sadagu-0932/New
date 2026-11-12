@@ -344,6 +344,20 @@ func test_map_and_teleport() -> void:
 		await get_tree().process_frame
 	check(panel._fog_fade < 0.05, "안개가 걷힘")
 	check(Rect2(panel.camera, MapPanel.VIEW.size).grow(1.0).has_point(panel.targets[panel.selected]["pos"]), "고른 탑이 지도 창 안에 보임")
+	# 크게/작게: 가장 작게 하면 세상 전체가 지도 창에 들어온다
+	var start_zoom: int = panel.zoom_index
+	check(is_equal_approx(MapPanel.tile_px(), float(DB.story.map_tile_px)), "처음 크기는 한 칸 %d px" % DB.story.map_tile_px)
+	panel.set_zoom(0)
+	check(MapPanel.world_size().x <= MapPanel.VIEW.size.x + 0.5 and MapPanel.world_size().y <= MapPanel.VIEW.size.y + 0.5,
+		"가장 작게 → 세상 전체가 지도 창 안에 (%.0f×%.0f px)" % [MapPanel.world_size().x, MapPanel.world_size().y])
+	for i in 60:
+		await get_tree().process_frame
+	var whole := Rect2(panel.camera, MapPanel.VIEW.size).grow(1.0)
+	check(whole.has_point(Vector2.ZERO) and whole.has_point(MapPanel.world_size()), "전체 보기에서는 세상의 양 끝이 다 보임")
+	panel.set_zoom(99)
+	check(panel.zoom_index == MapPanel.zoom_levels().size() - 1 and MapPanel.tile_px() > float(DB.story.map_tile_px), "가장 크게 (한 칸 %.0f px)" % MapPanel.tile_px())
+	check(is_equal_approx((panel.targets[panel.selected]["pos"] as Vector2).x, (Vector2(panel.targets[panel.selected]["cell"]).x + 0.5) * MapPanel.tile_px()), "크기를 바꿔도 탑 위치가 지도와 맞음")
+	panel.set_zoom(start_zoom)
 	panel._select(panel.selected + 1)
 	check((panel.targets[panel.selected]["waystone"] as WaystoneData).id == "lab_exit", "←→ 로 다른 탑 고름")
 	for i in 60:

@@ -33,6 +33,7 @@ text_item_picked = "획득: %s"
 text_cannot_teleport = "전투 중·보스방에서는 순간이동할 수 없다"
 text_no_waystone = "활성화한 웨이스톤이 없다"
 map_tile_px = 4
+map_zoom_levels = Array[float]([3.0, 4.0, 6.0])
 map_reveal_margin = 5
 text_unknown_area = "???"
 end_seconds = 6.0

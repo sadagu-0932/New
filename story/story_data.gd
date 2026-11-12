@@ -28,8 +28,10 @@ extends Resource
 @export var text_item_picked: String = ""
 @export var text_cannot_teleport: String = ""
 @export var text_no_waystone: String = ""
-## 지도 화면에서 맵 한 칸의 크기 (px)
+## 지도 화면을 처음 열 때 맵 한 칸의 크기 (px)
 @export var map_tile_px: int = 1
+## 지도 확대 단계들 (한 칸 px). 이보다 작은 "전체 보기" 단계가 맨 앞에 자동으로 붙는다
+@export var map_zoom_levels: Array[float] = []
 ## 탑을 켜면 그 구역 둘레 몇 칸까지 지도에서 밝혀지는지 (주변 지형)
 @export var map_reveal_margin: int = 0
 ## 지도에서 아직 밝혀지지 않은 지역의 이름

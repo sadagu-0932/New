@@ -18,7 +18,7 @@
 | Space | 회피 |
 | Q / F | 스킬1 / 스킬2 (스킬2 는 프롤로그가 끝나면 열림) |
 | Tab | 인벤토리 (스킬 지정 · 무기 · 갑옷 · 아이템) |
-| M | 지도 · 웨이스톤 순간이동 |
+| M | 지도 · 웨이스톤 순간이동 (↑↓·휠로 크게/작게) |
 | E | 상호작용 (대화) |
 | Esc | 일시정지 메뉴 (저장 · 불러오기 · 키 설정 · 타이틀로) |
 
@@ -27,6 +27,7 @@
 - Godot 4.7, 설계 문서는 [CLAUDE.md](CLAUDE.md)
 - 테스트: `godot --headless --path . res://tests/test_runner.tscn`
 - 스프라이트 다시 만들기: `python3 tools/sprite_gen.py`
+- 세상 크기 바꾸기: `levels/world/layout.json` 의 `width`·`height`(칸)를 고치고 아래 명령 실행
 - 바깥 세상 맵 다시 만들기: `python3 tools/build_world.py` (조각 맵 `levels/world/*.txt` + 스크립트 안의 배치 → `levels/areas/world.txt`, `data/areas/world.tres`)
 - 효과음 다시 만들기: `python3 tools/sound_gen.py`
 - Windows exe 만들기: `tools/build_story.sh` → `export/demo-story.exe` (Godot 4.7 과 Windows 내보내기 템플릿 필요. 내보내기만 하고 어디에도 올리지 않는다)

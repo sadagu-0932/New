@@ -5,6 +5,7 @@ extends CanvasLayer
 ##  - 웨이스톤(탑)을 활성화한 곳의 주변만 밝혀져 있고 나머지는 안개에 가려져 있다.
 ##    새로 밝혀진 곳은 지도를 열 때 안개가 걷히며 드러난다
 ##  - 활성화한 탑을 ←→ 로 골라 Enter 로 순간이동 (전투 중·보스방에서는 불가)
+##  - ↑↓·마우스 휠로 크게/작게. 가장 작게 하면 세상 전체가 한눈에 들어온다
 ## 구역의 지형 색은 data/areas/world.tres, 한 칸 크기·밝혀지는 둘레는 data/story.tres 의 map_tile_px·map_reveal_margin
 # TODO(안드로이드 추가 때): 터치 조작 (끌어서 움직이기)
 
@@ -31,6 +32,9 @@ var selected: int = 0
 var targets: Array[Dictionary] = []
 ## 지도 왼쪽 위가 화면에서 밀려난 정도 (px)
 var camera: Vector2 = Vector2.ZERO
+## 확대·축소 단계 (0 = 세상 전체가 한눈에, 클수록 크게). 한 번 고르면 게임을 끌 때까지 유지된다
+var zoom_index: int = -1
+static var _px: float = 0.0
 
 var _root: Control
 var _canvas: Control
@@ -83,6 +87,12 @@ func _ready() -> void:
 	clip.clip_contents = true
 	clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(clip)
+	# 지도가 창보다 작을 때(전체 보기) 남는 자리의 바탕
+	var back := ColorRect.new()
+	back.color = Color(0.05, 0.05, 0.09)
+	back.size = VIEW.size
+	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	clip.add_child(back)
 	_canvas = Control.new()
 	_canvas.size = VIEW.size
 	_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -101,7 +111,7 @@ func _ready() -> void:
 	_notice.add_theme_color_override(&"font_color", Color(0.95, 0.5, 0.45))
 	_notice.visible = false
 	_root.add_child(_notice)
-	var help := UiText.make_label("←→ 탑 고르기 · Enter 순간이동 · Esc 닫기")
+	var help := UiText.make_label("←→ 탑 · ↑↓·휠 크게/작게 · Enter 이동 · Esc 닫기")
 	help.position = Vector2(0, 165)
 	help.size = Vector2(320, 12)
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -151,8 +161,37 @@ static func is_revealed(cell: Vector2i, zones: Array[String]) -> bool:
 	return false
 
 
-static func tile_px() -> int:
-	return maxi(DB.story.map_tile_px, 1)
+## 지도에서 맵 한 칸의 크기 (px). 확대·축소 단계에 따라 바뀐다
+static func tile_px() -> float:
+	return _px if _px > 0.0 else float(maxi(DB.story.map_tile_px, 1))
+
+
+## 세상 전체가 지도 창에 다 들어오는 한 칸 크기
+static func fit_px() -> float:
+	var a := world()
+	if a == null:
+		return 1.0
+	var m := a.level_map()
+	return minf(VIEW.size.x / maxf(m.width, 1.0), VIEW.size.y / maxf(m.height, 1.0))
+
+
+## 확대·축소 단계들 (한 칸 px, 작은 것부터). 맨 앞은 "전체 보기"
+static func zoom_levels() -> Array[float]:
+	var out: Array[float] = [fit_px()]
+	for v: float in DB.story.map_zoom_levels:
+		if v > out[0] + 0.01:
+			out.append(v)
+	return out
+
+
+## 확대·축소 단계를 고른다 (0 = 전체 보기)
+func set_zoom(index: int) -> void:
+	var levels := zoom_levels()
+	zoom_index = clampi(index, 0, levels.size() - 1)
+	_px = levels[zoom_index]
+	if is_open:
+		_build_targets_keep_selection()
+		_refresh()
 
 
 ## 맵의 칸 → 지도 좌표 (px, 지도 왼쪽 위 기준)
@@ -191,6 +230,15 @@ func open() -> bool:
 	get_tree().paused = true
 	_notice.visible = false
 	_notice_left = 0.0
+	if zoom_index < 0:
+		# 처음 열 때의 크기: data/story.tres 의 map_tile_px 에 가장 가까운 단계
+		var levels := zoom_levels()
+		zoom_index = levels.size() - 1
+		for i in levels.size():
+			if levels[i] >= float(DB.story.map_tile_px) - 0.01:
+				zoom_index = i
+				break
+	_px = zoom_levels()[zoom_index]
 	_build_targets()
 	# 안개: 지난번에 본 모습(옛 안개)에서 지금 모습으로 걷힌다
 	var seen: Array[String] = []
@@ -233,6 +281,13 @@ func _build_targets() -> void:
 			best_d = d
 			selected = targets.size()
 		targets.append({"waystone": w, "cell": cells[i], "pos": world_pos(Vector2(cells[i]) + Vector2(0.5, 0.5))})
+
+
+## 확대·축소로 지도 좌표가 바뀌었을 때: 고른 탑은 그대로 두고 위치만 다시 계산
+func _build_targets_keep_selection() -> void:
+	var keep := selected
+	_build_targets()
+	selected = clampi(keep, 0, maxi(targets.size() - 1, 0))
 
 
 ## 세계 축소판 그림 (칸마다 그 구역의 지형 색)
@@ -298,8 +353,14 @@ func _refresh() -> void:
 
 ## 그 지점이 창 가운데에 오게 (지도 밖은 보이지 않게 가둔다)
 func _set_camera_target(point: Vector2) -> void:
-	var limit := (world_size() - VIEW.size).max(Vector2.ZERO)
+	var size := world_size()
+	var limit := (size - VIEW.size).max(Vector2.ZERO)
 	_camera_target = (point - VIEW.size * 0.5).clamp(Vector2.ZERO, limit).round()
+	# 지도가 창보다 작으면(전체 보기) 가운데에 놓는다
+	if size.x < VIEW.size.x:
+		_camera_target.x = -roundf((VIEW.size.x - size.x) * 0.5)
+	if size.y < VIEW.size.y:
+		_camera_target.y = -roundf((VIEW.size.y - size.y) * 0.5)
 
 
 func _draw_map() -> void:
@@ -331,7 +392,7 @@ func _draw_map() -> void:
 			_draw_tower(world_pos(Vector2(cells[i]) + Vector2(0.5, 0.5)), on)
 	if not targets.is_empty() and int(_blink * 3.0) % 2 == 0:
 		var pos: Vector2 = targets[selected]["pos"]
-		_canvas.draw_rect(Rect2(pos + Vector2(-5, -11), Vector2(10, 14)), COLOR_SELECTED, false)
+		_canvas.draw_rect(Rect2(pos.round() + Vector2(-5, -11), Vector2(10, 14)), COLOR_SELECTED, false)
 	var here: Variant = _here()
 	if here != null:
 		var at: Vector2 = here
@@ -388,6 +449,11 @@ func confirm() -> void:
 	teleport_requested.emit((t["waystone"] as WaystoneData).id)
 
 
+static func _is_wheel(event: InputEvent, button: MouseButton) -> bool:
+	var mb := event as InputEventMouseButton
+	return mb != null and mb.pressed and mb.button_index == button
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_echo():
 		return
@@ -398,12 +464,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"map") or event.is_action_pressed(&"pause"):
 		close()
-	elif event.is_action_pressed(&"move_left") or event.is_action_pressed(&"ui_left") \
-			or event.is_action_pressed(&"move_up") or event.is_action_pressed(&"ui_up"):
+	elif event.is_action_pressed(&"move_left") or event.is_action_pressed(&"ui_left"):
 		_select(selected - 1)
-	elif event.is_action_pressed(&"move_right") or event.is_action_pressed(&"ui_right") \
-			or event.is_action_pressed(&"move_down") or event.is_action_pressed(&"ui_down"):
+	elif event.is_action_pressed(&"move_right") or event.is_action_pressed(&"ui_right"):
 		_select(selected + 1)
+	elif event.is_action_pressed(&"move_up") or event.is_action_pressed(&"ui_up") or _is_wheel(event, MOUSE_BUTTON_WHEEL_UP):
+		set_zoom(zoom_index + 1)
+	elif event.is_action_pressed(&"move_down") or event.is_action_pressed(&"ui_down") or _is_wheel(event, MOUSE_BUTTON_WHEEL_DOWN):
+		set_zoom(zoom_index - 1)
 	elif event.is_action_pressed(&"menu_confirm") or event.is_action_pressed(&"dodge"):
 		confirm()
 	get_viewport().set_input_as_handled()
