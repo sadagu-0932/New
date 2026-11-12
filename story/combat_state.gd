@@ -10,8 +10,7 @@ static func is_restricted(tree: SceneTree) -> bool:
 	var area := DB.area(Story.area)
 	var player := tree.get_first_node_in_group(Player.GROUP) as Node2D
 	if Game.is_story_mode() and area != null and player != null:
-		var zone := area.zone_at_pos(player.global_position)
-		if zone != null and zone.is_restricted():
+		if area.in_boss_room(player.global_position):
 			return true
 	return in_combat(tree)
 

@@ -58,9 +58,9 @@ func _physics_process(_delta: float) -> void:
 	var first_tick := zone_id == "?"
 	zone_id = now
 	Events.zone_entered.emit(now)
-	if zone == null:
-		return
-	# 구역에 걸어 들어오면 이름을 잠깐 보여주고, 처음이면 글이 흘러간다
+	if zone == null or zone.display_name.is_empty():
+		return  # 이름 없는 미지의 땅
+	# 지역에 걸어 들어오면 이름을 잠깐 보여주고, 처음이면 글이 흘러간다
 	if not first_tick:
 		Events.toast.emit(zone.display_name)
 	var seen_flag := "entered:%s" % zone.id

@@ -9,6 +9,7 @@ extends RefCounted
 ##   벽 윗면 wall_top + 열린 쪽 글자 n·s·w·e (예: wall_top_nw). s = 바로 아래가 벽 앞면(처마)
 ##   벽 앞면 wall_face · wall_face_l · wall_face_r (줄의 양 끝) · wall_face_door (줄 가운데) · wall_face_window
 ##          wall_face_alt1~3 (문이 없는 타일셋에서 칸 좌표로 섞음)
+##   meta "connect_floor": true 면 바닥이 이웃과 이어진다 (철길): floor_ + 이어진 쪽 글자 n·s·w·e (예: floor_we, floor_ne)
 ##   meta "wall_over_floor": true 면 벽 칸 밑에도 바닥을 깐다 (나무처럼 가장자리가 뚫린 그림용)
 ## 한 맵에 타일 그림을 여러 개 섞어 쓸 수 있다 (구역마다 다른 그림): 칸마다 pick 이 고른다.
 
@@ -26,7 +27,8 @@ static func build(map: LevelMap, theme: ThemeData, tilesets: Array[String] = ["t
 	for i in tilesets.size():
 		var meta := theme.load_json(tilesets[i])
 		_add_source(tile_set, i, theme.load_texture(tilesets[i]), meta)
-		sets[tilesets[i]] = {"source": i, "tiles": meta.get("tiles", {}), "over_floor": bool(meta.get("wall_over_floor", false))}
+		sets[tilesets[i]] = {"source": i, "tiles": meta.get("tiles", {}), "over_floor": bool(meta.get("wall_over_floor", false)),
+			"connect": bool(meta.get("connect_floor", false))}
 	root.set_meta(&"sets", sets)
 	root.set_meta(&"default_set", tilesets[0])
 	root.set_meta(&"pick", pick)
@@ -64,13 +66,28 @@ static func paint(root: Node2D, map: LevelMap, cell: Vector2i, stump: bool = fal
 	var wall_layer := root.get_node(WALLS) as TileMapLayer
 	if map.is_floor(cell):
 		wall_layer.erase_cell(cell)
-		floor_layer.set_cell(cell, source, _coords(tiles, _floor_name(tiles, map, cell, stump)))
+		var floor_name := _floor_name(tiles, map, cell, stump)
+		if bool(tile_info["connect"]):
+			# 이어지는 바닥(철길): 같은 그림이 놓인 이웃 쪽을 보고 곧은 것·꺾인 것을 고른다
+			var suffix := ""
+			for pair: Array in [["n", Vector2i.UP], ["s", Vector2i.DOWN], ["w", Vector2i.LEFT], ["e", Vector2i.RIGHT]]:
+				if _set_for(root, cell + (pair[1] as Vector2i))["source"] == source:
+					suffix += String(pair[0])
+			if tiles.has("floor_%s" % suffix):
+				floor_name = "floor_%s" % suffix
+		floor_layer.set_cell(cell, source, _coords(tiles, floor_name))
 	elif map.is_wall(cell):
 		if bool(tile_info["over_floor"]):
 			floor_layer.set_cell(cell, source, _coords(tiles, "floor"))
 		wall_layer.set_cell(cell, source, _coords(tiles, _wall_name(tiles, map, cell)))
 	elif map.is_pit(cell):
-		wall_layer.set_cell(cell, source, _coords(tiles, "pit"))
+		# 물: 위쪽이 물이 아니면 물가, 나머지는 칸 좌표로 물결을 섞는다
+		var pit_name := "pit"
+		if tiles.has("pit_n") and not map.is_pit(cell + Vector2i.UP):
+			pit_name = "pit_n"
+		elif tiles.has("pit_alt") and (cell.x * 3 + cell.y * 5) % 4 == 0:
+			pit_name = "pit_alt"
+		wall_layer.set_cell(cell, source, _coords(tiles, pit_name))
 	else:
 		wall_layer.erase_cell(cell)
 
@@ -176,7 +193,7 @@ static func _add_source(tile_set: TileSet, source_id: int, texture: Texture2D, m
 		var physics_layer := -1
 		if tile_name.begins_with("wall"):
 			physics_layer = 0
-		elif tile_name == "pit":
+		elif tile_name.begins_with("pit"):
 			physics_layer = 1
 		if physics_layer >= 0:
 			var tile_data := source.get_tile_data(coords, 0)

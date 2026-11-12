@@ -32,9 +32,12 @@ extends Resource
 @export var map_tile_px: int = 1
 ## 지도 확대 단계들 (한 칸 px). 이보다 작은 "전체 보기" 단계가 맨 앞에 자동으로 붙는다
 @export var map_zoom_levels: Array[float] = []
-## 탑을 켜면 그 구역 둘레 몇 칸까지 지도에서 밝혀지는지 (주변 지형)
-@export var map_reveal_margin: int = 0
-## 지도에서 아직 밝혀지지 않은 지역의 이름
-@export var text_unknown_area: String = ""
+## 지도에서 맵 한 칸이 이 크기(px) 이상일 때 작은 지역 이름이 나온다 (그보다 작게 보면 묶음 이름만)
+@export var map_area_names_px: float = 0.0
+## 지도에서 가리키는 곳(마우스)이 지명에 이 거리(px) 안으로 오면 그 지명이 뜬다
+@export var map_label_radius_px: float = 0.0
+## 지도에 꽂을 수 있는 핀 수, 다 찼을 때의 글 (%d = 핀 수)
+@export var map_max_pins: int = 0
+@export var text_pins_full: String = ""
 ## 이번 범위의 끝 글(AreaExitData.end_text)이 떠 있는 시간 (초). 그 뒤 타이틀로
 @export var end_seconds: float = 0.0

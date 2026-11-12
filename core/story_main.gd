@@ -96,13 +96,15 @@ func _selfcheck() -> void:
 	else:
 		if run.level.props.get_child_count() < world.level_map().props.size():
 			problems.append("소품이 모자람")
-		# 구역마다 한 번씩 서 본다 (타일 그림·구역 판정)
-		for z in world.zones:
-			_player().teleport(LevelMap.cell_center(z.rect.get_center()))
+		# 이름 붙은 지점마다 한 번씩 서 본다 (타일 그림·지역 판정)
+		for mark: String in ["lab_gate", "village_gate", "lair_gate"]:
+			var cell := world.landmark(mark)
+			_player().teleport(LevelMap.cell_center(cell))
 			await get_tree().physics_frame
 			await get_tree().physics_frame
-			if run.level.area_director.zone_id != z.id:
-				problems.append("구역 판정 실패: %s" % z.id)
+			var z := world.zone_at(cell)
+			if cell.x < 0 or z == null or run.level.area_director.zone_id != z.id:
+				problems.append("지역 판정 실패: %s" % mark)
 	StorySave.clear_all()
 	print("SELFCHECK %s · 아이템 %d · 지역 %d · 적 수치 %d %s" % ["OK" if problems.is_empty() else "FAIL",
 		DB.items.size(), DB.areas.size(), DB.enemies.size(), problems])

@@ -1,0 +1,106 @@
+{
+  "tile_size": 16,
+  "tiles": {
+    "floor": [
+      0,
+      0
+    ],
+    "floor_alt": [
+      1,
+      0
+    ],
+    "floor_alt2": [
+      2,
+      0
+    ],
+    "floor_alt3": [
+      3,
+      0
+    ],
+    "floor_stump": [
+      4,
+      0
+    ],
+    "wall_top": [
+      5,
+      0
+    ],
+    "wall_top_n": [
+      6,
+      0
+    ],
+    "wall_top_s": [
+      7,
+      0
+    ],
+    "wall_top_ns": [
+      8,
+      0
+    ],
+    "wall_top_w": [
+      9,
+      0
+    ],
+    "wall_top_nw": [
+      10,
+      0
+    ],
+    "wall_top_sw": [
+      11,
+      0
+    ],
+    "wall_top_nsw": [
+      12,
+      0
+    ],
+    "wall_top_e": [
+      13,
+      0
+    ],
+    "wall_top_ne": [
+      14,
+      0
+    ],
+    "wall_top_se": [
+      15,
+      0
+    ],
+    "wall_top_nse": [
+      16,
+      0
+    ],
+    "wall_top_we": [
+      17,
+      0
+    ],
+    "wall_top_nwe": [
+      18,
+      0
+    ],
+    "wall_top_swe": [
+      19,
+      0
+    ],
+    "wall_top_nswe": [
+      20,
+      0
+    ],
+    "wall_face": [
+      21,
+      0
+    ],
+    "pit": [
+      22,
+      0
+    ],
+    "pit_alt": [
+      23,
+      0
+    ],
+    "pit_n": [
+      24,
+      0
+    ]
+  },
+  "wall_over_floor": true
+}

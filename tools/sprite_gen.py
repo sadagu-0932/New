@@ -2342,6 +2342,205 @@ def build_story_tiles() -> None:
     forest += [("wall_face", trunk_face()), ("pit", tile_pit())]
     _save_tileset("tiles_forest", forest, {"wall_over_floor": True})
 
+    # ------------------------------------------------------------------
+    # 철길: 풀밭 위에 자갈 바닥 + 침목 + 레일 두 줄. 이웃 칸과 이어진다 (곧은 것·꺾인 것·끝)
+    # ------------------------------------------------------------------
+    rng = random.Random(2005)
+
+    def rail(dirs: str) -> Canvas:
+        t = grass(0)
+
+        def put(x: int, y: int, col: str) -> None:
+            t.set(x, y, c(col))
+
+        def half(d: str) -> None:
+            # 가운데(4~11)에서 그 쪽 가장자리까지 반 칸
+            for k in range(8):
+                along = (15 - k) if d in "es" else k
+                for across in range(4, 12):
+                    x, y = (along, across) if d in "we" else (across, along)
+                    col = "stone_dark" if (along + across) % 5 else "stone"
+                    if along % 4 == 1:
+                        col = "brown_dark" if across not in (4, 11) else "brown"     # 침목
+                    if across in (6, 9):
+                        col = "pale"                                                 # 레일
+                    elif across in (7, 10) and along % 4 != 1:
+                        col = "shadow"                                               # 레일 그림자
+                    put(x, y, col)
+
+        for d in dirs:
+            half(d)
+        # 가운데: 양쪽이 만나는 자리 (꺾이는 곳은 자갈로 메운다)
+        straight = dirs in ("we", "ns")
+        if not straight:
+            for y in range(4, 12):
+                for x in range(4, 12):
+                    put(x, y, "stone_dark" if (x + y) % 5 else "stone")
+            for d in dirs:
+                for k in range(4, 8):
+                    for across in (6, 9):
+                        along = (15 - k) if d in "es" else k
+                        x, y = (along, across) if d in "we" else (across, along)
+                        put(x, y, "pale")
+        return t
+
+    rail_tiles = [(name, cv) for name, cv in forest if not name.startswith("floor") or name == "floor_stump"]
+    rail_tiles += [("floor", rail("we")), ("floor_alt", rail("we"))]
+    for dirs in ("we", "ns", "ne", "nw", "se", "sw", "n", "s", "w", "e", "nwe", "swe", "nsw", "nse", "nswe"):
+        rail_tiles.append((f"floor_{dirs}", rail(dirs)))
+    _save_tileset("tiles_rail", rail_tiles, {"wall_over_floor": True, "connect_floor": True})
+
+    # ------------------------------------------------------------------
+    # 쓰러진 나무 길: 짓밟힌 풀, 그루터기, 쓰러진 통나무, 부러진 가지 (골렘이 지나간 자리)
+    # ------------------------------------------------------------------
+    rng = random.Random(2006)
+
+    def trampled(kind: int) -> Canvas:
+        t = grass(0)
+        for _ in range(16):
+            t.set(rng.randrange(0, 16), rng.randrange(0, 16), c("brown"))
+        for _ in range(6):
+            t.set(rng.randrange(0, 16), rng.randrange(0, 16), c("brown_dark"))
+        if kind == 1:  # 쓰러진 통나무 (가로)
+            for y in range(6, 10):
+                t.line(1, y, 13, y, c("brown_dark"))
+            t.line(1, 6, 13, 6, c("brown"))
+            t.line(2, 7, 12, 7, c("brown"))
+            for y in range(6, 10):
+                t.set(14, y, c("tan"))
+            t.set(14, 7, c("skin"))
+            t.line(1, 10, 14, 10, c("green_dark"))
+            t.line(5, 4, 6, 5, c("brown_dark"))       # 부러진 가지
+            t.set(4, 3, c("green"))
+        elif kind == 2:  # 부러진 가지와 잎
+            t.line(3, 4, 8, 7, c("brown_dark"))
+            t.line(8, 7, 12, 6, c("brown_dark"))
+            t.line(6, 11, 11, 12, c("brown_dark"))
+            for x, y in ((2, 3), (12, 5), (13, 6), (5, 12), (12, 13)):
+                t.set(x, y, c("green_dark"))
+        elif kind == 3:  # 깊이 패인 발자국
+            for x0, y0 in ((3, 3), (9, 9)):
+                for y in range(y0, y0 + 4):
+                    t.line(x0, y, x0 + 3, y, c("brown_dark"))
+                t.line(x0, y0, x0 + 3, y0, c("shadow"))
+        return t
+
+    # ------------------------------------------------------------------
+    # 물 (호수·못): 건널 수 없지만 탄은 지나간다. 물가(위쪽 가장자리)와 물결
+    # ------------------------------------------------------------------
+    def water(kind: int) -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("blue"))
+        for x, y in ((2, 4), (3, 4), (4, 4), (10, 9), (11, 9), (12, 9), (6, 13), (7, 13)):
+            t.set(x, y, c("sky"))
+        for x, y in ((9, 3), (13, 12), (1, 10)):
+            t.set(x, y, c("navy"))
+        if kind == 1:  # 물결
+            t.line(5, 7, 9, 7, c("sky"))
+            t.set(7, 6, c("cyan"))
+            t.line(11, 2, 13, 2, c("sky"))
+        elif kind == 2:  # 물가: 위쪽에 젖은 흙과 얕은 물
+            t.line(0, 0, 15, 0, c("green_dark"))
+            t.line(0, 1, 15, 1, c("brown_dark"))
+            t.line(0, 2, 15, 2, c("navy"))
+            for x in range(0, 16, 3):
+                t.set(x, 3, c("sky"))
+            t.line(0, 4, 15, 4, c("blue"))
+        return t
+
+    water_tiles = [(name, cv) for name, cv in forest if name != "pit"]
+    water_tiles += [("pit", water(0)), ("pit_alt", water(1)), ("pit_n", water(2))]
+    _save_tileset("tiles_water", water_tiles, {"wall_over_floor": True})
+
+    # ------------------------------------------------------------------
+    # 바위 언덕: 벽 = 바위 (벨 수 없다). 윗면은 평평한 바위, 앞면은 절벽. 바닥은 자갈 섞인 풀
+    # ------------------------------------------------------------------
+    rng = random.Random(2007)
+
+    def gravel(kind: int) -> Canvas:
+        t = grass(0)
+        for _ in range(10):
+            t.set(rng.randrange(0, 16), rng.randrange(0, 16), c("stone"))
+        for _ in range(4):
+            t.set(rng.randrange(0, 16), rng.randrange(0, 16), c("stone_dark"))
+        if kind == 1:
+            for x, y in ((5, 6), (6, 6), (5, 7), (6, 7), (7, 7), (11, 11), (12, 11)):
+                t.set(x, y, c("stone_light"))
+            t.line(5, 8, 7, 8, c("shadow"))
+        return t
+
+    def rock_top() -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("stone"))
+        rr = random.Random(2008)
+        for _ in range(12):
+            t.set(rr.randrange(0, 16), rr.randrange(0, 16), c("stone_light"))
+        for _ in range(10):
+            t.set(rr.randrange(0, 16), rr.randrange(0, 16), c("stone_dark"))
+        t.line(3, 5, 7, 6, c("stone_dark"))
+        t.line(9, 11, 13, 10, c("stone_dark"))
+        return t
+
+    def rock_deco(t: Canvas, n: bool, s_: bool, w: bool, e: bool) -> None:
+        if n:
+            t.line(0, 0, 15, 0, c("outline"))
+            t.line(0, 1, 15, 1, c("pale"))
+            t.line(0, 2, 15, 2, c("stone_light"))
+        if w:
+            t.line(0, 0, 0, 15, c("outline"))
+            t.line(1, 1 if n else 0, 1, 15, c("stone_light"))
+        if e:
+            t.line(15, 0, 15, 15, c("outline"))
+            t.line(14, 1 if n else 0, 14, 15, c("stone_dark"))
+        if s_:
+            t.line(0, 14, 15, 14, c("stone_dark"))
+            t.line(0, 15, 15, 15, c("shadow"))
+
+    def cliff() -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("stone_dark"))
+        t.line(0, 0, 15, 0, c("stone"))
+        for x0, y0, x1, y1 in ((2, 1, 3, 9), (7, 2, 6, 12), (11, 1, 12, 8), (14, 4, 13, 13)):
+            t.line(x0, y0, x1, y1, c("shadow"))
+            t.line(x0 + 1, y0, x1 + 1, y1, c("stone"))
+        t.line(0, 13, 15, 13, c("shadow"))
+        t.line(0, 14, 15, 14, c("outline"))
+        t.line(0, 15, 15, 15, c("green_dark"))
+        return t
+
+    rock_tiles = [("floor", gravel(0)), ("floor_alt", gravel(1)), ("floor_shadow", _shadowed(gravel(0), "green_dark"))]
+    rock_tiles += _top_variants(rock_top, rock_deco)
+    rock_tiles += [("wall_face", cliff()), ("pit", water(0))]
+    _save_tileset("tiles_rock", rock_tiles)
+
+    # ------------------------------------------------------------------
+    # 길: 풀밭 위의 흙길 (탑과 탑을 잇는다)
+    # ------------------------------------------------------------------
+    rng = random.Random(2009)
+
+    def road(kind: int) -> Canvas:
+        t = Canvas(16, 16)
+        t.fill(c("tan"))
+        for _ in range(14):
+            t.set(rng.randrange(0, 16), rng.randrange(0, 16), c("brown"))
+        for _ in range(6):
+            t.set(rng.randrange(0, 16), rng.randrange(0, 16), c("skin"))
+        for x, y in ((0, 2), (0, 9), (15, 5), (15, 13), (3, 0), (11, 0), (6, 15), (13, 15)):
+            t.set(x, y, c("green"))
+        if kind == 1:
+            for x, y in ((6, 6), (7, 6), (6, 7), (10, 11)):
+                t.set(x, y, c("stone"))
+        return t
+
+    road_tiles = [(name, cv) for name, cv in forest if not name.startswith("floor") or name == "floor_stump"]
+    road_tiles += [("floor", road(0)), ("floor_alt", road(1))]
+    _save_tileset("tiles_path", road_tiles, {"wall_over_floor": True})
+
+    trail_tiles = [(name, cv) for name, cv in forest if not name.startswith("floor")]
+    trail_tiles += [("floor", trampled(0)), ("floor_alt", trampled(1)), ("floor_alt2", trampled(2)),
+                    ("floor_alt3", trampled(3)), ("floor_stump", stump())]
+    _save_tileset("tiles_trail", trail_tiles, {"wall_over_floor": True})
+
 
 # ---------------------------------------------------------------------------
 # 스토리판: 소품 16×16 — 웨이스톤, 획득물, NPC, 잔해

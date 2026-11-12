@@ -1,23 +1,272 @@
 {
   "_설명": "바깥 세상의 크기와 배치. 숫자를 바꾼 뒤 python3 tools/build_world.py 를 실행하면 세상이 다시 만들어진다.",
-  "_크기": "width·height = 세상 크기(칸). 키우면 구역 사이 들판이 넓어진다. 한 화면은 20×11칸.",
-  "width": 164,
-  "height": 44,
-  "_나무": "tree_density = 들판 1000칸마다 나무 무리 수. seed 를 바꾸면 나무 배치가 달라진다.",
-  "tree_density": 21,
-  "seed": 20261111,
-  "_구역": "at = 구역의 왼쪽 위가 놓일 자리 (세상 크기에 대한 비율, 0~1). 세상 크기를 바꾸면 같은 비율로 따라 움직인다.",
+  "_크기": "size = 정사각형 세상의 한 변(칸). 한 화면은 20×11칸. 위치는 전부 세상 크기에 대한 비율(0~1)이라 크기를 바꾸면 같이 벌어진다.",
+  "size": 512,
+  "seed": 20261112,
+  "_조각": "center = 그 조각의 가운데가 놓일 자리. 연구소는 세상 한가운데.",
   "pieces": {
-    "lab": { "at": [0.025, 0.09] },
-    "village": { "at": [0.293, 0.32] },
-    "forest": { "at": [0.573, 0.455] },
-    "golem_lair": { "at": [0.854, 0.18] }
+    "lab": {
+      "center": [
+        0.5,
+        0.5
+      ]
+    },
+    "village": {
+      "center": [
+        0.8,
+        0.66
+      ]
+    },
+    "golem_lair": {
+      "center": [
+        0.8,
+        0.2
+      ]
+    }
   },
-  "_획득물": "들판에 따로 놓는 획득물. at = 세상 크기에 대한 비율.",
+  "_쓰러진_나무_길": "광산촌에서 골렘 터까지 꺾이는 점들. blocks = 길을 막은 나무 자리(길 전체에 대한 비율), camps = 적이 있는 빈터 [비율, 적 글자들].",
+  "trail": {
+    "bends": [
+      [
+        0.78,
+        0.5
+      ],
+      [
+        0.7,
+        0.44
+      ],
+      [
+        0.74,
+        0.34
+      ],
+      [
+        0.66,
+        0.28
+      ]
+    ],
+    "blocks": [
+      0.22,
+      0.66
+    ],
+    "camps": [
+      [
+        0.42,
+        "CCS"
+      ],
+      [
+        0.8,
+        "BSC"
+      ]
+    ],
+    "tower": 0.93
+  },
+  "_지역": "지역 묶음 10개 (탑 하나가 묶음 하나를 지도에 연다). 묶음마다 areas 개의 작은 지역으로 다시 나뉜다. biome = 그 묶음의 주된 땅 모습: forest 숲 · forest_thin 성긴 숲 · plains 초원 · lake 호수 · rocky 바위 언덕. 이름은 임시.",
+  "regions": [
+    {
+      "id": "lab",
+      "name": "가운데 숲",
+      "at": [
+        0.5,
+        0.5
+      ],
+      "biome": "forest",
+      "start": true,
+      "areas": 5
+    },
+    {
+      "id": "village",
+      "name": "광산 골짜기",
+      "at": [
+        0.81,
+        0.68
+      ],
+      "biome": "forest",
+      "areas": 5
+    },
+    {
+      "id": "golem",
+      "name": "쓰러진 숲",
+      "at": [
+        0.74,
+        0.27
+      ],
+      "biome": "forest",
+      "areas": 7
+    },
+    {
+      "id": "highland",
+      "name": "잿빛 고원",
+      "at": [
+        0.2,
+        0.18
+      ],
+      "biome": "rocky",
+      "areas": 7
+    },
+    {
+      "id": "north_lake",
+      "name": "거울 호수",
+      "at": [
+        0.47,
+        0.14
+      ],
+      "biome": "lake",
+      "areas": 7
+    },
+    {
+      "id": "west_plains",
+      "name": "바람 초원",
+      "at": [
+        0.13,
+        0.52
+      ],
+      "biome": "plains",
+      "areas": 7
+    },
+    {
+      "id": "south_marsh",
+      "name": "낮은 물가",
+      "at": [
+        0.22,
+        0.84
+      ],
+      "biome": "lake",
+      "areas": 7
+    },
+    {
+      "id": "south_plains",
+      "name": "남쪽 들판",
+      "at": [
+        0.54,
+        0.87
+      ],
+      "biome": "plains",
+      "areas": 7
+    },
+    {
+      "id": "east_cliffs",
+      "name": "동쪽 벼랑",
+      "at": [
+        0.94,
+        0.42
+      ],
+      "biome": "rocky",
+      "areas": 7
+    },
+    {
+      "id": "thin_woods",
+      "name": "성긴 숲",
+      "at": [
+        0.3,
+        0.5
+      ],
+      "biome": "forest_thin",
+      "areas": 7
+    }
+  ],
   "field_pickups": [
-    { "item": "miner_cap", "at": [0.378, 0.205] },
-    { "item": "work_pants", "at": [0.268, 0.68] },
-    { "item": "sight_band", "at": [0.683, 0.84] },
-    { "item": "padded_pants", "at": [0.774, 0.27] }
-  ]
+    {
+      "item": "miner_cap"
+    },
+    {
+      "item": "work_pants"
+    },
+    {
+      "item": "sight_band"
+    },
+    {
+      "item": "padded_pants"
+    },
+    {
+      "item": "scrap"
+    },
+    {
+      "item": "heavy_gun"
+    },
+    {
+      "item": "mana_shard"
+    },
+    {
+      "item": "heal_vial"
+    },
+    {
+      "item": "ammo_cell"
+    },
+    {
+      "item": "scrap"
+    },
+    {
+      "item": "mana_shard"
+    },
+    {
+      "item": "heal_vial"
+    },
+    {
+      "item": "ammo_cell"
+    },
+    {
+      "item": "scrap"
+    },
+    {
+      "item": "mana_shard"
+    },
+    {
+      "item": "heal_vial"
+    },
+    {
+      "item": "ammo_cell"
+    },
+    {
+      "item": "scrap"
+    },
+    {
+      "item": "mana_shard"
+    },
+    {
+      "item": "heal_vial"
+    },
+    {
+      "item": "ammo_cell"
+    },
+    {
+      "item": "scrap"
+    },
+    {
+      "item": "mana_shard"
+    },
+    {
+      "item": "heal_vial"
+    },
+    {
+      "item": "ammo_cell"
+    },
+    {
+      "item": "scrap"
+    },
+    {
+      "item": "mana_shard"
+    },
+    {
+      "item": "heal_vial"
+    },
+    {
+      "item": "ammo_cell"
+    },
+    {
+      "item": "scrap"
+    },
+    {
+      "item": "mana_shard"
+    },
+    {
+      "item": "heal_vial"
+    },
+    {
+      "item": "ammo_cell"
+    },
+    {
+      "item": "scrap"
+    }
+  ],
+  "_볼거리": "작은 지역마다 볼거리가 하나씩 놓인다 (적 야영지·폐허·숨겨 둔 물건)."
 }

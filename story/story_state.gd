@@ -9,8 +9,9 @@ var area: String = AREA_PROLOGUE
 ## 스토리 진행도 (이름 → 값). 예: "prologue_done"
 var flags: Dictionary = {}
 ## 활성화한 웨이스톤 id
-# TODO(S4): 웨이스톤
 var waystones: Array = []
+## 지도에 꽂은 핀 (맵 칸 [x, y] 들)
+var pins: Array = []
 ## 인벤토리·장착·스킬 지정
 var inventory: Inventory = Inventory.new()
 
@@ -24,6 +25,7 @@ func reset() -> void:
 	area = AREA_PROLOGUE
 	flags = {}
 	waystones = []
+	pins = []
 	inventory = Inventory.new()
 	inventory.reset_to_start()
 
@@ -41,6 +43,7 @@ func to_dict() -> Dictionary:
 		"area": area,
 		"flags": flags.duplicate(true),
 		"waystones": waystones.duplicate(),
+		"pins": pins.duplicate(true),
 		"inventory": inventory.to_dict(),
 	}
 
@@ -50,6 +53,7 @@ func from_dict(d: Dictionary) -> void:
 	area = String(d.get("area", AREA_PROLOGUE))
 	flags = (d.get("flags", {}) as Dictionary).duplicate(true)
 	waystones = (d.get("waystones", []) as Array).duplicate()
+	pins = (d.get("pins", []) as Array).duplicate(true)
 	inventory.from_dict(d.get("inventory", {}))
 
 

@@ -6,5 +6,5 @@ extends Resource
 
 @export var id: String = ""
 @export var display_name: String = ""
-## 활성화하면 지도에서 밝혀지는 구역 id 들 (비우면 이 웨이스톤이 서 있는 구역만)
+## 활성화하면 지도에서 밝혀지는 지역 묶음 id 들 (비우면 이 웨이스톤이 서 있는 지역의 묶음)
 @export var reveals: Array[String] = []
