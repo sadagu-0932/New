@@ -17,8 +17,8 @@ lines = {
 "lab_wake": ["…제어 신호 끊김 · 원인 불명", "몸이 움직인다. 누구의 명령도 아니다", "벽이 무너져 있다. 바깥 공기가 들어온다"],
 "village_enter": ["언덕 아래, 불빛. 사람이 사는 곳이다"],
 "forest_enter": ["나무가 길처럼 쓰러져 있다. 저것이 지나간 자리"],
-"lair_enter": ["저것이 있다. 거의 멈춰 가고 있다"],
-"read:golem_record": ["골렘은 — 이식 실험 중 폭주한 실험체였다", "그리고 연구소는 여기 하나가 아니다", "길이 북쪽으로 이어진다"]
+"lair_enter": ["저것이 있다. 시험장에서 마주친 그것이다"],
+"read:golem_record": ["골렘은 — 이식 실험 중 폭주한 실험체였다", "그리고 연구소는 여기 하나가 아니다"]
 }
 line_ticks = 150
 combat_radius = 140.0
@@ -34,8 +34,16 @@ text_cannot_teleport = "전투 중·보스방에서는 순간이동할 수 없�
 text_no_waystone = "활성화한 웨이스톤이 없다"
 map_tile_px = 3
 map_zoom_levels = Array[float]([1.0, 2.0, 3.0, 4.0])
+map_reveal_radius = 64.0
+map_start_radius = 30.0
+map_reveal_fade = 14.0
 map_area_names_px = 2.0
 map_label_radius_px = 44.0
 map_max_pins = 8
 text_pins_full = "핀은 %d개까지 꽂을 수 있다"
 end_seconds = 6.0
+auto_reload_seconds = 30.0
+text_reloaded = "재장전"
+ending_document = "golem_record"
+ending_delay_seconds = 9.0
+ending_text = "TO BE CONTINUED"

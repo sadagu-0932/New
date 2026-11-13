@@ -379,6 +379,9 @@ func _draw_slots() -> void:
 		_canvas.draw_rect(rect, COLOR_LOCKED if locked else COLOR_SLOT)
 		_canvas.draw_rect(rect, COLOR_SELECTED if i == selected else COLOR_BORDER, false)
 		var icon := _icon_of(slot["entry"])
+		if icon == null and slot["kind"] == KIND_ARMOR:
+			# 빈 갑옷류 칸: 투구·갑옷·바지 윤곽을 흐리게 (글자 대신 그림)
+			icon = _slot_icon(String(slot["slot"]))
 		if icon != null:
 			_canvas.draw_texture(icon, rect.position + Vector2(2, 2))
 		var count := _count_of(slot)
@@ -404,6 +407,12 @@ func _icon_of(entry: Variant) -> Texture2D:
 	return null
 
 
+## 빈 갑옷류 칸의 윤곽 그림 (data/inventory.tres 의 armor_slot_icons)
+func _slot_icon(armor_slot: String) -> Texture2D:
+	var anim := StringName(String(DB.inventory.armor_slot_icons.get(armor_slot, "")))
+	return _item_icons.get_frame_texture(anim, 0) if _item_icons.has_animation(anim) else null
+
+
 ## 칸 왼쪽 위 글자: 보유 스킬이 어느 키에 지정돼 있는지, 빈 스킬 칸의 키 이름
 func _tag_of(slot: Dictionary) -> String:
 	var inv := Story.inventory
@@ -414,9 +423,6 @@ func _tag_of(slot: Dictionary) -> String:
 				return Settings.key_name(&"skill")
 			if inv.skill_ids[Inventory.SLOT_F] == id and inv.skill2_unlocked():
 				return Settings.key_name(&"skill2")
-		KIND_ARMOR:
-			# 빈 칸에는 칸 이름 첫 글자 (투·갑·바)
-			return String(DB.inventory.armor_slot_names[slot["slot"]]).left(1) if slot["entry"] == null else ""
 		KIND_SKILL_Q:
 			return Settings.key_name(&"skill") if slot["entry"] == null else ""
 		KIND_SKILL_F:

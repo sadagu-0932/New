@@ -27,6 +27,8 @@ extends Resource
 ## 몇 번 쳐야 베어지는지, 벨 때마다 얻는 아이템 id ("" = 없음)
 @export var break_hits: int = 0
 @export var break_drop_item: String = ""
+## 나무를 벨 때마다 채워지는 탄약 (발)
+@export var break_ammo: int = 0
 ## 지도 화면이 있는 지역인지 (프롤로그는 없다)
 @export var on_map: bool = true
 ## 이 맵 안의 지역들 (연구소·광산촌·쓰러진 숲 … 구불구불한 모양)

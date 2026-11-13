@@ -9,6 +9,8 @@ extends Resource
 @export var start_armor: Array[String] = []
 ## 갑옷류 칸 이름 (칸 id → 화면에 보일 이름). 이 순서로 장착 칸이 놓인다
 @export var armor_slot_names: Dictionary = {}
+## 빈 갑옷류 칸에 흐리게 놓을 그림 (칸 id → items 시트의 애니메이션 이름)
+@export var armor_slot_icons: Dictionary = {}
 ## 처음부터 보유한 스킬 id
 @export var start_skills: Array[String] = []
 ## 처음에 Q 에 지정된 스킬 ("" = game_config 의 default_skill_id)

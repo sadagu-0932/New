@@ -34,10 +34,21 @@ extends Resource
 @export var map_zoom_levels: Array[float] = []
 ## 지도에서 맵 한 칸이 이 크기(px) 이상일 때 작은 지역 이름이 나온다 (그보다 작게 보면 묶음 이름만)
 @export var map_area_names_px: float = 0.0
+## 지도를 밝히는 원: 탑 하나가 밝히는 반지름, 처음에 연구소 둘레를 밝히는 반지름, 가장자리가 흐려지는 폭 (칸)
+@export var map_reveal_radius: float = 0.0
+@export var map_start_radius: float = 0.0
+@export var map_reveal_fade: float = 0.0
 ## 지도에서 가리키는 곳(마우스)이 지명에 이 거리(px) 안으로 오면 그 지명이 뜬다
 @export var map_label_radius_px: float = 0.0
 ## 지도에 꽂을 수 있는 핀 수, 다 찼을 때의 글 (%d = 핀 수)
 @export var map_max_pins: int = 0
 @export var text_pins_full: String = ""
+## 바깥 세상에서 전투 중이 아니면 이 시간(초)마다 탄창을 가득 채운다 (0 = 끔)
+@export var auto_reload_seconds: float = 0.0
+@export var text_reloaded: String = ""
+## 이 자료를 읽으면 그 글이 다 흘러간 뒤(ending_delay_seconds) 끝 글을 보여주고 타이틀로
+@export var ending_document: String = ""
+@export var ending_delay_seconds: float = 0.0
+@export_multiline var ending_text: String = ""
 ## 이번 범위의 끝 글(AreaExitData.end_text)이 떠 있는 시간 (초). 그 뒤 타이틀로
 @export var end_seconds: float = 0.0

@@ -20,6 +20,8 @@ var _notice: Label
 var _notice_left: float = 0.0
 ## 자료를 주운 뒤 바로 펼쳐 보여줄 것 (다음 틱에 연다)
 var _pending_document: String = ""
+## 끝 글(TO BE CONTINUED)까지 남은 시간 (초, 0 = 기다리는 중 아님)
+var _ending_left: float = 0.0
 
 
 func _ready() -> void:
@@ -327,6 +329,9 @@ func _on_document_read(item_id: String) -> void:
 	if DB.story.lines.has(key) and not Story.has_flag(seen):
 		Story.set_flag(seen)
 		Events.story_triggered.emit(key)
+	# 골렘의 자료를 읽으면: 글이 흘러간 뒤 TO BE CONTINUED → 타이틀 (이번 작업 범위의 끝)
+	if item_id == DB.story.ending_document and _ending_left <= 0.0:
+		_ending_left = DB.story.ending_delay_seconds
 
 
 ## 프롤로그 끝 ("한나절 뒤" 암전 뒤) → 바깥 세상의 연구소에서 깨어남. 스킬 칸이 하나 더 열린다
@@ -341,11 +346,17 @@ func _on_prologue_finished() -> void:
 func _show_ending(text: String) -> void:
 	_free_run()
 	_notice.text = text
+	# 한 줄짜리 끝 글(TO BE CONTINUED)은 크게
+	_notice.add_theme_font_size_override(&"font_size", UiText.SIZE_LARGE if not text.contains("\n") else UiText.SIZE_SMALL)
 	_notice_layer.visible = true
 	_notice_left = DB.story.end_seconds
 
 
 func _process(delta: float) -> void:
+	if _ending_left > 0.0 and run != null and not get_tree().paused:
+		_ending_left -= delta
+		if _ending_left <= 0.0:
+			_show_ending(DB.story.ending_text)
 	if _notice_left > 0.0:
 		_notice_left -= delta
 		if _notice_left <= 0.0:
@@ -363,6 +374,7 @@ func go_title() -> void:
 	get_tree().paused = false
 	_notice_layer.visible = false
 	_notice_left = 0.0
+	_ending_left = 0.0
 	save_list.close()
 	title.can_continue = StorySave.has_any()
 	title.set_visible_screen(true)

@@ -32,14 +32,38 @@
       "fps": 1.5,
       "loop": true
     },
-    "rubble_a": {
+    "npc_miner": {
       "row": 5,
+      "frames": 2,
+      "fps": 1.5,
+      "loop": true
+    },
+    "npc_homeless": {
+      "row": 6,
+      "frames": 2,
+      "fps": 1.5,
+      "loop": true
+    },
+    "npc_child": {
+      "row": 7,
+      "frames": 2,
+      "fps": 2.5,
+      "loop": true
+    },
+    "npc_afraid": {
+      "row": 8,
+      "frames": 4,
+      "fps": 8.0,
+      "loop": true
+    },
+    "rubble_a": {
+      "row": 9,
       "frames": 1,
       "fps": 1.0,
       "loop": false
     },
     "rubble_b": {
-      "row": 6,
+      "row": 10,
       "frames": 1,
       "fps": 1.0,
       "loop": false

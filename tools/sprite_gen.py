@@ -2563,6 +2563,83 @@ NPC = [
     "....obo.obo.....",
     "....ooo.ooo.....",
 ]
+# 늙은 광부: 등불 달린 안전모, 흰 수염, 작업복, 어깨의 곡괭이. 조금 구부정하다
+NPC_MINER = [
+    "................",
+    ".....oooooo.....",
+    "....oYYwYYYo....",
+    "...oYYYYYYYYo..k",
+    "....offeffeo..kk",
+    "....owwwwwwo.k..",
+    ".....owwwwo.k...",
+    "....occcccok....",
+    "...occccccko....",
+    "...ofcccccfo....",
+    "...ofcbbbcfo....",
+    "....occccco.....",
+    "....opppppo.....",
+    "....opo.opo.....",
+    "....obo.obo.....",
+    "....ooo.ooo.....",
+]
+# 집 잃은 주민: 기운 누더기 옷, 등에 짐 보따리, 헝클어진 머리
+NPC_HOMELESS = [
+    "................",
+    "....o.oooo......",
+    "...ohhhhhhoo....",
+    "....ohffffho....",
+    "....offeffeo....",
+    "....offffffo....",
+    "...SSoffffo.....",
+    "..SSSSccccco....",
+    "..SSSScccccco...",
+    "..oSSocdccfco...",
+    "...oofcccdfco...",
+    "....occcdco.....",
+    "....opppppo.....",
+    "....opo.opo.....",
+    "....obo.obo.....",
+    "....ooo.ooo.....",
+]
+# 아이: 작고 머리가 크다, 머리를 묶었다, 손을 흔든다
+NPC_CHILD = [
+    "................",
+    "................",
+    "................",
+    "......oooo..r...",
+    ".....ohhhhoorr..",
+    ".....offffo.r...",
+    ".....ofefeo.....",
+    ".....offffo..o..",
+    "......offo..of..",
+    ".....occcco.o...",
+    "....ofccccfo....",
+    ".....occcco.....",
+    ".....oppppo.....",
+    ".....op.po......",
+    ".....ob.bo......",
+    ".....oo.oo......",
+]
+# 겁먹은 주민: 움츠러든 자세, 두 손을 가슴 앞에 모았다, 땀방울
+NPC_AFRAID = [
+    "................",
+    "................",
+    ".....oooooo..s..",
+    "....ohhhhhho.s..",
+    "....ohffffho....",
+    "....ofoffofo....",
+    "....offffffo....",
+    ".....offffo.....",
+    "...occffffcco...",
+    "...occffffcco...",
+    "....occcccco....",
+    "....occcccco....",
+    "....opppppo.....",
+    "....opoopo......",
+    "...obo.obo......",
+    "...ooo.ooo......",
+]
+
 RUBBLE_A = [
     "................",
     "................",
@@ -2646,6 +2723,23 @@ def build_story_props() -> None:
                                       "c": cloth, "p": pants, "b": "brown_dark"})
         return [base, base.shift_rows(1, 11, 1)]
 
+    def villager(rows: list[str], cmap: dict, idle: str = "bob") -> list[Canvas]:
+        base_map = {".": None, "o": "outline", "f": "skin", "e": "outline", "b": "brown_dark"}
+        base_map.update(cmap)
+        base = Canvas.from_rows(rows, base_map)
+        if idle == "shake":   # 겁먹은 주민: 좌우로 떤다
+            return [base, base.moved(1, 0), base, base.moved(-1, 0)]
+        if idle == "wave":    # 아이: 손을 흔든다
+            other = Canvas.from_rows([r.replace("o..", "..o", 1) if i in (7, 8) else r for i, r in enumerate(rows)], base_map)
+            return [base, other]
+        return [base, base.shift_rows(1, 11, 1)]
+
+    npc_miner = villager(NPC_MINER, {"Y": "yellow", "w": "white", "c": "brown", "p": "navy", "k": "stone_light"})
+    npc_miner[1].set(7, 2, c("orange"))     # 등불이 깜빡인다
+    npc_homeless = villager(NPC_HOMELESS, {"h": "brown_dark", "c": "stone", "d": "stone_dark", "p": "brown", "S": "tan"})
+    npc_child = villager(NPC_CHILD, {"h": "orange", "c": "red", "p": "navy", "r": "red"}, "wave")
+    npc_afraid = villager(NPC_AFRAID, {"h": "pale", "c": "green", "p": "green_dark", "s": "sky"}, "shake")
+
     rub_a = Canvas.from_rows(RUBBLE_A, {".": None, "o": "outline", "S": "stone", "s": "stone_dark", "b": "brown"})
     rub_b = Canvas.from_rows([row[::-1] for row in RUBBLE_A], {".": None, "o": "outline", "S": "stone_light", "s": "stone", "b": "brown_dark"})
 
@@ -2679,6 +2773,10 @@ def build_story_props() -> None:
         ("npc_a", npc("brown_dark", "blue", "navy"), 1.5, True),
         ("npc_b", npc("pale", "green", "green_dark"), 1.5, True),
         ("npc_c", npc("orange", "tan", "brown"), 1.5, True),
+        ("npc_miner", npc_miner, 1.5, True),
+        ("npc_homeless", npc_homeless, 1.5, True),
+        ("npc_child", npc_child, 2.5, True),
+        ("npc_afraid", npc_afraid, 8.0, True),
         ("rubble_a", [rub_a], 1.0, False),
         ("rubble_b", [rub_b], 1.0, False),
     ])
@@ -2812,7 +2910,19 @@ def build_item_icons() -> None:
         wood.set(11, y0 + 1, c("skin"))
         wood.set(5, y0 + 2, c("brown_dark"))
 
+    def slot_shadow(src: Canvas) -> Canvas:
+        """빈 장착 칸에 놓을 흐린 윤곽: 그림의 칠한 곳을 한 가지 어두운 색으로."""
+        cv = Canvas(16, 16)
+        for y in range(16):
+            for x in range(16):
+                if src.px[y][x] is not None and src.px[y][x] != c("shadow") and not (y in (0, 15) or x in (0, 15) or y == 1):
+                    cv.set(x, y, c("stone_dark"))
+        return cv
+
     icons = [
+        ("slot_helmet", slot_shadow(helmet("yellow", "orange", None))),
+        ("slot_armor", slot_shadow(armor("stone", "stone", None))),
+        ("slot_pants", slot_shadow(pants("blue", "navy"))),
         ("wood", wood),
         ("helmet_cap", helmet("yellow", "orange", "white")),
         ("helmet_band", band),

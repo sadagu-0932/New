@@ -270,6 +270,12 @@ func test_panel() -> void:
 		if slot["kind"] == InventoryPanel.KIND_ARMOR:
 			armor_slots.append(slot["slot"])
 	check(armor_slots == ["helmet", "armor", "pants"], "갑옷류 장착 칸 세 개: 투구·갑옷·바지 %s" % [armor_slots])
+	var pictures := true
+	for slot in panel.slots:
+		if slot["kind"] == InventoryPanel.KIND_ARMOR and slot["entry"] == null:
+			if panel._slot_icon(slot["slot"]) == null or not panel._tag_of(slot).is_empty():
+				pictures = false
+	check(pictures, "빈 갑옷류 칸은 글씨가 아니라 그림(윤곽)으로 나타냄")
 	check(not panel.ids(InventoryPanel.KIND_BAG).has("lab_gun") and panel.ids(InventoryPanel.KIND_BAG).has("heavy_gun"), "장착한 것은 장착 칸에, 나머지는 소지품 칸에")
 	check(panel.ids(InventoryPanel.KIND_SKILL).size() == 5 and panel.ids(InventoryPanel.KIND_SKILL_Q) == (["shockwave"] as Array[String]), "보유 스킬 5칸 + Q 칸에 지정된 스킬")
 	# 칸을 고르면(마우스를 올리면) 이름·능력치 글상자가 뜬다

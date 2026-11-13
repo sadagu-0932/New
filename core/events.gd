@@ -65,6 +65,8 @@ signal story_triggered(story_id: String)
 ## 보스가 깨어남
 signal boss_started(boss: Node2D)
 signal boss_hp_changed(current: int, maximum: int)
+## 보스가 다음 페이즈로 넘어감 (페이즈 번호)
+signal boss_phase_changed(phase: int)
 ## 보스 그로기 시작
 signal boss_groggy()
 ## 보스 1페이즈 격파 (타이머 정지)

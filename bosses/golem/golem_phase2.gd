@@ -1,9 +1,9 @@
 class_name GolemPhase2
 extends GolemPhase
-## 2페이즈: 동력이 바닥난 골렘. 탄막이 성기고 중간중간 길게 멈칫한다 → 짧은 전투.
+## 2페이즈 (스토리판, 다시 만난 골렘). 1페이즈를 깬 뒤 다시 일어나 이어진다.
 ## 패턴은 정해진 순서로 돈다 (조준탄 → 조준탄 → 성긴 원형). 랜덤을 쓰지 않는다.
 ## 몸통은 여전히 일반 탄에 거의 안 깎이고, 반사탄으로 코어를 부수면 붕괴한다 (Golem._defeat).
-## 수치는 GolemData 의 p2_* (data/bosses/golem.tres, 지역용은 data/enemies/golem_worn.tres)
+## 수치는 GolemData 의 p2_* (data/enemies/golem_return.tres)
 
 enum Pattern { AIMED, RING }
 

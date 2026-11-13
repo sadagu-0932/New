@@ -6,94 +6,86 @@
 [ext_resource type="Script" path="res://story/npc_data.gd" id="npc"]
 [ext_resource type="Script" path="res://story/zone_data.gd" id="zone"]
 
-[sub_resource type="Resource" id="exit_0"]
-script = ExtResource("exit")
-target_area = ""
-target_spawn = 0
-required_flag = "read:golem_record"
-locked_text = "아직 떠날 수 없다. 저것을 그냥 두고는."
-end_text = "3지역으로 가는 길\n\n이번 이야기는 여기까지"
-
-[sub_resource type="Resource" id="way_10"]
+[sub_resource type="Resource" id="way_8"]
 script = ExtResource("way")
 id = "tower_north_lake"
 display_name = "거울 호수 탑"
 reveals = Array[String]([])
 
-[sub_resource type="Resource" id="way_14"]
+[sub_resource type="Resource" id="way_11"]
 script = ExtResource("way")
 id = "tower_highland"
 display_name = "잿빛 고원 탑"
 reveals = Array[String]([])
 
-[sub_resource type="Resource" id="way_16"]
-script = ExtResource("way")
-id = "boss_gate"
-display_name = "골렘 터 앞 탑"
-reveals = Array[String]([])
-
-[sub_resource type="Resource" id="way_26"]
+[sub_resource type="Resource" id="way_24"]
 script = ExtResource("way")
 id = "tower_east_cliffs"
 display_name = "동쪽 벼랑 탑"
 reveals = Array[String]([])
 
-[sub_resource type="Resource" id="way_32"]
+[sub_resource type="Resource" id="way_26"]
+script = ExtResource("way")
+id = "boss_gate"
+display_name = "골렘 터 앞 탑"
+reveals = Array[String]([])
+
+[sub_resource type="Resource" id="way_30"]
 script = ExtResource("way")
 id = "tower_thin_woods"
 display_name = "성긴 숲 탑"
 reveals = Array[String]([])
 
-[sub_resource type="Resource" id="way_33"]
+[sub_resource type="Resource" id="way_32"]
 script = ExtResource("way")
 id = "lab_exit"
 display_name = "연구소 탑"
 reveals = Array[String]([])
 
-[sub_resource type="Resource" id="way_36"]
+[sub_resource type="Resource" id="way_35"]
 script = ExtResource("way")
 id = "tower_west_plains"
 display_name = "바람 초원 탑"
 reveals = Array[String]([])
 
-[sub_resource type="Resource" id="npc_42"]
+[sub_resource type="Resource" id="npc_38"]
 script = ExtResource("npc")
 id = "miner"
 display_name = "늙은 광부"
-sprite = &"npc_a"
-lines = Array[String](["…거기 서라.", "그 옷. 숲 한가운데 연구소 것이지.", "뭘 하는 곳인지는 모른다. 알고 싶지도 않고.", "볼일 없으면 마을에 오래 머물지 마라."])
+sprite = &"npc_miner"
+lines = Array[String](["…거기 서라.", "그 옷. 숲 너머 연구소 것이지.", "뭘 하는 곳인지는 모른다. 알고 싶지도 않고.", "볼일 없으면 마을에 오래 머물지 마라."])
 alt_flag = "golem_destroyed"
 alt_lines = Array[String](["숲이 조용해졌더군.", "…네가 한 거냐. 고맙다는 말은 해 두지."])
 
-[sub_resource type="Resource" id="npc_43"]
+[sub_resource type="Resource" id="npc_40"]
 script = ExtResource("npc")
 id = "homeless"
 display_name = "집 잃은 주민"
-sprite = &"npc_c"
+sprite = &"npc_homeless"
 lines = Array[String](["지붕째 뜯겨 나갔어.", "돌덩이 같은 게 걸어가더라고. 북쪽 숲으로.", "나무를 죄다 쓰러뜨리면서 갔어. 길이 났을 거야."])
 alt_flag = ""
 alt_lines = Array[String]([])
 
-[sub_resource type="Resource" id="way_44"]
+[sub_resource type="Resource" id="way_41"]
 script = ExtResource("way")
 id = "village"
 display_name = "광산촌 탑"
 reveals = Array[String]([])
 
-[sub_resource type="Resource" id="npc_46"]
+[sub_resource type="Resource" id="npc_43"]
 script = ExtResource("npc")
 id = "child"
 display_name = "아이"
-sprite = &"npc_b"
+sprite = &"npc_child"
 lines = Array[String](["우와, 총이다! 진짜야?", "철길 따라왔어? 저쪽 큰 건물에서?", "거기 뭐가 있어? 어른들은 아무도 안 알려 줘."])
 alt_flag = "golem_destroyed"
 alt_lines = Array[String](["큰 돌덩이 이제 안 와? 진짜?", "…고마워. 근데 조금 무서워."])
 
-[sub_resource type="Resource" id="npc_48"]
+[sub_resource type="Resource" id="npc_45"]
 script = ExtResource("npc")
 id = "afraid"
 display_name = "겁먹은 주민"
-sprite = &"npc_a"
+sprite = &"npc_afraid"
 lines = Array[String](["가, 가까이 오지 마…!", "어젯밤 그 커다란 것도 철길 쪽에서 왔어.", "집이 세 채나… 그건 북쪽 숲으로 갔어. 따라가지 마."])
 alt_flag = ""
 alt_lines = Array[String]([])
@@ -104,7 +96,7 @@ id = "tower_south_marsh"
 display_name = "낮은 물가 탑"
 reveals = Array[String]([])
 
-[sub_resource type="Resource" id="way_56"]
+[sub_resource type="Resource" id="way_55"]
 script = ExtResource("way")
 id = "tower_south_plains"
 display_name = "남쪽 들판 탑"
@@ -119,7 +111,12 @@ group = "lab"
 group_name = "가운데 숲"
 revealed_at_start = true
 enter_story_id = "lab_wake"
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_lab_1"]
 script = ExtResource("zone")
@@ -130,7 +127,12 @@ group = "lab"
 group_name = "가운데 숲"
 revealed_at_start = false
 enter_story_id = ""
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_lab_2"]
 script = ExtResource("zone")
@@ -141,7 +143,12 @@ group = "lab"
 group_name = "가운데 숲"
 revealed_at_start = false
 enter_story_id = ""
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_lab_3"]
 script = ExtResource("zone")
@@ -152,18 +159,28 @@ group = "lab"
 group_name = "가운데 숲"
 revealed_at_start = false
 enter_story_id = ""
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_lab_4"]
 script = ExtResource("zone")
 id = "lab_4"
-display_name = "속삭이는 수풀"
+display_name = "볕 드는 잡목림"
 key = "4"
 group = "lab"
 group_name = "가운데 숲"
 revealed_at_start = false
 enter_story_id = ""
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_village"]
 script = ExtResource("zone")
@@ -174,51 +191,76 @@ group = "village"
 group_name = "광산 골짜기"
 revealed_at_start = false
 enter_story_id = "village_enter"
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_village_1"]
 script = ExtResource("zone")
 id = "village_1"
-display_name = "젖은 숲길"
+display_name = "고요한 숲길"
 key = "6"
 group = "village"
 group_name = "광산 골짜기"
 revealed_at_start = false
 enter_story_id = ""
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_village_2"]
 script = ExtResource("zone")
 id = "village_2"
-display_name = "고요한 숲길"
+display_name = "고요한 숲터"
 key = "7"
 group = "village"
 group_name = "광산 골짜기"
 revealed_at_start = false
 enter_story_id = ""
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_village_3"]
 script = ExtResource("zone")
 id = "village_3"
-display_name = "고요한 숲터"
+display_name = "그늘 수풀"
 key = "8"
 group = "village"
 group_name = "광산 골짜기"
 revealed_at_start = false
 enter_story_id = ""
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_village_4"]
 script = ExtResource("zone")
 id = "village_4"
-display_name = "그늘 수풀"
+display_name = "그늘 숲길"
 key = "9"
 group = "village"
 group_name = "광산 골짜기"
 revealed_at_start = false
 enter_story_id = ""
-enemy_overrides = {}
+enemy_overrides = {
+"C": "charger_forest",
+"S": "shooter_forest",
+"B": "spreader_forest",
+"Z": "golem_return"
+}
 
 [sub_resource type="Resource" id="zone_golem_lair"]
 script = ExtResource("zone")
@@ -233,7 +275,7 @@ enemy_overrides = {
 "C": "charger_forest",
 "S": "shooter_forest",
 "B": "spreader_forest",
-"Z": "golem_worn"
+"Z": "golem_return"
 }
 
 [sub_resource type="Resource" id="zone_trail"]
@@ -249,13 +291,13 @@ enemy_overrides = {
 "C": "charger_forest",
 "S": "shooter_forest",
 "B": "spreader_forest",
-"Z": "golem_worn"
+"Z": "golem_return"
 }
 
 [sub_resource type="Resource" id="zone_golem_2"]
 script = ExtResource("zone")
 id = "golem_2"
-display_name = "이끼 수풀"
+display_name = "너른 들판"
 key = "c"
 group = "golem"
 group_name = "쓰러진 숲"
@@ -265,13 +307,13 @@ enemy_overrides = {
 "C": "charger_forest",
 "S": "shooter_forest",
 "B": "spreader_forest",
-"Z": "golem_worn"
+"Z": "golem_return"
 }
 
 [sub_resource type="Resource" id="zone_golem_3"]
 script = ExtResource("zone")
 id = "golem_3"
-display_name = "자작 숲터"
+display_name = "깊은 숲터"
 key = "d"
 group = "golem"
 group_name = "쓰러진 숲"
@@ -281,13 +323,13 @@ enemy_overrides = {
 "C": "charger_forest",
 "S": "shooter_forest",
 "B": "spreader_forest",
-"Z": "golem_worn"
+"Z": "golem_return"
 }
 
 [sub_resource type="Resource" id="zone_golem_4"]
 script = ExtResource("zone")
 id = "golem_4"
-display_name = "젖은 숲"
+display_name = "늙은 나무골"
 key = "e"
 group = "golem"
 group_name = "쓰러진 숲"
@@ -297,13 +339,13 @@ enemy_overrides = {
 "C": "charger_forest",
 "S": "shooter_forest",
 "B": "spreader_forest",
-"Z": "golem_worn"
+"Z": "golem_return"
 }
 
 [sub_resource type="Resource" id="zone_golem_5"]
 script = ExtResource("zone")
 id = "golem_5"
-display_name = "이슬 들판"
+display_name = "젖은 숲터"
 key = "f"
 group = "golem"
 group_name = "쓰러진 숲"
@@ -313,13 +355,13 @@ enemy_overrides = {
 "C": "charger_forest",
 "S": "shooter_forest",
 "B": "spreader_forest",
-"Z": "golem_worn"
+"Z": "golem_return"
 }
 
 [sub_resource type="Resource" id="zone_golem_6"]
 script = ExtResource("zone")
 id = "golem_6"
-display_name = "이끼 숲"
+display_name = "젖은 숲"
 key = "g"
 group = "golem"
 group_name = "쓰러진 숲"
@@ -329,13 +371,13 @@ enemy_overrides = {
 "C": "charger_forest",
 "S": "shooter_forest",
 "B": "spreader_forest",
-"Z": "golem_worn"
+"Z": "golem_return"
 }
 
 [sub_resource type="Resource" id="zone_highland_0"]
 script = ExtResource("zone")
 id = "highland_0"
-display_name = "천둥 언덕"
+display_name = "검은 벼랑"
 key = "h"
 group = "highland"
 group_name = "잿빛 고원"
@@ -346,7 +388,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_highland_1"]
 script = ExtResource("zone")
 id = "highland_1"
-display_name = "성긴 숲터"
+display_name = "자작 잡목림"
 key = "i"
 group = "highland"
 group_name = "잿빛 고원"
@@ -357,7 +399,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_highland_2"]
 script = ExtResource("zone")
 id = "highland_2"
-display_name = "붉은 고원"
+display_name = "부서진 돌밭"
 key = "j"
 group = "highland"
 group_name = "잿빛 고원"
@@ -368,7 +410,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_highland_3"]
 script = ExtResource("zone")
 id = "highland_3"
-display_name = "바람 벼랑"
+display_name = "메아리 바위골"
 key = "k"
 group = "highland"
 group_name = "잿빛 고원"
@@ -379,7 +421,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_highland_4"]
 script = ExtResource("zone")
 id = "highland_4"
-display_name = "검은 벼랑"
+display_name = "바람 고원"
 key = "l"
 group = "highland"
 group_name = "잿빛 고원"
@@ -390,7 +432,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_highland_5"]
 script = ExtResource("zone")
 id = "highland_5"
-display_name = "늑대 벼랑"
+display_name = "매의 돌밭"
 key = "m"
 group = "highland"
 group_name = "잿빛 고원"
@@ -401,7 +443,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_highland_6"]
 script = ExtResource("zone")
 id = "highland_6"
-display_name = "메아리 바위골"
+display_name = "새소리 잡목림"
 key = "n"
 group = "highland"
 group_name = "잿빛 고원"
@@ -412,7 +454,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_north_lake_0"]
 script = ExtResource("zone")
 id = "north_lake_0"
-display_name = "누런 둔덕"
+display_name = "긴 풀 풀밭"
 key = "o"
 group = "north_lake"
 group_name = "거울 호수"
@@ -423,7 +465,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_north_lake_1"]
 script = ExtResource("zone")
 id = "north_lake_1"
-display_name = "어린 나무밭"
+display_name = "잔물결 늪"
 key = "p"
 group = "north_lake"
 group_name = "거울 호수"
@@ -434,7 +476,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_north_lake_2"]
 script = ExtResource("zone")
 id = "north_lake_2"
-display_name = "갈대 여울"
+display_name = "푸른 물가"
 key = "q"
 group = "north_lake"
 group_name = "거울 호수"
@@ -445,7 +487,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_north_lake_3"]
 script = ExtResource("zone")
 id = "north_lake_3"
-display_name = "메마른 둔덕"
+display_name = "새벽 풀밭"
 key = "r"
 group = "north_lake"
 group_name = "거울 호수"
@@ -456,7 +498,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_north_lake_4"]
 script = ExtResource("zone")
 id = "north_lake_4"
-display_name = "긴 풀 풀밭"
+display_name = "거울 여울"
 key = "s"
 group = "north_lake"
 group_name = "거울 호수"
@@ -467,7 +509,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_north_lake_5"]
 script = ExtResource("zone")
 id = "north_lake_5"
-display_name = "바람 잡목림"
+display_name = "개구리 호수"
 key = "t"
 group = "north_lake"
 group_name = "거울 호수"
@@ -478,7 +520,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_north_lake_6"]
 script = ExtResource("zone")
 id = "north_lake_6"
-display_name = "잔물결 늪"
+display_name = "달빛 늪"
 key = "u"
 group = "north_lake"
 group_name = "거울 호수"
@@ -489,7 +531,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_west_plains_0"]
 script = ExtResource("zone")
 id = "west_plains_0"
-display_name = "양치기 둔덕"
+display_name = "낮은 물가"
 key = "v"
 group = "west_plains"
 group_name = "바람 초원"
@@ -500,7 +542,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_west_plains_1"]
 script = ExtResource("zone")
 id = "west_plains_1"
-display_name = "낮은 물가"
+display_name = "바람 잡목림"
 key = "w"
 group = "west_plains"
 group_name = "바람 초원"
@@ -511,7 +553,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_west_plains_2"]
 script = ExtResource("zone")
 id = "west_plains_2"
-display_name = "바람 나무밭"
+display_name = "저녁 초원"
 key = "x"
 group = "west_plains"
 group_name = "바람 초원"
@@ -522,7 +564,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_west_plains_3"]
 script = ExtResource("zone")
 id = "west_plains_3"
-display_name = "노란 덤불"
+display_name = "개구리 늪"
 key = "y"
 group = "west_plains"
 group_name = "바람 초원"
@@ -544,7 +586,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_west_plains_5"]
 script = ExtResource("zone")
 id = "west_plains_5"
-display_name = "거울 늪"
+display_name = "양치기 초원"
 key = "A"
 group = "west_plains"
 group_name = "바람 초원"
@@ -555,7 +597,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_west_plains_6"]
 script = ExtResource("zone")
 id = "west_plains_6"
-display_name = "고요한 여울"
+display_name = "낮은 못"
 key = "B"
 group = "west_plains"
 group_name = "바람 초원"
@@ -566,7 +608,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_marsh_0"]
 script = ExtResource("zone")
 id = "south_marsh_0"
-display_name = "달빛 호수"
+display_name = "성긴 숲"
 key = "C"
 group = "south_marsh"
 group_name = "낮은 물가"
@@ -577,7 +619,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_marsh_1"]
 script = ExtResource("zone")
 id = "south_marsh_1"
-display_name = "새벽 벌"
+display_name = "볕 드는 숲터"
 key = "D"
 group = "south_marsh"
 group_name = "낮은 물가"
@@ -588,7 +630,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_marsh_2"]
 script = ExtResource("zone")
 id = "south_marsh_2"
-display_name = "거울 못"
+display_name = "달빛 호수"
 key = "E"
 group = "south_marsh"
 group_name = "낮은 물가"
@@ -599,7 +641,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_marsh_3"]
 script = ExtResource("zone")
 id = "south_marsh_3"
-display_name = "고요한 못"
+display_name = "새벽 벌"
 key = "F"
 group = "south_marsh"
 group_name = "낮은 물가"
@@ -610,7 +652,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_marsh_4"]
 script = ExtResource("zone")
 id = "south_marsh_4"
-display_name = "꽃 벌"
+display_name = "갈대 못"
 key = "G"
 group = "south_marsh"
 group_name = "낮은 물가"
@@ -621,7 +663,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_marsh_5"]
 script = ExtResource("zone")
 id = "south_marsh_5"
-display_name = "안개 물가"
+display_name = "꽃 벌"
 key = "H"
 group = "south_marsh"
 group_name = "낮은 물가"
@@ -632,7 +674,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_marsh_6"]
 script = ExtResource("zone")
 id = "south_marsh_6"
-display_name = "잔물결 호수"
+display_name = "달빛 못"
 key = "I"
 group = "south_marsh"
 group_name = "낮은 물가"
@@ -643,7 +685,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_plains_0"]
 script = ExtResource("zone")
 id = "south_plains_0"
-display_name = "깊은 호수"
+display_name = "긴 풀 벌"
 key = "J"
 group = "south_plains"
 group_name = "남쪽 들판"
@@ -654,7 +696,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_plains_1"]
 script = ExtResource("zone")
 id = "south_plains_1"
-display_name = "성긴 나무밭"
+display_name = "메마른 벌"
 key = "K"
 group = "south_plains"
 group_name = "남쪽 들판"
@@ -665,7 +707,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_plains_2"]
 script = ExtResource("zone")
 id = "south_plains_2"
-display_name = "긴 풀 벌"
+display_name = "너른 초원"
 key = "L"
 group = "south_plains"
 group_name = "남쪽 들판"
@@ -676,7 +718,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_plains_3"]
 script = ExtResource("zone")
 id = "south_plains_3"
-display_name = "새벽 둔덕"
+display_name = "깊은 호수"
 key = "M"
 group = "south_plains"
 group_name = "남쪽 들판"
@@ -687,7 +729,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_plains_4"]
 script = ExtResource("zone")
 id = "south_plains_4"
-display_name = "누런 초원"
+display_name = "바람 숲"
 key = "N"
 group = "south_plains"
 group_name = "남쪽 들판"
@@ -698,7 +740,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_plains_5"]
 script = ExtResource("zone")
 id = "south_plains_5"
-display_name = "깊은 여울"
+display_name = "바람 둔덕"
 key = "O"
 group = "south_plains"
 group_name = "남쪽 들판"
@@ -709,7 +751,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_south_plains_6"]
 script = ExtResource("zone")
 id = "south_plains_6"
-display_name = "갈대 물가"
+display_name = "마른 덤불"
 key = "P"
 group = "south_plains"
 group_name = "남쪽 들판"
@@ -720,7 +762,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_east_cliffs_0"]
 script = ExtResource("zone")
 id = "east_cliffs_0"
-display_name = "매의 벼랑"
+display_name = "부서진 고원"
 key = "Q"
 group = "east_cliffs"
 group_name = "동쪽 벼랑"
@@ -731,7 +773,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_east_cliffs_1"]
 script = ExtResource("zone")
 id = "east_cliffs_1"
-display_name = "새소리 숲터"
+display_name = "어린 숲"
 key = "R"
 group = "east_cliffs"
 group_name = "동쪽 벼랑"
@@ -742,7 +784,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_east_cliffs_2"]
 script = ExtResource("zone")
 id = "east_cliffs_2"
-display_name = "바람 바위골"
+display_name = "메아리 언덕"
 key = "S"
 group = "east_cliffs"
 group_name = "동쪽 벼랑"
@@ -753,7 +795,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_east_cliffs_3"]
 script = ExtResource("zone")
 id = "east_cliffs_3"
-display_name = "성긴 숲"
+display_name = "자작 덤불"
 key = "T"
 group = "east_cliffs"
 group_name = "동쪽 벼랑"
@@ -764,7 +806,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_east_cliffs_4"]
 script = ExtResource("zone")
 id = "east_cliffs_4"
-display_name = "새벽 초원"
+display_name = "매의 벼랑"
 key = "U"
 group = "east_cliffs"
 group_name = "동쪽 벼랑"
@@ -775,7 +817,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_east_cliffs_5"]
 script = ExtResource("zone")
 id = "east_cliffs_5"
-display_name = "어린 덤불"
+display_name = "마른 나무밭"
 key = "V"
 group = "east_cliffs"
 group_name = "동쪽 벼랑"
@@ -786,7 +828,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_east_cliffs_6"]
 script = ExtResource("zone")
 id = "east_cliffs_6"
-display_name = "긴 풀 둔덕"
+display_name = "노란 덤불"
 key = "W"
 group = "east_cliffs"
 group_name = "동쪽 벼랑"
@@ -797,7 +839,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_thin_woods_0"]
 script = ExtResource("zone")
 id = "thin_woods_0"
-display_name = "어린 숲터"
+display_name = "너른 풀밭"
 key = "X"
 group = "thin_woods"
 group_name = "성긴 숲"
@@ -808,7 +850,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_thin_woods_1"]
 script = ExtResource("zone")
 id = "thin_woods_1"
-display_name = "새소리 나무밭"
+display_name = "메마른 들판"
 key = "Y"
 group = "thin_woods"
 group_name = "성긴 숲"
@@ -819,7 +861,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_thin_woods_2"]
 script = ExtResource("zone")
 id = "thin_woods_2"
-display_name = "이슬 초원"
+display_name = "양치기 풀밭"
 key = "Z"
 group = "thin_woods"
 group_name = "성긴 숲"
@@ -830,7 +872,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_thin_woods_3"]
 script = ExtResource("zone")
 id = "thin_woods_3"
-display_name = "자작 숲"
+display_name = "거울 못"
 key = "!"
 group = "thin_woods"
 group_name = "성긴 숲"
@@ -841,7 +883,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_thin_woods_4"]
 script = ExtResource("zone")
 id = "thin_woods_4"
-display_name = "낮은 호수"
+display_name = "잔물결 못"
 key = "@"
 group = "thin_woods"
 group_name = "성긴 숲"
@@ -852,7 +894,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_thin_woods_5"]
 script = ExtResource("zone")
 id = "thin_woods_5"
-display_name = "달빛 여울"
+display_name = "새소리 숲터"
 key = "$"
 group = "thin_woods"
 group_name = "성긴 숲"
@@ -863,7 +905,7 @@ enemy_overrides = {}
 [sub_resource type="Resource" id="zone_thin_woods_6"]
 script = ExtResource("zone")
 id = "thin_woods_6"
-display_name = "메마른 풀밭"
+display_name = "이슬 풀밭"
 key = "%"
 group = "thin_woods"
 group_name = "성긴 숲"
@@ -912,39 +954,40 @@ ground_wall_colors = {
 breakable_grounds = "grtpw"
 on_map = true
 zones = Array[ExtResource("zone")]([SubResource("zone_lab"), SubResource("zone_lab_1"), SubResource("zone_lab_2"), SubResource("zone_lab_3"), SubResource("zone_lab_4"), SubResource("zone_village"), SubResource("zone_village_1"), SubResource("zone_village_2"), SubResource("zone_village_3"), SubResource("zone_village_4"), SubResource("zone_golem_lair"), SubResource("zone_trail"), SubResource("zone_golem_2"), SubResource("zone_golem_3"), SubResource("zone_golem_4"), SubResource("zone_golem_5"), SubResource("zone_golem_6"), SubResource("zone_highland_0"), SubResource("zone_highland_1"), SubResource("zone_highland_2"), SubResource("zone_highland_3"), SubResource("zone_highland_4"), SubResource("zone_highland_5"), SubResource("zone_highland_6"), SubResource("zone_north_lake_0"), SubResource("zone_north_lake_1"), SubResource("zone_north_lake_2"), SubResource("zone_north_lake_3"), SubResource("zone_north_lake_4"), SubResource("zone_north_lake_5"), SubResource("zone_north_lake_6"), SubResource("zone_west_plains_0"), SubResource("zone_west_plains_1"), SubResource("zone_west_plains_2"), SubResource("zone_west_plains_3"), SubResource("zone_west_plains_4"), SubResource("zone_west_plains_5"), SubResource("zone_west_plains_6"), SubResource("zone_south_marsh_0"), SubResource("zone_south_marsh_1"), SubResource("zone_south_marsh_2"), SubResource("zone_south_marsh_3"), SubResource("zone_south_marsh_4"), SubResource("zone_south_marsh_5"), SubResource("zone_south_marsh_6"), SubResource("zone_south_plains_0"), SubResource("zone_south_plains_1"), SubResource("zone_south_plains_2"), SubResource("zone_south_plains_3"), SubResource("zone_south_plains_4"), SubResource("zone_south_plains_5"), SubResource("zone_south_plains_6"), SubResource("zone_east_cliffs_0"), SubResource("zone_east_cliffs_1"), SubResource("zone_east_cliffs_2"), SubResource("zone_east_cliffs_3"), SubResource("zone_east_cliffs_4"), SubResource("zone_east_cliffs_5"), SubResource("zone_east_cliffs_6"), SubResource("zone_thin_woods_0"), SubResource("zone_thin_woods_1"), SubResource("zone_thin_woods_2"), SubResource("zone_thin_woods_3"), SubResource("zone_thin_woods_4"), SubResource("zone_thin_woods_5"), SubResource("zone_thin_woods_6")])
-boss_room_rect = Rect2i(400, 95, 20, 14)
+boss_room_rect = Rect2i(330, 221, 20, 14)
 boss_cleared_flag = "golem_destroyed"
 landmarks = {
-"camp_0": Vector2i(361, 216),
-"camp_1": Vector2i(351, 137),
+"camp_0": Vector2i(312, 263),
+"camp_1": Vector2i(323, 242),
 "lab_gate": Vector2i(274, 257),
-"lair_gate": Vector2i(399, 106),
-"rail_mid": Vector2i(337, 298),
-"trail_after_block_0": Vector2i(393, 250),
-"trail_after_block_1": Vector2i(357, 155),
-"trail_before_block_0": Vector2i(399, 258),
-"trail_before_block_1": Vector2i(365, 160),
-"trail_block_0": Vector2i(396, 254),
-"trail_block_1": Vector2i(361, 157),
-"trail_block_stand_0": Vector2i(399, 256),
-"trail_block_stand_1": Vector2i(364, 159),
-"trail_block_tree_0": Vector2i(398, 256),
-"trail_block_tree_1": Vector2i(363, 159),
-"trail_start": Vector2i(410, 326),
-"village_center": Vector2i(410, 338),
-"village_gate": Vector2i(397, 338),
+"lair_gate": Vector2i(329, 232),
+"rail_mid": Vector2i(289, 279),
+"trail_after_block_0": Vector2i(307, 268),
+"trail_after_block_1": Vector2i(321, 247),
+"trail_before_block_0": Vector2i(311, 277),
+"trail_before_block_1": Vector2i(318, 255),
+"trail_block_0": Vector2i(309, 273),
+"trail_block_1": Vector2i(319, 250),
+"trail_block_stand_0": Vector2i(310, 276),
+"trail_block_stand_1": Vector2i(318, 253),
+"trail_block_tree_0": Vector2i(310, 275),
+"trail_block_tree_1": Vector2i(318, 252),
+"trail_start": Vector2i(315, 288),
+"village_center": Vector2i(314, 300),
+"village_gate": Vector2i(302, 300),
 "lab_pos": Vector2i(238, 246),
 "lab_size": Vector2i(36, 20),
-"village_pos": Vector2i(398, 330),
+"village_pos": Vector2i(303, 292),
 "village_size": Vector2i(24, 16),
-"golem_lair_pos": Vector2i(400, 95),
+"golem_lair_pos": Vector2i(330, 221),
 "golem_lair_size": Vector2i(20, 14)
 }
 break_hits = 2
 break_drop_item = "wood"
+break_ammo = 3
 enemy_overrides = {}
-exits = Array[ExtResource("exit")]([SubResource("exit_0")])
-waystones = Array[ExtResource("way")]([SubResource("way_10"), SubResource("way_14"), SubResource("way_16"), SubResource("way_26"), SubResource("way_32"), SubResource("way_33"), SubResource("way_36"), SubResource("way_44"), SubResource("way_54"), SubResource("way_56")])
-pickups = Array[String](["scrap", "heal_vial", "ammo_cell", "heal_vial", "scrap", "scrap", "mana_shard", "mana_shard", "ammo_cell", "heal_vial", "mana_shard", "mana_shard", "scrap", "scrap", "ammo_cell", "ammo_cell", "scrap", "miner_cap", "mana_shard", "heal_vial", "mana_shard", "ammo_cell", "work_pants", "ammo_cell", "heal_vial", "rapid_gun", "lab_memo", "scrap", "padded_pants", "heavy_gun", "heal_vial", "ammo_cell", "light_wrap", "mana_shard", "mana_shard", "plated_coat", "sight_band", "scrap", "heal_vial"])
-npcs = Array[ExtResource("npc")]([SubResource("npc_42"), SubResource("npc_43"), SubResource("npc_46"), SubResource("npc_48")])
+exits = Array[ExtResource("exit")]([])
+waystones = Array[ExtResource("way")]([SubResource("way_8"), SubResource("way_11"), SubResource("way_24"), SubResource("way_26"), SubResource("way_30"), SubResource("way_32"), SubResource("way_35"), SubResource("way_41"), SubResource("way_54"), SubResource("way_55")])
+pickups = Array[String](["heal_vial", "work_pants", "mana_shard", "scrap", "mana_shard", "scrap", "heal_vial", "mana_shard", "padded_pants", "heal_vial", "heal_vial", "ammo_cell", "scrap", "scrap", "sight_band", "heal_vial", "scrap", "mana_shard", "ammo_cell", "mana_shard", "heavy_gun", "miner_cap", "scrap", "rapid_gun", "ammo_cell", "heal_vial", "lab_memo", "scrap", "mana_shard", "heal_vial", "light_wrap", "mana_shard", "plated_coat", "scrap", "mana_shard", "ammo_cell", "ammo_cell", "ammo_cell", "ammo_cell"])
+npcs = Array[ExtResource("npc")]([SubResource("npc_38"), SubResource("npc_40"), SubResource("npc_43"), SubResource("npc_45")])
 signs = Array[String](["실험동 B · 격리 구역\n출입 금지", "나무가 길을 막았다\n우클릭 근접 공격으로\n벨 수 있다", "북쪽 숲 — 큰 것이 지나간 길"])

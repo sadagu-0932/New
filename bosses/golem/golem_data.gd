@@ -56,8 +56,14 @@ extends EnemyData
 @export var p2_ring_bullets: int = 0
 
 @export_group("스토리 지역")
-## 시작 페이즈 (1 = 프롤로그, 2 = 2지역 숲의 지친 골렘)
+## 시작 페이즈 (1 또는 2)
 @export var start_phase: int = 1
+## 1페이즈 패턴 빠르기 배율 (1 = 프롤로그와 같음, 클수록 빠르고 어렵다)
+@export var phase1_speed_mult: float = 1.0
+## 스토리판: 1페이즈를 깨면 컷씬 없이 짧게 각성한 뒤 2페이즈로 이어지는지 (다시 만나는 골렘)
+@export var continue_to_phase2: bool = false
+## 1페이즈 → 2페이즈 사이 각성하는 틱 (그동안 맞지 않는다)
+@export var phase2_transition_ticks: int = 0
 ## 플레이어가 이 거리(px) 안에 오면 깨어난다 (0 = 튜토리얼 7구간 입장 때)
 @export var wake_radius: float = 0.0
 ## 2페이즈에서 체력 0 → 무너지는 데 걸리는 틱

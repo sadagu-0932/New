@@ -20,6 +20,8 @@ var _timer: int = 0
 var _body_hits: int = 0
 var _last_perfect_tick: int = -100000
 var _core_flash: int = 0
+## 각성(INTRO)이 끝나면 들어갈 페이즈 (0 = 데이터의 start_phase)
+var _next_phase: int = 0
 
 
 func gd() -> GolemData:
@@ -73,7 +75,12 @@ func _tick_ai() -> void:
 			_timer -= 1
 			if _timer <= 0:
 				mode = Mode.FIGHT
-				enter_phase(GolemPhase2.new(self) if gd().start_phase == 2 else GolemPhase1.new(self))
+				if _next_phase == 2 or gd().start_phase == 2:
+					enter_phase(GolemPhase2.new(self))
+				else:
+					var p1 := GolemPhase1.new(self)
+					p1.speed_mult = gd().phase1_speed_mult
+					enter_phase(p1)
 		Mode.COLLAPSE:
 			_timer -= 1
 			if _timer <= 0:
@@ -158,6 +165,9 @@ func _defeat() -> void:
 	if phase != null and phase.number() == 2 and Game.is_story_mode():
 		_start_collapse()
 		return
+	if phase != null and phase.number() == 1 and Game.is_story_mode() and gd().continue_to_phase2:
+		_start_phase2_transition()
+		return
 	defeated = true
 	mode = Mode.CUTSCENE
 	Events.boss_defeated.emit(self)
@@ -173,6 +183,22 @@ func _start_collapse() -> void:
 	for node in get_tree().get_nodes_in_group(Projectile.GROUP_ENEMY):
 		(node as Projectile).destroy(false)
 	Events.boss_defeated.emit(self)
+	Effect.spawn(&"perfect", global_position, 0.0, 4.0)
+
+
+## 다시 만난 골렘: 1페이즈를 깨면 컷씬 없이 다시 일어나 2페이즈로 (체력이 다시 찬다)
+func _start_phase2_transition() -> void:
+	for node in get_tree().get_nodes_in_group(Projectile.GROUP_ENEMY):
+		(node as Projectile).destroy(false)
+	mode = Mode.INTRO
+	_next_phase = 2
+	_timer = gd().phase2_transition_ticks
+	hp = gd().max_hp
+	perfect_chain = 0
+	if sprite != null:
+		sprite.play(&"awaken")
+	Events.boss_hp_changed.emit(hp, gd().max_hp)
+	Events.boss_phase_changed.emit(2)
 	Effect.spawn(&"perfect", global_position, 0.0, 4.0)
 
 
@@ -218,6 +244,8 @@ func _anim() -> StringName:
 			return &"groggy"
 		Mode.CUTSCENE:
 			return sprite.animation
+		Mode.INTRO:
+			return &"awaken" if _next_phase == 2 else &"idle"
 		Mode.FIGHT:
 			if phase and phase.is_attacking():
 				return &"attack"

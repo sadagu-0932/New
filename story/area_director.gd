@@ -45,12 +45,15 @@ func _ready() -> void:
 
 ## 플레이어가 지금 든 구역 id ("" = 들판, "?" = 아직 모름)
 var zone_id: String = "?"
+## 전투 밖에서 재장전까지 남은 틱
+var reload_ticks: int = -1
 
 
 func _physics_process(_delta: float) -> void:
 	var player := level.player
 	if player == null:
 		return
+	_tick_reload(player)
 	var zone := area.zone_at_pos(player.global_position)
 	var now := zone.id if zone != null else ""
 	if now == zone_id:
@@ -67,6 +70,24 @@ func _physics_process(_delta: float) -> void:
 	if not zone.enter_story_id.is_empty() and not Story.has_flag(seen_flag):
 		Events.story_triggered.emit(zone.enter_story_id)
 	Story.set_flag(seen_flag)
+
+
+## 전투 중이 아니면 일정 시간마다 탄창을 가득 채운다 (data/story.tres 의 auto_reload_seconds)
+func _tick_reload(player: Player) -> void:
+	var interval := int(DB.story.auto_reload_seconds * Game.config.tick_rate)
+	if interval <= 0 or player.is_dead():
+		return
+	if reload_ticks < 0 or CombatState.in_combat(get_tree()):
+		reload_ticks = interval      # 전투 중이면 처음부터 다시 센다
+		return
+	reload_ticks -= 1
+	if reload_ticks > 0:
+		return
+	reload_ticks = interval
+	if player.ammo.current < player.ammo.maximum:
+		player.ammo.set_current(player.ammo.maximum)
+		Events.toast.emit(DB.story.text_reloaded)
+		Audio.play("ui_confirm")
 
 
 func _exit_tree() -> void:

@@ -42,9 +42,9 @@ GROUNDS = {
 # 벽(나무)을 벨 수 있는 땅 종류 (바위·연구소 벽·마을 집은 못 벤다)
 BREAKABLE = "grtpw"
 # 묶음별 설정: 그 묶음의 모든 작은 지역에 적용되는 적 수치
-REGION_EXTRA = {
-    "golem": dict(overrides={"C": "charger_forest", "S": "shooter_forest", "B": "spreader_forest", "Z": "golem_worn"}),
-}
+# 골렘 이야기가 벌어지는 연구소 둘레의 세 묶음: 숲용 적 수치 + 다시 만나는 골렘
+_GOLEM_STORY = dict(overrides={"C": "charger_forest", "S": "shooter_forest", "B": "spreader_forest", "Z": "golem_return"})
+REGION_EXTRA = {"lab": _GOLEM_STORY, "village": _GOLEM_STORY, "golem": _GOLEM_STORY}
 # 작은 지역에 처음 들어섰을 때 흘러가는 글 (data/story.tres 의 lines 키)
 ZONE_ENTER = {"lab": "lab_wake", "village": "village_enter", "trail": "forest_enter", "golem_lair": "lair_enter"}
 # 지역 맵의 글자 (작은 지역 번호 → 글자)
@@ -95,24 +95,20 @@ SIGNS = {
 CHOP_SIGN = "나무가 길을 막았다\n우클릭 근접 공격으로\n벨 수 있다"
 NPCS = {
     "village": [
-        dict(id="miner", name="늙은 광부", sprite="npc_a",
-             lines=["…거기 서라.", "그 옷. 숲 한가운데 연구소 것이지.", "뭘 하는 곳인지는 모른다. 알고 싶지도 않고.",
+        dict(id="miner", name="늙은 광부", sprite="npc_miner",
+             lines=["…거기 서라.", "그 옷. 숲 너머 연구소 것이지.", "뭘 하는 곳인지는 모른다. 알고 싶지도 않고.",
                     "볼일 없으면 마을에 오래 머물지 마라."],
              alt_flag="golem_destroyed", alt=["숲이 조용해졌더군.", "…네가 한 거냐. 고맙다는 말은 해 두지."]),
-        dict(id="homeless", name="집 잃은 주민", sprite="npc_c",
+        dict(id="homeless", name="집 잃은 주민", sprite="npc_homeless",
              lines=["지붕째 뜯겨 나갔어.", "돌덩이 같은 게 걸어가더라고. 북쪽 숲으로.", "나무를 죄다 쓰러뜨리면서 갔어. 길이 났을 거야."]),
-        dict(id="child", name="아이", sprite="npc_b",
+        dict(id="child", name="아이", sprite="npc_child",
              lines=["우와, 총이다! 진짜야?", "철길 따라왔어? 저쪽 큰 건물에서?", "거기 뭐가 있어? 어른들은 아무도 안 알려 줘."],
              alt_flag="golem_destroyed", alt=["큰 돌덩이 이제 안 와? 진짜?", "…고마워. 근데 조금 무서워."]),
-        dict(id="afraid", name="겁먹은 주민", sprite="npc_a",
+        dict(id="afraid", name="겁먹은 주민", sprite="npc_afraid",
              lines=["가, 가까이 오지 마…!", "어젯밤 그 커다란 것도 철길 쪽에서 왔어.",
                     "집이 세 채나… 그건 북쪽 숲으로 갔어. 따라가지 마."]),
     ],
 }
-# 세계의 끝: 골렘 터 위로 난 길 (북쪽 테두리). 골렘의 자료를 읽어야 열린다
-END_EXIT = dict(flag="read:golem_record", locked="아직 떠날 수 없다. 저것을 그냥 두고는.",
-                end="3지역으로 가는 길\n\n이번 이야기는 여기까지")
-
 
 def read_piece(name: str) -> list[str]:
     rows = []
@@ -450,9 +446,10 @@ def main() -> None:
     # ---- 철길: 연구소의 부서진 벽 → 광산촌 (유일하게 뚫린 길) ----
     lab_gate = gates[("lab", "e")]
     vil_gate = gates[("village", "w")]
-    mid_x = (lab_gate[0] + vil_gate[0]) // 2 + 2
-    rail = line_cells(lab_gate, (mid_x, lab_gate[1]), True) + line_cells((mid_x, lab_gate[1]), (mid_x, vil_gate[1]), False)[1:] \
-        + line_cells((mid_x, vil_gate[1]), (vil_gate[0] + 3, vil_gate[1]), True)[1:]
+    # 직각으로 꺾지 않고 비스듬히(지그재그로) 곧장 이어진다: 벽 앞에서 몇 칸 곧게 나와 대각선으로 가다가 마을 앞에서 다시 곧게
+    out_a = (lab_gate[0] + 4, lab_gate[1])
+    out_b = (vil_gate[0] - 4, vil_gate[1])
+    rail = line_cells(lab_gate, out_a, True) + step_cells(out_a, out_b)[1:] + line_cells(out_b, (vil_gate[0] + 3, vil_gate[1]), True)[1:]
     # 철길 양옆은 숲이 감싼다 (철길 말고는 새는 곳이 없게), 그 가운데로 철길을 낸다
     for x, y in rail:
         for dx in range(-5, 6):
@@ -557,13 +554,6 @@ def main() -> None:
         raise AssertionError("탑 놓을 자리가 없음")
     landmarks["lair_gate"] = lair_gate
 
-    # ---- 세계의 끝: 골렘 터 북쪽으로 난 길 ----
-    ex, ey = gates[("golem_lair", "n")]
-    for y in range(1, ey + 1):
-        clear(ex, y, "t")
-    grid[0][ex] = "E"
-    props[(0, ex)] = ("E", END_EXIT)
-
     # ---- 나머지 지역: 탑 하나씩 + 탑과 탑을 잇는 흙길 + 작은 볼거리들 ----
     protected = set(rail) | set(trail)
 
@@ -647,7 +637,7 @@ def main() -> None:
     # 세상 테두리: 두 겹 나무 (맨 바깥은 벨 수 없다). 끝 출입구만 뚫려 있다
     for y in range(N):
         for x in range(N):
-            if (x < 2 or y < 2 or x >= N - 2 or y >= N - 2) and grid[y][x] not in "E" and not (x == ex and y == 1):
+            if x < 2 or y < 2 or x >= N - 2 or y >= N - 2:
                 grid[y][x], ground[y][x] = "#", "g"
                 props.pop((y, x), None)
 
@@ -798,6 +788,7 @@ boss_cleared_flag = "golem_destroyed"
 landmarks = {marks}
 break_hits = 2
 break_drop_item = "wood"
+break_ammo = 3
 enemy_overrides = {{}}
 exits = Array[ExtResource("exit")]([{", ".join(refs["E"])}])
 waystones = Array[ExtResource("way")]([{", ".join(refs["Y"])}])

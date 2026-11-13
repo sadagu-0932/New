@@ -76,7 +76,31 @@ func test_world_data() -> void:
 	check(world.prop_cells("E").size() == world.exits.size() and world.prop_cells("Y").size() == world.waystones.size()
 		and world.prop_cells("$").size() == world.pickups.size() and world.prop_cells("N").size() == world.npcs.size()
 		and world.prop_cells("I").size() == world.signs.size(), "맵의 소품 수 = 지역 데이터 수")
-	check(world.exits.size() == 1 and world.exits[0].target_area.is_empty(), "화면이 바뀌는 출입구는 없음 — 남은 하나는 3지역으로 가는 길(끝)")
+	check(world.exits.is_empty(), "화면이 바뀌는 출입구는 없음 (골렘까지 잡으면 TO BE CONTINUED)")
+	# 골렘 이야기는 전부 연구소 가까이에 모여 있고, 나머지 넓은 땅은 다음 이야기용으로 남겨 둔다
+	var lab_c := Vector2(world.landmark("lab_pos")) + Vector2(world.landmark("lab_size")) * 0.5
+	var near := float(m.width) * 0.28
+	check(Vector2(world.landmark("village_center")).distance_to(lab_c) < near and Vector2(world.landmark("lair_gate")).distance_to(lab_c) < near,
+		"광산촌·골렘 터가 연구소 가까이에 (세상 한 변의 28%% 안, %.0f · %.0f칸)" % [Vector2(world.landmark("village_center")).distance_to(lab_c), Vector2(world.landmark("lair_gate")).distance_to(lab_c)])
+	# 철길은 직각으로 꺾이지 않고 비스듬히(지그재그로) 이어진다: 가로·세로로 곧게 뻗은 구간이 짧다
+	var rail: Array[Vector2i] = []
+	for y in m.height:
+		for x in m.width:
+			if world.ground_at(Vector2i(x, y)) == "r":
+				rail.append(Vector2i(x, y))
+	var longest := 0
+	for c in rail:
+		var run := 0
+		while world.ground_at(c + Vector2i(run + 1, 0)) == "r" and world.ground_at(c + Vector2i(run + 1, 1)) != "r" and world.ground_at(c + Vector2i(run + 1, -1)) != "r":
+			run += 1
+		longest = maxi(longest, run)
+	check(longest < 14, "철길이 비스듬히 이어짐 (곧게 뻗은 가장 긴 구간 %d칸)" % longest)
+	var sprites := {}
+	for n in world.npcs:
+		sprites[String(n.sprite)] = true
+	check(sprites.size() == world.npcs.size() and sprites.has("npc_miner") and sprites.has("npc_child"), "주민마다 특징에 맞는 그림 %s" % [sprites.keys()])
+	for name: String in sprites:
+		check(DB.theme.load_sheet("story_props").has_animation(StringName(name)), "주민 그림 %s 있음" % name)
 	# 길: 철길만 뚫려 있고, 쓰러진 나무 길은 나무를 베어야 한다
 	var walk := _flood(m, false, false)
 	check(walk.has(world.landmark("village_gate")), "연구소에서 철길을 따라 광산촌까지 걸어서 닿음")
@@ -295,11 +319,20 @@ func test_waystone() -> void:
 	var stone := _waystone("lab_exit")
 	stone.refresh()
 	check(stone != null and not stone.active, "웨이스톤 탑은 처음엔 꺼져 있음")
-	check(MapPanel.revealed_zones() == (["lab"] as Array[String]), "처음엔 출발한 연구소와 그 둘레 숲만 지도에 밝혀져 있음")
 	var m := world.level_map()
-	check(MapPanel.is_revealed(m.spawn_cell, ["lab"]) and MapPanel.is_revealed(world.landmark("lab_gate"), ["lab"])
-		and not MapPanel.is_revealed(world.landmark("village_center"), ["lab"]) and not MapPanel.is_revealed(Vector2i(3, 3), ["lab"]),
-		"연구소 둘레 숲까지 밝혀지고 마을·먼 땅은 안개")
+	check(MapPanel.reveal_circles().size() == 1, "처음엔 연구소 둘레의 원 하나만 밝혀져 있음")
+	check(MapPanel.is_revealed(m.spawn_cell) and MapPanel.is_revealed(world.landmark("lab_gate"))
+		and not MapPanel.is_revealed(world.landmark("village_center")) and not MapPanel.is_revealed(Vector2i(3, 3)),
+		"연구소 둘레까지 밝혀지고 마을·먼 땅은 안개")
+	# 원: 가운데는 다 밝혀지고 가장자리로 갈수록 점점 흐려진다
+	var c0: Vector3 = MapPanel.reveal_circles()[0]
+	var center := Vector2(c0.x, c0.y)
+	var fade := DB.story.map_reveal_fade
+	check(MapPanel.fog_at(center, MapPanel.reveal_circles()) == 0.0 and MapPanel.fog_at(center + Vector2(c0.z + 1.0, 0), MapPanel.reveal_circles()) == 1.0, "원 안은 밝고 원 밖은 안개")
+	var mid := MapPanel.fog_at(center + Vector2(c0.z - fade * 0.5, 0), MapPanel.reveal_circles())
+	check(mid > 0.2 and mid < 0.8, "원 가장자리는 점점 흐려짐 (%.2f)" % mid)
+	var same := absf(MapPanel.fog_at(center + Vector2(c0.z - 3.0, 0), MapPanel.reveal_circles()) - MapPanel.fog_at(center + Vector2(0, c0.z - 3.0), MapPanel.reveal_circles())) < 0.001
+	check(same, "완전한 원 (어느 쪽이든 같은 거리에서 같은 진하기)")
 	var p := _p()
 	p.health.current = 2
 	p.ammo.set_current(1)
@@ -405,14 +438,11 @@ func test_map_and_teleport() -> void:
 	var stone := _waystone("village")
 	_p().teleport(stone.global_position + Vector2(0, 10))
 	await step(3)
-	var vil_group := world.zones_in_group("village")
-	var all_open := true
-	for z in vil_group:
-		if not MapPanel.revealed_zones().has(z.id):
-			all_open = false
-	check(Story.waystones.has("village") and all_open and vil_group.size() >= 3 and not MapPanel.revealed_groups().has("golem"),
-		"광산촌 탑 → 광산 골짜기 묶음(작은 지역 %d곳)이 통째로 밝혀짐, 쓰러진 숲은 아직 안개" % vil_group.size())
-	check(MapPanel.is_revealed(world.landmark("trail_start"), MapPanel.revealed_zones()), "마을 둘레 숲(길 들머리)까지 밝혀짐")
+	check(Story.waystones.has("village") and MapPanel.reveal_circles().size() == Story.waystones.size() + 1 and MapPanel.is_revealed(world.landmark("village_center"))
+		and MapPanel.revealed_zones().has("village"), "광산촌 탑 → 그 둘레가 둥글게 밝혀짐")
+	check(MapPanel.is_revealed(world.landmark("trail_start")), "마을 둘레 숲(길 들머리)까지 밝혀짐")
+	# 이웃한 원은 겹쳐서 이어진다: 연구소 원과 광산촌 원 사이 철길 가운데도 밝혀짐
+	check(MapPanel.is_revealed(world.landmark("rail_mid")), "연구소 원과 광산촌 원이 자연스럽게 이어짐 (철길 가운데도 밝혀짐)")
 	check(panel.open() and get_tree().paused, "지도 열기 (게임 일시정지)")
 	check(panel.targets.size() == 2, "순간이동할 수 있는 곳 = 켠 탑 2곳")
 	check(MapPanel.zone_label(world.zone("lab")) == "연구소" and MapPanel.zone_label(world.zone("golem_lair")) == ""
@@ -496,8 +526,24 @@ func test_map_and_teleport() -> void:
 	check(panel.hovered == -1, "멀리 있으면 탑 표시는 작은 채로")
 	panel.center_on(MapPanel.world_pos(Vector2(lab_tower) + Vector2(0.5, 0.5)))
 	panel._refresh()
-	check(panel.hovered >= 0 and (panel.targets[panel.hovered]["waystone"] as WaystoneData).id == "lab_exit", "가까이 가리키면 그 탑이 커지며 활성화됨")
-	panel.click_cell(lab_tower + Vector2i(1, 0))
+	check(panel.hovered >= 0 and (panel.targets[panel.hovered]["waystone"] as WaystoneData).id == "lab_exit", "탑 그림 위에 올리면 그 탑이 커지며 활성화됨")
+	# 탑 그림 바로 옆(몇 px 떨어진 곳)은 아니다: 거의 위에 올려야 한다
+	var tower_px := MapPanel.world_pos(Vector2(lab_tower) + Vector2(0.5, 0.5)).round()
+	panel.hovered = -1
+	panel.center_on(tower_px + Vector2(6, 2))
+	panel._refresh()
+	check(panel.hovered == -1, "탑 그림에서 몇 px 떨어져 있으면 커지지 않음")
+	panel.center_on(tower_px + Vector2(1, -3))
+	panel._refresh()
+	check(panel.hovered >= 0, "탑 그림 위에 올리면 커짐")
+	panel.center_on(tower_px + Vector2(4, -10))
+	panel._refresh()
+	check(panel.hovered >= 0, "커진 뒤에는 커진 그림 안에 있는 동안 그대로 (떨리지 않게)")
+	panel.center_on(tower_px + Vector2(4, -10))
+	panel.hovered = -1
+	panel._refresh()
+	check(panel.hovered == -1, "커지기 전에는 그 자리(커진 그림 범위)로는 커지지 않음")
+	panel.click_cell(lab_tower)
 	check(panel.popup_open and panel.popup_options[0] == MapPanel.OPT_TELEPORT and panel._popup_title.text == "연구소 탑", "켠 탑을 누르면 순간이동 창 (%s)" % panel._popup_title.text)
 	var hp := _p().health.current
 	var lv := _lv()
@@ -608,6 +654,22 @@ func test_forest() -> void:
 		swings += 1
 	check(not lv.map.is_wall(tree) and swings == world.break_hits, "근접으로 %d번 치면 나무가 베어짐" % swings)
 	check(Story.inventory.count("wood") > wood, "벤 나무에서 나무토막을 얻음")
+	# 나무를 베면 탄약도 채워진다
+	p.ammo.set_current(0)
+	var tree2 := tree + Vector2i(0, -1)
+	while not (lv.map.is_wall(tree2) and lv.breakable.can_break(tree2)) and tree2.y > tree.y - 6:
+		tree2 += Vector2i(0, -1)
+	if lv.breakable.can_break(tree2):
+		for i in world.break_hits:
+			lv.breakable.hit(tree2)
+	check(p.ammo.current == world.break_ammo, "나무를 베면 탄약이 %d발 채워짐 (%d)" % [world.break_ammo, p.ammo.current])
+	# 전투 중이 아니면 일정 시간마다 재장전
+	p.ammo.set_current(0)
+	var director: AreaDirector = lv.area_director
+	director.reload_ticks = 3
+	await step(5)
+	check(p.ammo.current == p.ammo.maximum, "전투 중이 아니면 %d초마다 재장전" % int(DB.story.auto_reload_seconds))
+	check(director.reload_ticks > int(DB.story.auto_reload_seconds * 60.0) - 10, "재장전 뒤 다시 처음부터 셈")
 	p.teleport(LevelMap.cell_center(stand))
 	input.push(Vector2(dir), 20, 0, 0, LevelMap.cell_center(tree))
 	await step(21)
@@ -618,7 +680,7 @@ func test_forest() -> void:
 	var gate := _waystone("boss_gate")
 	p.teleport(gate.global_position + Vector2(0, 10))
 	await step(3)
-	check(Story.waystones.has("boss_gate") and MapPanel.revealed_groups().has("golem") and MapPanel.revealed_zones().has("golem_lair"), "골렘 터 앞 탑 → 쓰러진 숲 묶음이 지도에 밝혀짐")
+	check(Story.waystones.has("boss_gate") and MapPanel.is_revealed(world.landmark("lair_gate")) and MapPanel.revealed_zones().has("golem_lair"), "골렘 터 앞 탑 → 골렘 터 둘레가 지도에 밝혀짐")
 	check(StorySave.latest()["state"]["story"]["waystones"].has("boss_gate"), "골렘 터 앞에서 자동저장")
 
 
@@ -633,7 +695,7 @@ func test_boss_room_rules() -> void:
 	var p := _p()
 	var lair := world.boss_room_rect
 	var g := _golem()
-	check(g != null and g.data == DB.enemies["golem_worn"] and g.mode == Golem.Mode.DORMANT, "지친 골렘이 있음 (아직 깨어나지 않음)")
+	check(g != null and g.data == DB.enemies["golem_return"] and g.mode == Golem.Mode.DORMANT, "다시 만나는 골렘이 있음 (아직 깨어나지 않음)")
 	check(lair.has_point(Vector2i((g.global_position / LevelMap.TILE_SIZE).floor())), "골렘은 골렘 터 안에 있음")
 	check(not CombatState.is_restricted(get_tree()), "골렘 터 밖에서는 제한 없음")
 	# 걸어서 들어간다 (서쪽 입구, 골렘이 깨지 않을 만큼 먼 자리)
@@ -646,20 +708,28 @@ func test_boss_room_rules() -> void:
 	var before := int(StorySave.latest()["seq"])
 	check(not main.saves.save_manual() and not main.saves.save_auto("timer") and int(StorySave.latest()["seq"]) == before, "보스방에서는 수동·자동 저장 모두 불가")
 	check(not main.teleport("village"), "보스방에서는 순간이동 불가")
-	check((_props(AreaExit)[0] as AreaExit).is_locked(), "3지역으로 가는 길은 아직 잠겨 있음")
 
 
 func test_golem_phase2() -> void:
 	var g := _golem()
 	var d := g.gd()
+	var prologue := DB.enemies["golem"] as GolemData
 	var p := _p()
 	Debug.god_mode = true
 	p.teleport(g.global_position + Vector2(0, 70))
 	await step(2)
 	check(g.mode == Golem.Mode.INTRO and CombatState.in_combat(get_tree()), "가까이 가면 깨어남")
 	await wait_until(func() -> bool: return g.mode == Golem.Mode.FIGHT, d.intro_ticks + 5)
-	check(g.phase is GolemPhase2 and g.phase.number() == 2, "곧바로 2페이즈 (기존 페이즈 상태 구조)")
-	check(d.max_hp < (DB.enemies["golem"] as GolemData).max_hp, "동력이 바닥난 상태: 체력이 낮아 짧은 전투 (%d)" % d.max_hp)
+	check(g.phase is GolemPhase1 and not (g.phase is GolemPhase2), "프롤로그에서 봤던 1페이즈부터")
+	check((g.phase as GolemPhase1).speed_mult > 1.0 and d.phase1_speed_mult > prologue.phase1_speed_mult, "1페이즈가 프롤로그보다 빠름 (×%.2f)" % (g.phase as GolemPhase1).speed_mult)
+	check(d.ring_bullets > prologue.ring_bullets and d.groggy_perfect_hits > prologue.groggy_perfect_hits, "탄이 더 많고 그로기도 더 어렵다")
+	# 1페이즈를 깨면 컷씬 없이 다시 일어나 2페이즈로
+	g.hp = 1
+	g.hurtbox.receive_hit(HitInfo.make(DB.parry.reflect_damage, HitInfo.Kind.REFLECT, Team.PLAYER, Vector2.RIGHT, null))
+	check(g.mode == Golem.Mode.INTRO and not g.defeated and g.hp == d.max_hp and _props(GolemCutscene).is_empty(), "1페이즈 격파 → 컷씬 없이 다시 일어남 (체력 다시 참)")
+	check(Game.is_story_mode() and not Story.has_flag("golem_destroyed"), "아직 쓰러진 것이 아님")
+	await wait_until(func() -> bool: return g.mode == Golem.Mode.FIGHT, d.phase2_transition_ticks + 5)
+	check(g.phase is GolemPhase2 and g.phase.number() == 2, "이어서 2페이즈 (기존 페이즈 상태 구조)")
 	await wait_until(func() -> bool: return (g.phase as GolemPhase2).history.size() >= 3, d.p2_rest_ticks * 4 + d.p2_aimed_interval_ticks * d.p2_aimed_shots * 3 + 60)
 	check((g.phase as GolemPhase2).history == ([GolemPhase2.Pattern.AIMED, GolemPhase2.Pattern.AIMED, GolemPhase2.Pattern.RING] as Array[int]),
 		"2페이즈 패턴은 정해진 순서 (랜덤 없음) %s" % [(g.phase as GolemPhase2).history])
@@ -713,10 +783,11 @@ func test_document_and_ending() -> void:
 		if (n as ItemPickup).item_id == "golem_record":
 			again = true
 	check(not again, "이미 주운 자료는 다시 떨어져 있지 않음")
-	var road: AreaExit = _props(AreaExit)[0]
-	check(not road.is_locked(), "자료를 읽으면 3지역으로 가는 길이 열림")
-	_p().teleport(road.global_position)
-	await step(3)
-	check(main.run == null and main._notice_layer.visible and main._notice.text.contains("3지역"), "3지역으로 가는 길 입구 = 이번 범위의 끝")
+	# 자료를 읽고 나면 글이 흘러간 뒤 TO BE CONTINUED → 타이틀
+	main._ending_left = 0.0
+	main._on_document_read("golem_record")
+	check(main._ending_left > 0.0 and main.run != null, "자료를 읽으면 잠시 뒤 끝이 남 (그동안 게임은 계속)")
+	await wait_until(func() -> bool: return main._notice_layer.visible, int(DB.story.ending_delay_seconds * 60.0) + 30)
+	check(main.run == null and main._notice_layer.visible and main._notice.text == "TO BE CONTINUED", "골렘까지 잡고 자료를 읽으면 TO BE CONTINUED")
 	await wait_until(func() -> bool: return main.title.is_showing(), int(DB.story.end_seconds * 60.0) + 30)
 	check(main.title.is_showing() and main.title.can_continue, "끝 글 뒤 타이틀로 (이어하기 가능)")

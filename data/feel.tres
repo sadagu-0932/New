@@ -25,6 +25,7 @@ gun_hover_period_ticks = 90.0
 gun_recoil_px = 2.0
 gun_recoil_return = 0.6
 gun_swing_arc_deg = 130.0
+tree_fall_seconds = 0.6
 gun_swing_reach = 8.0
 bullet_trail_fade_seconds = 0.15
 afterimage_interval_ticks = 2
