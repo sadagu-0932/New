@@ -3,13 +3,17 @@ extends CanvasLayer
 ## 일시정지 화면 (어둡게 + 글자). 여기서 설정을 연다:
 ## PC 는 K → 키 설정 창, 터치 기기는 [배치] 버튼 → 버튼 위치 바꾸기
 
-const TEXT := "일시정지\n\nEsc 계속하기 · R 길게 눌러 처음부터\nK 키 설정"
+## 왼쪽 글 자리 (오른쪽에 소리 슬라이더)
+const TEXT_RECT := Rect2(8, 0, 148, 180)
+const SLIDERS_POS := Vector2(166, 62)
+const TEXT := "일시정지\n\nEsc 계속하기\nR 길게 눌러 처음부터\nK 키 설정"
 
 var key_panel: KeyBindPanel
-## 소리 크기 다이얼 (오른쪽 아래)
-var volume_dial: VolumeDial
+## 소리 크기 슬라이더 (오른쪽: 마스터 + 소리 종류별, ↑↓ 고르기 · ←→ 조절)
+var volume_sliders: VolumeSliders
 var _root: Control
 var _label: Label
+var _sound_caption: Label
 
 
 ## 열려 있는지 (Crosshair 가 포인터로 바꿀 때 사용)
@@ -33,11 +37,19 @@ func _ready() -> void:
 	_label = UiText.make_label(UiText.for_device(TEXT))
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# 왼쪽에 글, 오른쪽에 소리 슬라이더
+	_label.position = TEXT_RECT.position
+	_label.size = TEXT_RECT.size
 	_root.add_child(_label)
-	volume_dial = VolumeDial.new()
-	volume_dial.position = Vector2(272, 126)
-	_root.add_child(volume_dial)
+	_sound_caption = UiText.make_label("소리")
+	_sound_caption.position = SLIDERS_POS - Vector2(0, 13)
+	_sound_caption.size = Vector2(60, 12)
+	_sound_caption.modulate = Color(1, 1, 1, 0.6)
+	_root.add_child(_sound_caption)
+	volume_sliders = VolumeSliders.new()
+	volume_sliders.keyboard_enabled = true
+	volume_sliders.position = SLIDERS_POS
+	_root.add_child(volume_sliders)
 	_root.visible = false
 	key_panel = KeyBindPanel.new()
 	add_child(key_panel)
@@ -49,7 +61,9 @@ func _process(_delta: float) -> void:
 	# 버튼 위치를 바꾸는 동안에는 일시정지 글자를 숨긴다 (버튼·안내와 겹치지 않게)
 	var editing := TouchControls.instance != null and TouchControls.instance.edit_mode
 	_label.visible = not editing
-	volume_dial.visible = not editing and not key_panel.is_open
+	var show_sound := not editing and not key_panel.is_open
+	volume_sliders.visible = show_sound
+	_sound_caption.visible = show_sound
 
 
 func _on_pause_changed(paused: bool) -> void:

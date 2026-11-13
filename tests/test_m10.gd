@@ -8,7 +8,7 @@ const MAP := "res://tests/maps/m2_test.txt"
 func run_all() -> void:
 	print("[M10] 다듬기·내보내기")
 	test_audio_silent_without_files()
-	test_volume_dial()
+	test_volume_sliders()
 	await test_screen_fx()
 	await test_afterimage()
 	test_title_ignores_fullscreen_key()
@@ -43,34 +43,57 @@ func test_audio_silent_without_files() -> void:
 	check(true, "이벤트로 소리가 울려도 문제없음")
 
 
-func test_volume_dial() -> void:
+func test_volume_sliders() -> void:
 	var saved := Settings.volume
-	var dial := VolumeDial.new()
-	add_child(dial)
+	var saved_cats := Settings.category_volumes.duplicate()
+	var sliders := VolumeSliders.new()
+	add_child(sliders)
+	check(sliders.row_count() == DB.audio.categories.size() + 1 and sliders.categories[0] == "", "슬라이더: 마스터 + 소리 종류별 %d줄" % DB.audio.categories.size())
+	var unsorted: Array[String] = []
+	for slot: String in Audio.SLOTS:
+		if not DB.audio.categories.has(str(DB.audio.slot_categories.get(slot, ""))):
+			unsorted.append(slot)
+	check(unsorted.is_empty(), "모든 소리가 종류에 들어 있음 %s" % [unsorted])
 	Audio.set_volume(0.5)
-	check(is_equal_approx(Audio.volume(), 0.5), "다이얼 값 0.5")
-	check(is_equal_approx(AudioServer.get_bus_volume_db(0), linear_to_db(0.5)), "전체 소리 크기에 반영")
-	dial.step(1)
-	check(is_equal_approx(Audio.volume(), 0.5 + DB.audio.volume_step), "한 칸 올리기")
-	dial.step(-1)
-	dial.step(-1)
-	check(is_equal_approx(Audio.volume(), 0.5 - DB.audio.volume_step), "한 칸 내리기")
-	check(is_equal_approx(VolumeDial.point_to_value(Vector2(0, -10)), 0.5), "손잡이를 위로 돌리면 가운데 값")
-	check(VolumeDial.point_to_value(Vector2(10, 0)) > 0.5 and VolumeDial.point_to_value(Vector2(-10, 0)) < 0.5, "오른쪽으로 돌리면 커지고 왼쪽은 작아짐")
+	check(is_equal_approx(Audio.volume(), 0.5), "마스터 0.5")
+	check(is_equal_approx(AudioServer.get_bus_volume_db(0), linear_to_db(0.5)), "마스터는 전체 소리 크기에 반영")
+	sliders.step(1, 0)
+	check(is_equal_approx(Audio.volume(), 0.5 + DB.audio.volume_step), "마스터 한 칸 올리기")
+	# 막대를 누른 자리로 바뀜 (전투 줄 가운데)
+	var combat := sliders.categories.find("combat")
 	var ev := InputEventMouseButton.new()
 	ev.button_index = MOUSE_BUTTON_LEFT
 	ev.pressed = true
-	ev.position = dial._center() + Vector2(-10, 10)
-	dial._gui_input(ev)
-	check(Audio.volume() == 0.0 and AudioServer.is_bus_mute(0), "왼쪽 끝까지 돌리면 소리 끔")
+	ev.position = sliders.track_rect(combat).get_center()
+	sliders._gui_input(ev)
 	ev.pressed = false
-	dial._gui_input(ev)
+	sliders._gui_input(ev)
+	check(is_equal_approx(Audio.category_volume("combat"), 0.5), "막대 가운데를 누르면 전투 소리 0.5")
+	ev.pressed = true
+	ev.position = sliders.track_rect(combat).position - Vector2(5, -1)
+	sliders._gui_input(ev)
+	ev.pressed = false
+	sliders._gui_input(ev)
+	check(Audio.category_volume("combat") == 0.0, "왼쪽 끝 → 전투 소리 끔")
+	Audio._last_played.clear()
+	check(Audio.play("shoot") and Audio.category_volume("ui") > 0.0, "꺼진 종류의 소리는 오류 없이 무음")
+	sliders.step(-1, sliders.categories.find("ui"))
+	check(is_equal_approx(Audio.category_volume("ui"), 1.0 - DB.audio.volume_step), "메뉴 소리 한 칸 내리기 (다른 종류는 그대로)")
+	check(is_equal_approx(Audio.category_volume("skill"), DB.audio.volume_default), "건드리지 않은 종류는 기본값")
+	Audio.set_volume(0.0)
+	check(AudioServer.is_bus_mute(0), "마스터 0 → 전부 끔")
 	Audio.set_volume(2.0)
 	check(Audio.volume() == 1.0 and not AudioServer.is_bus_mute(0), "최대는 1, 다시 켜짐")
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(Settings.PATH))
-	check(data is Dictionary and float((data as Dictionary).get("volume", -1)) == 1.0, "소리 크기는 설정 파일에 저장")
-	dial.queue_free()
+	var saved_ok: bool = data is Dictionary and float((data as Dictionary).get("volume", -1)) == 1.0 \
+		and float(((data as Dictionary).get("volumes", {}) as Dictionary).get("combat", -1)) == 0.0
+	check(saved_ok, "마스터·종류별 크기는 설정 파일에 저장")
+	Settings.category_volumes = {}
+	Settings.load_settings()
+	check(Audio.category_volume("combat") == 0.0, "다시 읽어도 종류별 크기 그대로")
+	sliders.queue_free()
 	Settings.volume = saved
+	Settings.category_volumes = saved_cats
 	Settings.save_settings()
 	Settings.volume_changed.emit(saved)
 

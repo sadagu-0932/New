@@ -30,5 +30,46 @@ fixed_pitch = {
 "skill_decoy": true
 }
 min_gap_ms = 40
+categories = Array[String](["combat", "enemy", "skill", "world", "ui"])
+category_names = {
+"combat": "전투",
+"enemy": "적·보스",
+"skill": "스킬",
+"world": "장치",
+"ui": "메뉴"
+}
+slot_categories = {
+"shoot": "combat",
+"empty": "combat",
+"melee": "combat",
+"melee_hit": "combat",
+"parry": "combat",
+"perfect_parry": "combat",
+"dodge": "combat",
+"perfect_dodge": "combat",
+"hit": "combat",
+"death": "combat",
+"execute": "combat",
+"reparry": "combat",
+"dash_slash": "combat",
+"combo": "combat",
+"enemy_hit": "enemy",
+"enemy_die": "enemy",
+"boss_start": "enemy",
+"boss_groggy": "enemy",
+"boss_defeat": "enemy",
+"skill": "skill",
+"skill_blink": "skill",
+"skill_absorb": "skill",
+"skill_decoy": "skill",
+"skill_shockwave": "skill",
+"skill_mark": "skill",
+"gate": "world",
+"switch": "world",
+"start": "world",
+"split": "world",
+"ui_move": "ui",
+"ui_confirm": "ui"
+}
 volume_default = 1.0
 volume_step = 0.05
