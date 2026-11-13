@@ -232,7 +232,7 @@ tools/             sprite_gen.py 등 빌드 도구
 
 ## 배포 구조
 
-- 스피드런판: `main` 브랜치 그대로, 별도 exe. **이 브랜치에서 main·download·gh-pages 를 건드리지 않는다** (`tools/publish.sh` 실행 금지)
+- 스피드런판: `main` 브랜치 그대로, 별도 exe. **이 브랜치에서 main·download 를 건드리지 않는다** (`tools/publish.sh` 실행 금지). gh-pages 는 `story/` 폴더만 (스토리판 웹)
 - 스토리판: `story-mode` 브랜치, 별도 exe. 게임 이름·창 제목·저장 폴더(`user://`)를 스피드런판과 구분
 - 스토리판에는 스피드런 기능(타이머·스플릿·리더보드·기록 화면·어트랙트 모드)을 넣지 않는다
 - 타이틀: 새 게임 / 이어하기 / 설정 / 종료
@@ -240,7 +240,8 @@ tools/             sprite_gen.py 등 빌드 도구
 - 게임 이름·창 제목·저장 폴더는 임시로 `demo-story` (세계관 이름이 정해지면 교체)
 - `data/game_config.tres` 의 `story_mode` 로 스토리판 동작을 켠다. 진입점은 `core/story_main.gd` (스피드런판의 `core/main.gd`·타이머·리더보드 파일은 main 병합이 쉽도록 지우지 않고 쓰지만 않는다)
 - 즉시 재시작(R 홀드)은 없다
-- 플랫폼: **지금은 Windows 판만** 만든다 (키보드+마우스 기준). 안드로이드용은 나중에 추가 → 새 화면(인벤토리·지도·저장 목록)의 터치 조작도 그때. 웹·리눅스 배포는 계획 없음
+- 플랫폼: **지금은 Windows 판만** 만든다 (키보드+마우스 기준). 안드로이드용은 나중에 추가 → 새 화면(인벤토리·지도·저장 목록)의 터치 조작도 그때. 리눅스 배포는 계획 없음
+- **웹 버전** (사용자 요청): https://sadagu-0932.github.io/New/story/ — `tools/deploy_story_web.sh` (story-mode 에서만 실행, gh-pages 의 `story/` 폴더만 바꾼다. 스피드런판 웹은 그대로이고, main 의 deploy_web.sh 도 `story/` 를 지우지 않는다). 키보드+마우스 기준 (폰 브라우저 터치는 안드로이드 작업 때)
 - 자동 테스트: 기존 M1~M10 묶음은 `story_mode` 를 끄고(공통 코드 확인), S 묶음은 켜고 돈다
 
 ## 스토리 설정 (기준)

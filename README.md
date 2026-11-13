@@ -4,7 +4,8 @@
 
 ## 플레이
 
-- 스토리판은 Windows 판만 만든다 (안드로이드용은 나중에 추가). 아직 올려 둔 다운로드는 없다 → `tools/build_story.sh` 로 exe 를 만들거나 Godot 4.7 로 프로젝트를 열어 실행
+- **웹 버전:** https://sadagu-0932.github.io/New/story/ (키보드+마우스, `tools/deploy_story_web.sh` 로 갱신)
+- Windows 판은 아직 올려 둔 다운로드가 없다 (안드로이드용은 나중에 추가) → `tools/build_story.sh` 로 exe 를 만들거나 Godot 4.7 로 프로젝트를 열어 실행
 - 스피드런판은 `main` 브랜치의 README 참고
 
 ## 조작
