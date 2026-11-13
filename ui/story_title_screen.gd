@@ -18,6 +18,8 @@ var selected: int = 0
 ## 이어할 저장이 있는지 (없으면 이어하기를 고를 수 없다). StoryMain 이 타이틀을 띄울 때 채운다
 var can_continue: bool = false
 var key_panel: KeyBindPanel
+## 소리 크기 다이얼 (오른쪽 아래)
+var volume_dial: VolumeDial
 
 var _root: Control
 var _labels: Array[Label] = []
@@ -57,11 +59,19 @@ func _ready() -> void:
 		label.mouse_entered.connect(_select.bind(i))
 		_root.add_child(label)
 		_labels.append(label)
+	volume_dial = VolumeDial.new()
+	volume_dial.position = Vector2(272, 126)
+	_root.add_child(volume_dial)
 	# 타이틀(99) 위에 뜨도록 층을 올린다
 	key_panel = KeyBindPanel.new()
 	add_child(key_panel)
 	key_panel.layer = layer + 1
 	_refresh()
+
+
+func _process(_delta: float) -> void:
+	if volume_dial != null:
+		volume_dial.visible = not key_panel.is_open
 
 
 func set_visible_screen(value: bool) -> void:

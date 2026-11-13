@@ -34,6 +34,8 @@ func _ready() -> void:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
 		_players.append(p)
+	Settings.volume_changed.connect(func(_v: float) -> void: _apply_volume())
+	_apply_volume()
 	Events.player_shot.connect(func() -> void: play("shoot"))
 	Events.ammo_empty.connect(func() -> void: play("empty"))
 	Events.melee_started.connect(func() -> void: play("melee"))
@@ -77,6 +79,24 @@ func _on_combo_changed(stage: int) -> void:
 	if stage > _combo_stage:
 		play("combo")
 	_combo_stage = stage
+
+
+## 지금 소리 크기 (0~1, 다이얼 값)
+func volume() -> float:
+	return Settings.volume if Settings.volume >= 0.0 else _data.volume_default
+
+
+## 소리 크기 바꾸기 (다이얼 한 칸 단위로 맞춘다)
+func set_volume(value: float) -> void:
+	var step := maxf(_data.volume_step, 0.001)
+	Settings.set_volume(snappedf(clampf(value, 0.0, 1.0), step))
+
+
+## 다이얼 값을 Master 버스에 반영 (0 이면 끈다)
+func _apply_volume() -> void:
+	var v := volume()
+	AudioServer.set_bus_mute(0, v <= 0.0)
+	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(v, 0.0001)))
 
 
 ## 이 슬롯에 소리 파일이 있는지

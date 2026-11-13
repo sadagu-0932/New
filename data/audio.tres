@@ -30,3 +30,5 @@ fixed_pitch = {
 "skill_decoy": true
 }
 min_gap_ms = 40
+volume_default = 1.0
+volume_step = 0.05

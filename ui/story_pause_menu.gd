@@ -18,6 +18,8 @@ const COLOR_SELECTED := Color(0.97, 0.78, 0.35)
 
 var selected: int = 0
 var key_panel: KeyBindPanel
+## 소리 크기 다이얼 (오른쪽)
+var volume_dial: VolumeDial
 
 var _root: Control
 var _labels: Array[Label] = []
@@ -56,10 +58,18 @@ func _ready() -> void:
 		label.mouse_entered.connect(_select.bind(i))
 		_root.add_child(label)
 		_labels.append(label)
+	volume_dial = VolumeDial.new()
+	volume_dial.position = Vector2(236, 70)
+	_root.add_child(volume_dial)
 	_root.visible = false
 	key_panel = KeyBindPanel.new()
 	add_child(key_panel)
 	Events.pause_changed.connect(_on_pause_changed)
+
+
+func _process(_delta: float) -> void:
+	if volume_dial != null:
+		volume_dial.visible = not key_panel.is_open
 
 
 func _on_pause_changed(paused: bool) -> void:
