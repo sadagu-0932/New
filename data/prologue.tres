@@ -1,0 +1,90 @@
+[gd_resource type="Resource" script_class="TutorialData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://levels/tutorial/tutorial_data.gd" id="1"]
+[ext_resource type="Script" path="res://levels/tutorial/tutorial_section_data.gd" id="2"]
+
+[sub_resource type="Resource" id="section_1"]
+script = ExtResource("2")
+title = "이동·회피"
+map_file = "res://levels/prologue/section_1.txt"
+hint = "[명령] WASD 이동 · Space 회피 — 회피 순간은 피해 무효"
+hint_hide_on = "dodge"
+hint_hide_delay_ticks = 90
+drain_ammo = false
+gate_rule = 0
+sign_text = "Tab: 스킬 설정\n전투 중에는 변경 불가"
+story_id = "tutorial_section_1"
+
+[sub_resource type="Resource" id="section_2"]
+script = ExtResource("2")
+title = "사격"
+map_file = "res://levels/prologue/section_2.txt"
+hint = "[명령] 마우스로 조준 · 좌클릭 사격 — 구덩이 너머 대상 전부 제거"
+hint_hide_on = "shoot"
+hint_hide_delay_ticks = 120
+drain_ammo = false
+gate_rule = 1
+story_id = "tutorial_section_2"
+
+[sub_resource type="Resource" id="section_3"]
+script = ExtResource("2")
+title = "근접"
+map_file = "res://levels/prologue/section_3.txt"
+hint = "[명령] 탄약 공급 차단 · 우클릭 근접 공격 — 타격 시 탄약 회수"
+hint_hide_on = "melee"
+hint_hide_delay_ticks = 90
+drain_ammo = true
+gate_rule = 1
+story_id = "tutorial_section_3"
+
+[sub_resource type="Resource" id="section_4"]
+script = ExtResource("2")
+title = "패링"
+map_file = "res://levels/prologue/section_4.txt"
+hint = "[명령] 탄이 닿는 순간 우클릭 — 튕긴 탄으로 수정을 맞힐 것"
+hint_hide_on = "switch"
+hint_hide_delay_ticks = 60
+drain_ammo = false
+gate_rule = 2
+story_id = "tutorial_section_4"
+
+[sub_resource type="Resource" id="section_5"]
+script = ExtResource("2")
+title = "완벽 회피"
+map_file = "res://levels/prologue/section_5.txt"
+hint = "[명령] 피격 직전에 회피 — 은폐 반응 발현 확인"
+hint_hide_on = "perfect_dodge"
+hint_hide_delay_ticks = 120
+drain_ammo = false
+gate_rule = 1
+story_id = "tutorial_section_5"
+
+[sub_resource type="Resource" id="section_6"]
+script = ExtResource("2")
+title = "스킬"
+map_file = "res://levels/prologue/section_6.txt"
+hint = "[명령] Q 스킬 사용 — 마석 출력으로 구역 돌파"
+hint_hide_on = "skill"
+hint_hide_delay_ticks = 120
+drain_ammo = false
+gate_rule = 1
+story_id = "tutorial_section_6"
+
+[sub_resource type="Resource" id="section_7"]
+script = ExtResource("2")
+title = "골렘"
+map_file = "res://levels/prologue/section_7.txt"
+hint = "[명령] 대상 제압 — 반사한 탄만 유효"
+hint_hide_on = "parry"
+hint_hide_delay_ticks = 180
+drain_ammo = false
+gate_rule = 0
+story_id = "tutorial_section_7"
+
+[resource]
+script = ExtResource("1")
+sections = Array[ExtResource("2")]([SubResource("section_1"), SubResource("section_2"), SubResource("section_3"), SubResource("section_4"), SubResource("section_5"), SubResource("section_6"), SubResource("section_7")])
+story_trigger_radius = 24.0
+pre_start_hint = ""
+sign_radius = 40.0
+tilesets = Array[String](["tiles_lab"])

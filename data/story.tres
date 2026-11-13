@@ -1,11 +1,17 @@
-[gd_resource type="Resource" script_class="StoryData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="StoryData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://story/story_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/prologue.tres" id="prologue"]
 
 [resource]
 script = ExtResource("1")
 title_subtitle = "스토리판"
-prologue_end_text = "한나절 뒤"
+prologue = ExtResource("prologue")
+prologue_dark_seconds = 2.5
+prologue_wake_seconds = 2.0
+ladder_fade_out_seconds = 0.8
+ladder_fade_in_seconds = 1.2
+text_climb = "%s 오르기"
 lines = {
 "tutorial_section_1": ["기록 개시. 실험체 기동 확인", "의식 반응 없음 · 제어 신호 정상"],
 "tutorial_section_2": ["사격 제어 시험으로 이행"],

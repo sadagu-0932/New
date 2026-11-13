@@ -29,6 +29,10 @@ const SPAWNS := {
 	"$": [preload("res://story/props/item_pickup.gd"), ""],
 	"N": [preload("res://story/props/npc.gd"), ""],
 	"R": [preload("res://story/props/rubble.gd"), ""],
+	# 스토리판 프롤로그(연구소 지하): 사다리(바깥 세상에서는 바닥 승강구) · 실험 캡슐 · 깨진 캡슐
+	"H": [preload("res://story/props/ladder.gd"), ""],
+	"K": [preload("res://story/props/capsule.gd"), ""],
+	"k": [preload("res://story/props/capsule.gd"), ""],
 }
 
 ## 글자 맵 파일 경로 (tutorial 이 없을 때)
@@ -64,6 +68,9 @@ func _ready() -> void:
 	if area != null:
 		# 구역마다 타일 그림이 다르다 (연구소·광산촌·숲이 한 맵에 이어져 있다)
 		tiles = LevelBuilder.build(map, DB.theme, area.tilesets(), area.tileset_at)
+	elif tutorial != null:
+		# 튜토리얼 타일 그림 (스토리판 프롤로그는 연구소 지하라 연구소 타일)
+		tiles = LevelBuilder.build(map, DB.theme, tutorial.tilesets)
 	else:
 		tiles = LevelBuilder.build(map, DB.theme)
 	add_child(tiles)

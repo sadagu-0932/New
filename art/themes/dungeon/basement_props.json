@@ -1,0 +1,30 @@
+{
+  "frame_width": 16,
+  "frame_height": 32,
+  "animations": {
+    "ladder": {
+      "row": 0,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "hatch": {
+      "row": 1,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    },
+    "capsule": {
+      "row": 2,
+      "frames": 2,
+      "fps": 2.0,
+      "loop": true
+    },
+    "capsule_broken": {
+      "row": 3,
+      "frames": 1,
+      "fps": 1.0,
+      "loop": false
+    }
+  }
+}

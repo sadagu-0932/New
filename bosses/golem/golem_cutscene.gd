@@ -3,10 +3,11 @@ extends Node
 ## 2페이즈 시작 컷씬 (대사 없음). 골렘 1페이즈 격파 직후 (타이머는 이미 멈춤 → 기록에 영향 없음).
 ## 1. 골렘 각성  2. 필살기 1회  3. 주인공 쓰러짐  4. 암전  5. TO BE CONTINUED → Events.demo_finished (기록 화면, M7)
 ## 첫 회는 끝까지 재생, 두 번째부터 E·Enter 로 건너뛰기 가능 (SaveData "golem_cutscene_seen").
-## 스토리판(프롤로그)은 5 가 "한나절 뒤" → Events.prologue_finished (1지역에서 깨어남).
+## 스토리판(프롤로그)은 글자 없이: 4 암전 → 어둠 속에 머묾(골렘은 떠나고 잔해만 남는다) → 같은 자리에서 깨어나며 밝아짐
+##   → Events.prologue_awakened (골렘 방의 사다리를 오를 수 있게 된다. 사다리를 오르면 바깥 세상 연구소)
 ## 데모 모드가 아니면(본편) 3~5 대신 2페이즈 전투로 이어진다.
 
-enum Step { AWAKEN, SPECIAL, COLLAPSE, FADE, TEXT, DONE }
+enum Step { AWAKEN, SPECIAL, COLLAPSE, FADE, TEXT, WAKE, DONE }
 
 const SAVE_KEY := "golem_cutscene_seen"
 ## 화면 흔들림 세기 (px, 화면 표시 전용)
@@ -25,10 +26,13 @@ var _skip_label: Label
 ## 화면 연출용 랜덤 (게임 로직 RNG 와 분리)
 var _fx_rng := RandomNumberGenerator.new()
 var _fake_bullets: Array[Node2D] = []
+## 골렘 수치 (스토리판에서는 어둠 속에서 골렘이 사라지므로 미리 들고 있는다)
+var _gd: GolemData
 
 
 func _init(owner_golem: Golem) -> void:
 	golem = owner_golem
+	_gd = owner_golem.gd()
 
 
 func _ready() -> void:
@@ -52,8 +56,8 @@ func _build_overlay() -> void:
 	_black.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_black.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layer.add_child(_black)
-	# 스토리판은 "TO BE CONTINUED" 대신 시간 경과 글 (data/story.tres)
-	_text = UiText.make_label(DB.story.prologue_end_text if Game.is_story_mode() else "TO BE CONTINUED", UiText.SIZE_LARGE)
+	# 스토리판은 글자 없이 어둠만 (TEXT 단계 = 어둠 속에 머묾)
+	_text = UiText.make_label("" if Game.is_story_mode() else "TO BE CONTINUED", UiText.SIZE_LARGE)
 	_text.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -71,7 +75,7 @@ func _build_overlay() -> void:
 
 func _enter(s: Step) -> void:
 	step = s
-	var d := golem.gd()
+	var d := _gd
 	match s:
 		Step.AWAKEN:
 			_timer = d.cut_awaken_ticks
@@ -87,9 +91,15 @@ func _enter(s: Step) -> void:
 		Step.FADE:
 			_timer = d.cut_fade_ticks
 		Step.TEXT:
-			_timer = d.cut_text_ticks
+			_timer = roundi(DB.story.prologue_dark_seconds * Engine.physics_ticks_per_second) if Game.is_story_mode() else d.cut_text_ticks
 			_black.color.a = 1.0
 			_text.visible = true
+			if Game.is_story_mode():
+				_leave_golem()
+		Step.WAKE:
+			_timer = maxi(roundi(DB.story.prologue_wake_seconds * Engine.physics_ticks_per_second), 1)
+			if _player:
+				_player.cutscene_wake()
 		Step.DONE:
 			_finish()
 
@@ -111,7 +121,9 @@ func _physics_process(_delta: float) -> void:
 			_shake(0.0)
 			_move_fake_bullets()
 		Step.FADE:
-			_black.color.a = 1.0 - float(_timer) / float(maxi(golem.gd().cut_fade_ticks, 1))
+			_black.color.a = 1.0 - float(_timer) / float(maxi(_gd.cut_fade_ticks, 1))
+		Step.WAKE:
+			_black.color.a = float(_timer) / float(maxi(roundi(DB.story.prologue_wake_seconds * Engine.physics_ticks_per_second), 1))
 	if _timer > 0:
 		return
 	match step:
@@ -127,6 +139,8 @@ func _physics_process(_delta: float) -> void:
 		Step.FADE:
 			_enter(Step.TEXT)
 		Step.TEXT:
+			_enter(Step.WAKE if Game.is_story_mode() else Step.DONE)
+		Step.WAKE:
 			_enter(Step.DONE)
 
 
@@ -137,6 +151,11 @@ func skip() -> void:
 	if not Game.is_demo_mode():
 		_finish_into_phase2()
 		return
+	if Game.is_story_mode():
+		# 어둠·깨어남 연출을 건너뛰고 바로 깨어난 상태로
+		_leave_golem()
+		if _player:
+			_player.cutscene_wake()
 	_enter(Step.DONE)
 
 
@@ -145,7 +164,12 @@ func _finish() -> void:
 	_shake(0.0)
 	SaveData.set_value(SAVE_KEY, true)
 	if Game.is_story_mode():
-		Events.prologue_finished.emit()
+		# 깨어남: 화면을 다 밝히고 다시 움직일 수 있게. 이 컷씬은 여기서 끝 (사다리는 StoryMain 이 켠다)
+		_black.color.a = 0.0
+		if _player:
+			_player.set_cutscene_lock(false)
+		Events.prologue_awakened.emit()
+		queue_free()
 	else:
 		Events.demo_finished.emit()
 
@@ -162,9 +186,23 @@ func _finish_into_phase2() -> void:
 	queue_free()
 
 
+## 스토리판: 어둠 속에서 골렘이 떠난다 (몸은 사라지고 그 자리에 잔해). 남은 연출 탄도 치운다
+func _leave_golem() -> void:
+	_clear_fake_bullets()
+	if not is_instance_valid(golem) or golem.is_queued_for_deletion():
+		return
+	var parent := golem.get_parent()
+	var center := golem.global_position
+	for offset: Vector2 in [Vector2(-12, 6), Vector2(10, -4), Vector2(2, 14)]:
+		var r := Rubble.new()
+		r.position = center + offset
+		parent.add_child(r)
+	golem.queue_free()
+
+
 ## 필살기 연출: 사방으로 큰 탄막 (판정 없는 그림)
 func _spawn_special() -> void:
-	var d := golem.gd()
+	var d := _gd
 	var frames := DB.theme.load_sheet("bullets")
 	for i in d.cut_special_bullets:
 		var b := AnimatedSprite2D.new()

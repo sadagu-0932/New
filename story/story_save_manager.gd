@@ -24,6 +24,9 @@ func _player() -> Player:
 ## 지금 저장할 수 있는지
 func can_save() -> bool:
 	var p := _player()
+	# 프롤로그에서 골렘에게 쓰러졌다 깨어난 뒤 ~ 사다리를 오르기 전에는 저장하지 않는다 (불러오면 시험이 다시 시작되므로)
+	if Story.has_flag("prologue_awake") and not Story.has_flag("prologue_done"):
+		return false
 	return p != null and not p.is_dead() and not p.cutscene_lock and not CombatState.is_restricted(get_tree())
 
 

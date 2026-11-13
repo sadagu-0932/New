@@ -5,8 +5,16 @@ extends Resource
 
 ## 타이틀 화면의 부제
 @export var title_subtitle: String = ""
-## 프롤로그 끝 컷씬의 암전 글 ("TO BE CONTINUED" 자리)
-@export var prologue_end_text: String = ""
+## 프롤로그(연구소 지하) 맵. 스피드런판 튜토리얼과 따로 둔다 (기술을 자연스럽게 익히게 다시 짠 것)
+@export var prologue: TutorialData
+## 골렘에게 쓰러진 뒤: 화면이 어두워진 채 머무는 시간 → 같은 자리에서 깨어나며 밝아지는 시간 (초, 글자 없음)
+@export var prologue_dark_seconds: float = 0.0
+@export var prologue_wake_seconds: float = 0.0
+## 사다리를 오를 때 어두워지는 시간 / 바깥 세상에서 밝아지는 시간 (초)
+@export var ladder_fade_out_seconds: float = 0.0
+@export var ladder_fade_in_seconds: float = 0.0
+## 사다리 앞 표시 (%s = 상호작용 키 이름)
+@export var text_climb: String = ""
 ## 스토리 트리거 id → 화면 위쪽에 차례로 흘러가는 글 (Array[String]). 게임을 멈추지 않는다
 @export var lines: Dictionary = {}
 ## 글 한 줄이 떠 있는 틱

@@ -32,7 +32,8 @@ func new_level(map_path: String) -> Level:
 
 
 ## 실제 튜토리얼 맵으로 새 레벨을 띄운다
-func new_tutorial_level() -> Level:
+## tutorial: 쓸 튜토리얼 (없으면 game_config 의 것. 스토리판 프롤로그는 DB.story.prologue)
+func new_tutorial_level(tutorial: TutorialData = null) -> Level:
 	if level != null:
 		level.queue_free()
 		await get_tree().physics_frame
@@ -41,7 +42,7 @@ func new_tutorial_level() -> Level:
 	input = ScriptedInputSource.new()
 	PlayerInput.source = input
 	level = Level.new()
-	level.tutorial = DB.game_config.tutorial
+	level.tutorial = tutorial if tutorial != null else DB.game_config.tutorial
 	add_child(level)
 	await get_tree().physics_frame
 	return level

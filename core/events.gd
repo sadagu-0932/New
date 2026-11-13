@@ -75,8 +75,12 @@ signal boss_defeated(boss: Node2D)
 signal boss_collapsed(boss: Node2D)
 ## 데모 끝 (2페이즈 시작 컷씬 종료) → 기록 화면
 signal demo_finished()
-## 스토리판: 프롤로그 끝 (골렘 컷씬의 "한나절 뒤" 암전까지 끝남) → 1지역으로
+## 스토리판: 프롤로그 끝 (연구소 지하의 사다리를 올라 어두워진 뒤) → 바깥 세상 연구소로
 signal prologue_finished()
+## 스토리판: 프롤로그 골렘에게 쓰러졌다가 (암전 뒤) 같은 자리에서 깨어남 → 사다리를 오를 수 있다
+signal prologue_awakened()
+## 스토리판: 연구소 지하의 사다리를 오름 → 어두워졌다가 바깥 세상 연구소에서 밝아진다
+signal ladder_climbed()
 ## 스토리판: 죽은 뒤 마지막 저장 지점에서 부활 요청
 signal story_respawn_requested()
 ## 스토리 지역에 들어옴 (지역 id)

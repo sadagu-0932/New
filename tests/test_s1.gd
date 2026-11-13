@@ -35,8 +35,8 @@ func test_config() -> void:
 
 func test_texts() -> void:
 	var forbidden := ["처형", "은신", "돌진 베기", "재패링", "콤보", "연속"]
-	var texts: Array[String] = [DB.story.prologue_end_text, DB.story.skill_locked_notice, DB.game_config.tutorial.pre_start_hint]
-	for sd: TutorialSectionData in DB.game_config.tutorial.sections:
+	var texts: Array[String] = [DB.story.text_climb, DB.story.skill_locked_notice, DB.story.prologue.pre_start_hint]
+	for sd: TutorialSectionData in DB.story.prologue.sections:
 		texts.append(sd.hint)
 		texts.append(sd.sign_text)
 		check(DB.story.lines.has(sd.story_id), "구간 트리거 %s 에 제어 기록 글 있음" % sd.story_id)
@@ -119,7 +119,7 @@ func test_story_triggers_and_log() -> void:
 	var log_view := DialoguePlayer.new()
 	add_child(log_view)
 	_stories.clear()
-	await new_tutorial_level()
+	await new_tutorial_level(DB.story.prologue)
 	await step(3)
 	check(_stories == (["tutorial_section_1"] as Array[String]), "시작하자마자 1구간 스토리 트리거 발동 %s" % [_stories])
 	var first: String = DB.story.lines["tutorial_section_1"][0]
@@ -143,7 +143,9 @@ func _start_run() -> RunController:
 		await step(1)
 	input = ScriptedInputSource.new()
 	PlayerInput.source = input
-	var run := RunController.new(RunSetup.from_config(DB.game_config))
+	var setup := RunSetup.from_config(DB.game_config)
+	setup.tutorial = DB.story.prologue
+	var run := RunController.new(setup)
 	add_child(run)
 	await step(1)
 	return run
@@ -164,11 +166,12 @@ func test_no_instant_restart() -> void:
 func test_skill_change_outside_combat() -> void:
 	var run := await _start_run()
 	var p := run.level.player
-	cross_start_line(p)
 	await step(3)
-	check(Game.clock_running, "출발선을 넘음")
+	check(get_tree().get_first_node_in_group(StartLine.GROUP) == null, "스토리판 프롤로그에는 출발선이 없음")
+	p.teleport(p.global_position + Vector2(120, 0))
+	await step(3)
 	check(not CombatState.in_combat(get_tree()), "주변에 적이 없으면 전투 중 아님")
-	check(run.change_skill(DB.skill_by_id("blink")) and p.skill.data.id == "blink", "출발한 뒤에도 전투 중이 아니면 스킬 변경 가능")
+	check(run.change_skill(DB.skill_by_id("blink")) and p.skill.data.id == "blink", "시험 중에도 전투 중이 아니면 스킬 변경 가능")
 	# 적이 플레이어를 보면 전투 중
 	var e := spawn_enemy_in(run.level, "charger_weak", p.global_position + Vector2(40, 0))
 	await wait_until(func() -> bool: return e.has_target, 30)
@@ -191,7 +194,7 @@ func spawn_enemy_in(lv: Level, key: String, pos: Vector2) -> Enemy:
 
 func test_prologue_ending() -> void:
 	SaveData.set_value(GolemCutscene.SAVE_KEY, false)
-	await new_tutorial_level()
+	await new_tutorial_level(DB.story.prologue)
 	Debug.god_mode = true
 	level.player.teleport(LevelMap.cell_center(level.map.section_cells[7] + Vector2i(2, 0)))
 	await step(2)
@@ -214,13 +217,52 @@ func test_prologue_ending() -> void:
 		if n is GolemCutscene:
 			cut = n
 	check(cut != null, "골렘 격파 → 컷씬")
+	var ladder: Ladder = null
+	for n in level.props.get_children():
+		if n is Ladder:
+			ladder = n
+	check(ladder != null and not ladder.usable, "골렘 방에 사다리가 미리 걸려 있음 (시험 중에는 못 오름)")
 	_prologue_finished = 0
 	_demo_finished = 0
+	var awakened := [0]
+	var on_awake := func() -> void: awakened[0] += 1
+	Events.prologue_awakened.connect(on_awake)
 	await wait_until(func() -> bool: return cut.step == GolemCutscene.Step.TEXT,
 		d.cut_awaken_ticks + d.cut_special_ticks + d.cut_collapse_ticks + d.cut_fade_ticks + 20)
-	check(cut._text.visible and cut._text.text == "한나절 뒤", "암전 → \"한나절 뒤\" (TO BE CONTINUED 아님): %s" % cut._text.text)
-	await wait_until(func() -> bool: return _prologue_finished > 0, d.cut_text_ticks + 5)
-	check(_prologue_finished == 1 and _demo_finished == 0, "컷씬 끝 → 프롤로그 종료 이벤트 (기록 화면 없음)")
+	check(cut._text.text == "" and cut._black.color.a >= 1.0, "암전 → 글자 없이 어둠만 (\"한나절 뒤\" 없음)")
+	await step(2)
+	var rubble := 0
+	for n in level.props.get_children():
+		if n is Rubble:
+			rubble += 1
+	check(not is_instance_valid(g) and rubble > 0, "어둠 속에서 골렘은 떠나고 잔해만 남음")
+	var dark_ticks := roundi(DB.story.prologue_dark_seconds * Engine.physics_ticks_per_second)
+	var wake_ticks := roundi(DB.story.prologue_wake_seconds * Engine.physics_ticks_per_second)
+	await wait_until(func() -> bool: return cut.step == GolemCutscene.Step.WAKE, dark_ticks + 5)
+	check(not level.player.is_dead() and level.player.health.current == level.player.health.maximum, "같은 자리에서 깨어남 (체력 회복)")
+	await step(wake_ticks / 2)
+	var mid: float = cut._black.color.a
+	check(mid > 0.1 and mid < 0.9, "화면이 서서히 밝아짐 (%.2f)" % mid)
+	await wait_until(func() -> bool: return awakened[0] > 0, wake_ticks + 5)
+	await step(1)
+	check(awakened[0] == 1 and _prologue_finished == 0 and _demo_finished == 0, "깨어남 알림 (아직 프롤로그는 안 끝남, 기록 화면 없음)")
+	check(not is_instance_valid(cut) and not level.player.cutscene_lock, "깨어난 뒤 다시 움직일 수 있음")
+	Events.prologue_awakened.disconnect(on_awake)
+	# 사다리: StoryMain 이 깨어남 알림을 받아 켠다 (여기서는 직접)
+	var climbed := [0]
+	var on_climb := func() -> void: climbed[0] += 1
+	Events.ladder_climbed.connect(on_climb)
+	level.player.teleport(ladder.global_position + Vector2(0, 6))
+	input.push(Vector2.ZERO, 1, 0, InputFrame.INTERACT)
+	await step(3)
+	check(climbed[0] == 0, "깨어나기 전 상태의 사다리는 오를 수 없음")
+	ladder.usable = true
+	await step(1)
+	check(ladder._prompt.visible, "깨어난 뒤 사다리 앞: 오르기 표시")
+	input.push(Vector2.ZERO, 1, 0, InputFrame.INTERACT)
+	await step(3)
+	check(climbed[0] == 1 and level.player.cutscene_lock, "E → 사다리를 오름")
+	Events.ladder_climbed.disconnect(on_climb)
 	Debug.god_mode = false
 	level.queue_free()
 	level = null
@@ -244,12 +286,31 @@ func test_main_flow() -> void:
 	main.title.activate(StoryTitleScreen.Item.NEW_GAME)
 	await step(2)
 	check(main.run != null and main.run.level != null and main.run.level.tutorial != null and not main.title.is_showing(), "새 게임 → 프롤로그(튜토리얼) 시작")
-	Events.prologue_finished.emit()
+	Events.prologue_awakened.emit()
+	await step(1)
+	var ladder_usable := false
+	for n in main.run.level.props.get_children():
+		if n is Ladder:
+			ladder_usable = (n as Ladder).usable
+	check(ladder_usable and Story.has_flag("prologue_awake"), "깨어나면 골렘 방 사다리를 오를 수 있음")
+	check(not main.saves.can_save(), "깨어난 뒤 ~ 사다리 전에는 저장하지 않음")
+	Events.ladder_climbed.emit()
+	await step(roundi(DB.story.ladder_fade_out_seconds * 60.0 * 0.5))
+	check(main._fade.color.a > 0.2 and main.run.level.tutorial != null, "사다리 → 화면이 어두워짐 (글자 없음)")
+	await wait_until(func() -> bool: return Story.has_flag("prologue_done"), roundi(DB.story.ladder_fade_out_seconds * 60.0) + 30)
 	await step(2)
 	check(Story.has_flag("prologue_done") and Story.area == DB.story.after_prologue_area, "프롤로그 끝 → 진행도 기록, 다음 지역은 %s" % Story.area)
+	check(main._fade.color.a > 0.5, "바깥 세상은 어두운 데서 시작해")
+	await step(roundi(DB.story.ladder_fade_in_seconds * 60.0) + 10)
+	check(main._fade.color.a <= 0.0, "…서서히 밝아짐")
 	check(main.run != null and main.run.level.area != null and main.run.level.area.id == "world" and main.run.level.tutorial == null
 		and main.run.level.area.zone_at_pos(main.run.level.player.global_position).id == "lab",
-		"\"한나절 뒤\" → 바깥 세상의 연구소에서 깨어남")
+		"사다리 → 바깥 세상의 연구소")
+	var hatch_near := false
+	for n in main.run.level.props.get_children():
+		if n is Ladder and n.global_position.distance_to(main.run.level.player.global_position) <= 24.0:
+			hatch_near = true
+	check(hatch_near, "바깥 세상에서는 올라온 승강구 바로 옆에서 시작")
 	main.queue_free()
 	PlayerInput.source = ScriptedInputSource.new()
 	await step(2)

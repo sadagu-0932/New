@@ -8,6 +8,8 @@ extends Resource
 @export var story_trigger_radius: float = 0.0
 ## 출발 전(첫 조작 전) 하단 안내 문구. 가장 먼저 스킬 설정 방법을 알려준다
 @export_multiline var pre_start_hint: String = ""
+## 타일 그림 (첫 번째가 기본). 스토리판 프롤로그는 연구소 지하라 tiles_lab
+@export var tilesets: Array[String] = ["tiles"]
 ## 표지판 글상자가 보이는 거리 (px)
 @export var sign_radius: float = 0.0
 

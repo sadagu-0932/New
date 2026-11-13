@@ -421,6 +421,14 @@ func cutscene_collapse() -> void:
 	_sprite.play(&"death")
 
 
+## 컷씬: 쓰러졌던 자리에서 다시 일어남 (스토리판 프롤로그). 체력은 다시 가득
+func cutscene_wake() -> void:
+	state = State.NORMAL
+	velocity = Vector2.ZERO
+	health.current = health.maximum
+	Events.player_hp_changed.emit(health.current, health.maximum)
+
+
 ## 스킬 장착 (출발 전 Tab 설정, 런 시작 시)
 func set_skill(data: SkillData) -> void:
 	if skill:

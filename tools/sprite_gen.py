@@ -2716,6 +2716,130 @@ def build_waystone() -> None:
     ])
 
 
+# 프롤로그(연구소 지하) 소품 16×32 — 사다리(위 칸 벽에 걸쳐 그린다), 실험 캡슐, 깨진 캡슐
+# 사다리: 위쪽 벽에 뚫린 승강구(빛이 새어 나옴) → 바닥까지 내려오는 쇠사다리
+LADDER = [
+    "................",
+    "..oooooooooooo..",
+    "..oYYYYYYYYYYo..",
+    "..oYyyyyyyyyYo..",
+    "..oyyyyyyyyyyo..",
+    "..ottttttttttto.",
+    "..ottRtttttttRo.",
+    "..ottRRRRRRRRRo.",
+    "..ottRtttttttRo.",
+    "..ottRtttttttRo.",
+    "..ottRRRRRRRRRo.",
+    "..ottRtttttttRo.",
+    "..ottRtttttttRo.",
+    "..ottRRRRRRRRRo.",
+    "..ottRtttttttRo.",
+    "..oooRoooooooRo.",
+    "....oRo.....oRo.",
+    "....oRRRRRRRRRo.",
+    "....oRo.....oRo.",
+    "....oRo.....oRo.",
+    "....oRo.....oRo.",
+    "....oRRRRRRRRRo.",
+    "....oRo.....oRo.",
+    "....oRo.....oRo.",
+    "....oRo.....oRo.",
+    "....oRRRRRRRRRo.",
+    "....oRo.....oRo.",
+    "....oRo.....oRo.",
+    "....oRo.....oRo.",
+    "....oRRRRRRRRRo.",
+    "....oro.....oro.",
+    "....ooo.....ooo.",
+]
+
+# 실험 캡슐: 쇠 뚜껑 · 유리관 안 마석 액체(거품) · 받침
+CAPSULE = [
+    "................",
+    "....oooooooo....",
+    "...oMMMMMMMMo...",
+    "..oMmmmmmmmmMo..",
+    "..ooooooooooooo.",
+    "...oGwLLLLLLGo..",
+    "...oGwLLLLLLGo..",
+    "...oGLLLLLbLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLLbLLLLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLLLLLLbGo..",
+    "...oGLLLbLLLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLbLLLLLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLLLLLbLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLLLbLLLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLLLLLLLGo..",
+    "...oGLLLLLLLGo..",
+    "..ooooooooooooo.",
+    "..oMmmmmmmmmMo..",
+    "..oMMMMMMMMMMo..",
+    "..oMMmMMMMmMMo..",
+    "..oMMMMMMMMMMo..",
+    "...oooooooooo...",
+    "................",
+]
+
+
+# 바닥 승강구 (바깥 세상 연구소 쪽 끝): 아래 칸에 그린다. 지하로 내려가는 사다리 머리가 보인다
+HATCH = ["................"] * 16 + [
+    "................",
+    ".oooooooooooooo.",
+    ".oLLLLLLLLLLLLo.",
+    ".oLttttttttttLo.",
+    ".oLtRtttttttRLo.",
+    ".oLtRRRRRRRRRLo.",
+    ".oLtRtttttttRLo.",
+    ".oLtRtttttttRLo.",
+    ".oLtRRRRRRRRRLo.",
+    ".oLtRtttttttRLo.",
+    ".oLtRtttttttRLo.",
+    ".oLtrtttttttrLo.",
+    ".oLttttttttttLo.",
+    ".oLLLLLLLLLLLLo.",
+    ".oooooooooooooo.",
+    "................",
+]
+
+
+def build_basement_props() -> None:
+    ladder = Canvas.from_rows(LADDER, {".": None, "o": "outline", "Y": "yellow", "y": "tan",
+                                       "t": "shadow", "R": "stone_light", "r": "stone"})
+    cmap = {".": None, "o": "outline", "M": "stone", "m": "stone_light", "G": "pale", "w": "white",
+            "L": "green", "b": "green_light"}
+    full1 = Canvas.from_rows(CAPSULE, cmap)
+    # 거품이 한 칸씩 올라간다
+    full2 = Canvas.from_rows([r for r in CAPSULE[:5]] + [CAPSULE[5 + ((i + 1) % 20)] for i in range(20)] + CAPSULE[25:], cmap)
+    # 깨진 캡슐 (주인공이 나온 것): 유리 윗부분이 깨지고 액체가 빠졌다
+    broken = Canvas.from_rows(CAPSULE, {".": None, "o": "outline", "M": "stone", "m": "stone_light", "G": "pale",
+                                        "w": "white", "L": "shadow", "b": "shadow"})
+    for y in range(5, 15):
+        for x in range(3, 13):
+            # 위쪽 유리가 깨져 나간 자리 (들쭉날쭉)
+            if y < 5 + (x * 3) % 9 and 4 <= x <= 11:
+                broken.set(x, y, None if (x * 7 + y * 3) % 5 != 0 else c("pale"))
+    for x in range(5, 11):
+        broken.set(x, 24, c("green_dark"))
+        broken.set(x, 23, c("green") if x % 2 else c("green_dark"))
+    hatch = Canvas.from_rows(HATCH, {".": None, "o": "outline", "L": "stone_light", "t": "outline",
+                                     "R": "stone_light", "r": "stone"})
+    save_sheet("basement_props", 16, 32, [
+        ("ladder", [ladder], 1.0, False),
+        ("hatch", [hatch], 1.0, False),
+        ("capsule", [full1, full2], 2.0, True),
+        ("capsule_broken", [broken], 1.0, False),
+    ])
+
+
 def build_story_props() -> None:
 
     def npc(hair: str, cloth: str, pants: str) -> list[Canvas]:
@@ -2974,6 +3098,7 @@ def main() -> None:
     build_story_tiles()
     build_story_props()
     build_waystone()
+    build_basement_props()
     build_golem()
     build_icon()
     verify_palette()

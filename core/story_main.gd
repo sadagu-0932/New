@@ -1,6 +1,7 @@
 extends Node
 ## 스토리판 진입점·화면 흐름.
-## 타이틀(새 게임 / 이어하기 / 설정 / 종료) → 프롤로그(기존 튜토리얼) → "한나절 뒤" → 바깥 세상
+## 타이틀(새 게임 / 이어하기 / 설정 / 종료) → 프롤로그(연구소 지하) → 골렘에게 쓰러짐 → 암전 → 같은 자리에서 깨어남
+## → 골렘 방의 사다리를 오름 → 어두워졌다가 바깥 세상 연구소에서 밝아짐
 ## 바깥 세상은 한 장으로 이어진 맵(world)이라 연구소·광산촌·숲·골렘 터를 걸어서 오간다 (화면 전환 없음).
 ## 웨이스톤 순간이동, 저장·불러오기·부활, 웨이스톤 활성화, 획득물·자료 읽기를 여기서 잇는다.
 ## 스피드런 기능(타이머·스플릿·리더보드·기록 화면·어트랙트 모드·관리자 창)은 만들지 않는다.
@@ -22,6 +23,13 @@ var _notice_left: float = 0.0
 var _pending_document: String = ""
 ## 끝 글(TO BE CONTINUED)까지 남은 시간 (초, 0 = 기다리는 중 아님)
 var _ending_left: float = 0.0
+## 화면 전체를 어둡게 덮는 막 (사다리를 오를 때 어두워졌다가 밝아진다, 글자 없음)
+var _fade_layer: CanvasLayer
+var _fade: ColorRect
+## 막의 진하기가 바뀌는 속도 (초당, + 어두워짐 / - 밝아짐). 0 = 그대로
+var _fade_speed: float = 0.0
+## 다 어두워졌을 때 부를 것
+var _on_faded: Callable = Callable()
 
 
 func _ready() -> void:
@@ -53,6 +61,7 @@ func _ready() -> void:
 	map_panel.teleport_requested.connect(teleport)
 	add_child(map_panel)
 	_build_notice()
+	_build_fade()
 	title = StoryTitleScreen.new()
 	title.new_game_requested.connect(start_new_game)
 	title.continue_requested.connect(continue_game)
@@ -65,6 +74,8 @@ func _ready() -> void:
 		add_child(DebugOverlay.new())
 	Events.return_to_title.connect(go_title)
 	Events.prologue_finished.connect(_on_prologue_finished)
+	Events.prologue_awakened.connect(_on_prologue_awakened)
+	Events.ladder_climbed.connect(_on_ladder_climbed)
 	Events.story_respawn_requested.connect(respawn)
 	Events.loadout_changed.connect(_apply_loadout)
 	Events.area_exit_entered.connect(_on_area_exit)
@@ -175,6 +186,9 @@ func _start_run(state: Dictionary = {}) -> void:
 		# 스토리 지역: 지역 맵을 쓴다 (프롤로그는 튜토리얼 맵 그대로)
 		setup.tutorial = null
 		setup.area = area
+	elif DB.story.prologue != null:
+		# 프롤로그: 연구소 지하 (스피드런판 튜토리얼과 따로 짠 맵)
+		setup.tutorial = DB.story.prologue
 	setup.skill = Story.inventory.skill_data(Inventory.SLOT_Q)
 	run = RunController.new(setup)
 	run.pending_state = state
@@ -334,12 +348,73 @@ func _on_document_read(item_id: String) -> void:
 		_ending_left = DB.story.ending_delay_seconds
 
 
-## 프롤로그 끝 ("한나절 뒤" 암전 뒤) → 바깥 세상의 연구소에서 깨어남. 스킬 칸이 하나 더 열린다
+## 골렘에게 쓰러졌다가 같은 자리에서 깨어남 (골렘 컷씬이 알린다) → 골렘 방의 사다리를 오를 수 있다
+func _on_prologue_awakened() -> void:
+	Story.set_flag("prologue_awake")
+	# 시험 명령 문구는 거둔다 (깨어난 뒤에는 글자 안내 없이)
+	Events.hint_changed.emit("")
+	if run != null and run.level != null:
+		for node in run.level.props.get_children():
+			if node is Ladder:
+				(node as Ladder).usable = true
+
+
+## 사다리를 오름: 화면이 어두워진 뒤 바깥 세상 연구소(승강구 자리)에서 밝아진다
+func _on_ladder_climbed() -> void:
+	fade_out(DB.story.ladder_fade_out_seconds, func() -> void:
+		Events.prologue_finished.emit()
+		fade_in(DB.story.ladder_fade_in_seconds))
+
+
+## 프롤로그 끝 → 바깥 세상의 연구소에서 시작. 스킬 칸이 하나 더 열린다
 func _on_prologue_finished() -> void:
 	Story.set_flag("prologue_done")
 	Story.area = DB.story.after_prologue_area
 	_start_run()
 	saves.save_auto("start")
+
+
+func _build_fade() -> void:
+	_fade_layer = CanvasLayer.new()
+	# 게임 화면·HUD 위, 메뉴(일시정지 95 등) 아래
+	_fade_layer.layer = 89
+	add_child(_fade_layer)
+	_fade = ColorRect.new()
+	_fade.color = Color(0, 0, 0, 0)
+	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade_layer.add_child(_fade)
+
+
+## 화면을 seconds 동안 어둡게 한 뒤 done 을 부른다
+func fade_out(seconds: float, done: Callable = Callable()) -> void:
+	_on_faded = done
+	_fade_speed = 1.0 / maxf(seconds, 0.01)
+
+
+## 어두운 화면을 seconds 동안 밝힌다
+func fade_in(seconds: float) -> void:
+	_fade.color.a = 1.0
+	_on_faded = Callable()
+	_fade_speed = -1.0 / maxf(seconds, 0.01)
+
+
+func is_fading() -> bool:
+	return _fade_speed != 0.0 or _fade.color.a > 0.0
+
+
+func _tick_fade(delta: float) -> void:
+	if _fade_speed == 0.0:
+		return
+	_fade.color.a = clampf(_fade.color.a + _fade_speed * delta, 0.0, 1.0)
+	if _fade_speed > 0.0 and _fade.color.a >= 1.0:
+		_fade_speed = 0.0
+		var done := _on_faded
+		_on_faded = Callable()
+		if done.is_valid():
+			done.call()
+	elif _fade_speed < 0.0 and _fade.color.a <= 0.0:
+		_fade_speed = 0.0
 
 
 ## 이번 작업 범위의 끝: 글을 보여주고 타이틀로
@@ -353,6 +428,7 @@ func _show_ending(text: String) -> void:
 
 
 func _process(delta: float) -> void:
+	_tick_fade(delta)
 	if _ending_left > 0.0 and run != null and not get_tree().paused:
 		_ending_left -= delta
 		if _ending_left <= 0.0:
@@ -375,6 +451,9 @@ func go_title() -> void:
 	_notice_layer.visible = false
 	_notice_left = 0.0
 	_ending_left = 0.0
+	_fade_speed = 0.0
+	_on_faded = Callable()
+	_fade.color.a = 0.0
 	save_list.close()
 	title.can_continue = StorySave.has_any()
 	title.set_visible_screen(true)
