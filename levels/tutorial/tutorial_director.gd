@@ -3,6 +3,7 @@ extends Node
 ## 튜토리얼 진행 관리 (레벨의 자식).
 ##  - 구간 입장 판정 (구간 시작 표시 1~7 을 넘으면 입장, 앞으로만) → Events.section_entered (스플릿 지점)
 ##  - 하단 안내 문구 표시·자동 숨김 (게임을 멈추지 않음). 출발 전엔 스킬 설정(Tab) 안내를 먼저
+##    통과 조건(pass_condition)이 있으면 그 아래 줄에 문이 열릴 때까지 계속 보인다 (남은 적 수 포함)
 ##  - 표지판 글 넣기
 ##  - 근접 구간 입장 시 탄약 0
 ##  - 구간 문 열기 (적 전멸 / 수정 스위치)
@@ -21,6 +22,10 @@ var _opened: Dictionary = {}
 var _hint_hide_timer: int = -1
 var _hint_signal: Signal
 var _hint_callable: Callable
+## 지금 보이는 명령 문구 (행동하면 사라진다) — 통과 조건 줄과 합쳐서 보여준다
+var _command: String = ""
+## 보스를 쓰러뜨린 구간 (통과 조건 줄을 더 보이지 않는다)
+var _done: Dictionary = {}
 
 
 func _init(owner_level: Level, tutorial: TutorialData) -> void:
@@ -51,8 +56,11 @@ func _ready() -> void:
 			var sign := node as Signpost
 			sign.radius = data.sign_radius
 			sign.set_text(_section_data(k).sign_text if _section_data(k) else "")
-	Events.enemy_died.connect(func(_e: Node2D) -> void: _check_all_gates())
-	Events.switch_activated.connect(func(_s: Node2D) -> void: _check_all_gates())
+	Events.enemy_died.connect(func(_e: Node2D) -> void: _on_progress())
+	Events.switch_activated.connect(func(_s: Node2D) -> void: _on_progress())
+	Events.boss_defeated.connect(func(_b: Node2D) -> void:
+		_done[section] = true
+		_command = "")
 	Events.clock_started.connect(_on_clock_started)
 	_check_all_gates()
 	_enter(1)
@@ -86,7 +94,8 @@ func _physics_process(_delta: float) -> void:
 	if _hint_hide_timer >= 0:
 		_hint_hide_timer -= 1
 		if _hint_hide_timer < 0:
-			Events.hint_changed.emit("")
+			_command = ""
+			_refresh_hint()
 
 
 func _enter(k: int) -> void:
@@ -101,6 +110,7 @@ func _enter(k: int) -> void:
 		# 출발 전: 스킬 설정 안내가 먼저. 출발하면 1구간 문구로 바뀐다
 		_disconnect_hint_signal()
 		_hint_hide_timer = -1
+		_command = ""
 		Events.hint_changed.emit(data.pre_start_hint)
 		return
 	_show_hint(sd)
@@ -114,7 +124,8 @@ func _on_clock_started() -> void:
 func _show_hint(sd: TutorialSectionData) -> void:
 	_disconnect_hint_signal()
 	_hint_hide_timer = -1
-	Events.hint_changed.emit(sd.hint)
+	_command = sd.hint
+	_refresh_hint()
 	if sd.hint.is_empty() or sd.hint_hide_on.is_empty():
 		return
 	var sig := _signal_for(sd.hint_hide_on)
@@ -126,6 +137,38 @@ func _show_hint(sd: TutorialSectionData) -> void:
 		if _hint_hide_timer < 0:
 			_hint_hide_timer = delay
 	sig.connect(_hint_callable)
+
+
+## 하단 안내 = 명령 문구 + 통과 조건 줄 (지금 구간)
+func _refresh_hint() -> void:
+	var lines: Array[String] = []
+	if not _command.is_empty():
+		lines.append(_command)
+	var cond := pass_text(section)
+	if not cond.is_empty():
+		lines.append(cond)
+	Events.hint_changed.emit("\n".join(lines))
+
+
+## 구간 k 의 통과 조건 줄 (문이 열렸으면 pass_done_text, 조건이 없으면 "")
+func pass_text(k: int) -> String:
+	var sd := _section_data(k)
+	if sd == null or sd.pass_condition.is_empty() or _done.get(k, false):
+		return ""
+	if _opened.get(k, false) and sd.gate_rule != TutorialSectionData.GateRule.NONE:
+		return data.pass_done_text
+	if sd.pass_condition.contains("%d"):
+		return sd.pass_condition % remaining_enemies(k)
+	return sd.pass_condition
+
+
+## 구간 k 에 살아 있는 적 수
+func remaining_enemies(k: int) -> int:
+	var n := 0
+	for e: Variant in _contents.get(k, {}).get("enemies", []):
+		if is_instance_valid(e) and not (e as Enemy).dead:
+			n += 1
+	return n
 
 
 func _disconnect_hint_signal() -> void:
@@ -151,6 +194,14 @@ static func _signal_for(action: String) -> Signal:
 		"switch":
 			return Events.switch_activated
 	return Signal()
+
+
+## 적이 쓰러지거나 스위치가 켜짐 → 문 확인 + 통과 조건 줄(남은 수) 갱신
+func _on_progress() -> void:
+	_check_all_gates()
+	var sd := _section_data(section)
+	if sd != null and not sd.pass_condition.is_empty() and (not _command.is_empty() or not pass_text(section).is_empty()):
+		_refresh_hint()
 
 
 func _check_all_gates() -> void:

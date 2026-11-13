@@ -25,6 +25,10 @@ cp "$OUT"/index.* "$TMP/story/"
 rm -f "$TMP/story/"*.import
 # 브라우저가 예전 게임 데이터(index.pck)를 기억해 옛 버전이 뜨지 않게, 버전마다 파일 이름을 바꾼다
 VER="$(git -C "$ROOT" rev-parse --short HEAD)"
+# 커밋 전 시안을 올릴 때는 바뀐 내용으로 이름을 달리한다 (같은 이름이면 브라우저가 예전 것을 띄움)
+if [ -n "$(git -C "$ROOT" status --porcelain)" ]; then
+	VER="$VER-$( (git -C "$ROOT" diff HEAD; git -C "$ROOT" status --porcelain) | sha1sum | cut -c1-7)"
+fi
 mv "$TMP/story/index.pck" "$TMP/story/index-$VER.pck"
 sed -i "s/\"executable\":\"index\"/\"executable\":\"index\",\"mainPack\":\"index-$VER.pck\"/; s/\"index.pck\":/\"index-$VER.pck\":/" "$TMP/story/index.html"
 touch "$TMP/.nojekyll"

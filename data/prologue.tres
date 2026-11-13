@@ -5,9 +5,10 @@
 
 [sub_resource type="Resource" id="section_1"]
 script = ExtResource("2")
+pass_condition = "[통과] 오른쪽 출구까지 이동"
 title = "이동·회피"
 map_file = "res://levels/prologue/section_1.txt"
-hint = "[명령] WASD 이동 · Space 회피 — 회피 순간은 피해 무효"
+hint = "[명령] WASD 이동 · Space 회피 (회피 중 피해 무효)"
 hint_hide_on = "dodge"
 hint_hide_delay_ticks = 90
 drain_ammo = false
@@ -17,9 +18,10 @@ story_id = "tutorial_section_1"
 
 [sub_resource type="Resource" id="section_2"]
 script = ExtResource("2")
+pass_condition = "[통과] 구덩이 너머 대상 제거 (남은 %d)"
 title = "사격"
 map_file = "res://levels/prologue/section_2.txt"
-hint = "[명령] 마우스로 조준 · 좌클릭 사격 — 구덩이 너머 대상 전부 제거"
+hint = "[명령] 마우스로 조준 · 좌클릭 사격"
 hint_hide_on = "shoot"
 hint_hide_delay_ticks = 120
 drain_ammo = false
@@ -28,9 +30,10 @@ story_id = "tutorial_section_2"
 
 [sub_resource type="Resource" id="section_3"]
 script = ExtResource("2")
+pass_condition = "[통과] 대상 전부 제거 (남은 %d)"
 title = "근접"
 map_file = "res://levels/prologue/section_3.txt"
-hint = "[명령] 탄약 공급 차단 · 우클릭 근접 공격 — 타격 시 탄약 회수"
+hint = "[명령] 탄약 차단 · 우클릭 근접 — 타격 시 탄약 회수"
 hint_hide_on = "melee"
 hint_hide_delay_ticks = 90
 drain_ammo = true
@@ -39,9 +42,10 @@ story_id = "tutorial_section_3"
 
 [sub_resource type="Resource" id="section_4"]
 script = ExtResource("2")
+pass_condition = "[통과] 튕긴 탄으로 구덩이 섬의 수정을 맞힐 것"
 title = "패링"
 map_file = "res://levels/prologue/section_4.txt"
-hint = "[명령] 탄이 닿는 순간 우클릭 — 튕긴 탄으로 수정을 맞힐 것"
+hint = "[명령] 탄이 닿는 순간 우클릭 — 탄을 튕겨낼 것"
 hint_hide_on = "switch"
 hint_hide_delay_ticks = 60
 drain_ammo = false
@@ -50,9 +54,10 @@ story_id = "tutorial_section_4"
 
 [sub_resource type="Resource" id="section_5"]
 script = ExtResource("2")
+pass_condition = "[통과] 탄막형 제거 (남은 %d)"
 title = "완벽 회피"
 map_file = "res://levels/prologue/section_5.txt"
-hint = "[명령] 피격 직전에 회피 — 은폐 반응 발현 확인"
+hint = "[명령] 피격 직전에 회피 — 은폐 반응 확인"
 hint_hide_on = "perfect_dodge"
 hint_hide_delay_ticks = 120
 drain_ammo = false
@@ -61,9 +66,10 @@ story_id = "tutorial_section_5"
 
 [sub_resource type="Resource" id="section_6"]
 script = ExtResource("2")
+pass_condition = "[통과] 대상 전부 제거 (남은 %d)"
 title = "스킬"
 map_file = "res://levels/prologue/section_6.txt"
-hint = "[명령] Q 스킬 사용 — 마석 출력으로 구역 돌파"
+hint = "[명령] Q 스킬 사용 — 마석 출력으로 돌파"
 hint_hide_on = "skill"
 hint_hide_delay_ticks = 120
 drain_ammo = false
@@ -72,9 +78,10 @@ story_id = "tutorial_section_6"
 
 [sub_resource type="Resource" id="section_7"]
 script = ExtResource("2")
+pass_condition = "[통과] 시험용 병기 '골렘' 제압"
 title = "골렘"
 map_file = "res://levels/prologue/section_7.txt"
-hint = "[명령] 대상 제압 — 반사한 탄만 유효"
+hint = "[명령] 대상 제압 — 튕겨낸 탄만 유효"
 hint_hide_on = "parry"
 hint_hide_delay_ticks = 180
 drain_ammo = false
@@ -87,4 +94,5 @@ sections = Array[ExtResource("2")]([SubResource("section_1"), SubResource("secti
 story_trigger_radius = 24.0
 pre_start_hint = ""
 sign_radius = 40.0
+pass_done_text = "[개방] 문이 열렸다 — 다음 구역으로"
 tilesets = Array[String](["tiles_lab"])

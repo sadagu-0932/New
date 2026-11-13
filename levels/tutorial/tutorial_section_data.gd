@@ -24,5 +24,8 @@ enum GateRule {
 @export var gate_rule: GateRule = GateRule.NONE
 ## 이 구간 표지판(맵 글자 'I')에 쓸 글
 @export_multiline var sign_text: String = ""
+## 다음 구역으로 넘어가는 조건 (안내 문구 아래 줄에 문이 열릴 때까지 계속 보인다. 빈 문자열 = 없음)
+## %d 가 있으면 구간에 남은 적 수로 바뀐다 (문 규칙이 '적 전멸'일 때)
+@export var pass_condition: String = ""
 ## 본편에서 연결할 스토리 트리거 ID
 @export var story_id: String = ""

@@ -8,7 +8,10 @@ extends CanvasLayer
 ## 나타나고 사라지는 속도 (초당 알파, 화면 표시 전용)
 const FADE_SPEED := 4.0
 ## 하단 안내 문구 바로 윗줄 (위쪽은 표지판 글상자·보스 체력 바와 겹친다)
+## 안내 문구가 여러 줄이면 그 위로 올라간다 (HintDisplay.top_y)
 const TOP := 142
+## 안내 문구 윗줄과의 간격 (px)
+const GAP := 2
 
 var _label: Label
 var _queue: Array[String] = []
@@ -57,4 +60,5 @@ func _physics_process(_delta: float) -> void:
 
 
 func _process(delta: float) -> void:
+	_label.position.y = minf(TOP, HintDisplay.top_y - _label.size.y - GAP)
 	_label.modulate.a = move_toward(_label.modulate.a, _target_alpha, FADE_SPEED * delta)

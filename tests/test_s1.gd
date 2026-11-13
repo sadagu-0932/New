@@ -16,6 +16,7 @@ func run_all() -> void:
 	test_texts()
 	await test_title()
 	await test_story_triggers_and_log()
+	await test_pass_conditions()
 	await test_no_instant_restart()
 	await test_skill_change_outside_combat()
 	await test_prologue_ending()
@@ -149,6 +150,56 @@ func _start_run() -> RunController:
 	add_child(run)
 	await step(1)
 	return run
+
+
+## 하단 안내: 긴 문구는 줄을 바꿔 화면 안에 들어오고, 통과 조건 줄(남은 수)이 함께 보인다
+func test_pass_conditions() -> void:
+	var hints := HintDisplay.new()
+	add_child(hints)
+	var log_view := DialoguePlayer.new()
+	add_child(log_view)
+	for sd: TutorialSectionData in DB.story.prologue.sections:
+		check(not sd.pass_condition.is_empty(), "%s 구간에 통과 조건이 있음" % sd.title)
+	await new_tutorial_level(DB.story.prologue)
+	await step(2)
+	var d := level.director
+	check(hints.current_text().contains(DB.story.prologue.sections[0].pass_condition), "1구간: 명령 문구 아래 통과 조건 줄: %s" % hints.current_text())
+	level.player.teleport(LevelMap.cell_center(level.map.section_cells[2] + Vector2i(1, 0)))
+	await step(3)
+	var total := d.remaining_enemies(2)
+	check(total > 0 and hints.current_text().contains("남은 %d" % total), "2구간: 남은 대상 수 표시 (%d): %s" % [total, hints.current_text()])
+	var first: Enemy = d.contents(2)["enemies"][0]
+	first.dead = true
+	Events.enemy_died.emit(first)
+	await step(1)
+	check(hints.current_text().contains("남은 %d" % (total - 1)), "대상을 쓰러뜨리면 남은 수가 줄어듦: %s" % hints.current_text())
+	for e: Variant in d.contents(2)["enemies"]:
+		if is_instance_valid(e):
+			(e as Enemy).dead = true
+	Events.enemy_died.emit(first)
+	await step(1)
+	check(hints.current_text().contains(DB.story.prologue.pass_done_text), "문이 열리면 통과 줄이 '다음 구역으로'로 바뀜: %s" % hints.current_text())
+	# 프롤로그 문구는 모두 한 줄에 들어간다 (단어 하나만 다음 줄로 넘어가 잘려 보이지 않게)
+	var too_long: Array[String] = []
+	for sd: TutorialSectionData in DB.story.prologue.sections:
+		for t: String in [sd.hint, sd.pass_condition.replace("%d", "9"), DB.story.prologue.pass_done_text]:
+			Events.hint_changed.emit(t)
+			await step(1)
+			if hints._label.get_line_count() > 1:
+				too_long.append(t)
+	check(too_long.is_empty(), "안내·통과 문구가 모두 한 줄에 들어감 %s" % [too_long])
+	# 줄바꿈: 화면(320) 안에 들어오고, 제어 기록 글은 안내 문구 위로 비킨다
+	Events.hint_changed.emit("[명령] 아주 긴 안내 문구가 한 줄에 다 들어가지 않을 때에도 화면 밖으로 잘리지 않고 다음 줄로 넘어가야 한다\n통과 조건: 시험")
+	Events.story_triggered.emit("tutorial_section_2")
+	await step(30)
+	var rect := hints._label.get_global_rect()
+	check(rect.position.x >= 0.0 and rect.end.x <= 320.0 and hints._label.get_line_count() >= 3, "긴 문구는 줄을 바꿔 화면 안에 (%d줄)" % hints._label.get_line_count())
+	check(log_view._label.position.y + log_view._label.size.y <= HintDisplay.top_y, "제어 기록 글은 안내 문구 위로 비킴")
+	hints.queue_free()
+	log_view.queue_free()
+	level.queue_free()
+	level = null
+	await step(1)
 
 
 func test_no_instant_restart() -> void:
