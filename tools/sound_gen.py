@@ -19,6 +19,11 @@ OUT = ROOT / "art" / "audio"
 RATE = 22050
 # 잡음용 난수는 고정 시드 (다시 만들어도 같은 결과)
 RNG = np.random.default_rng(20240501)
+# 모든 소리에 공통으로 거는 부드럽게 다듬기 (살짝 뭉툭하게)
+# SOFTEN_LOWPASS: 높은 소리를 깎는 정도 (0 = 그대로, 클수록 먹먹)
+# SOFTEN_ATTACK: 시작을 이 시간(초) 동안 살짝 올려 '딱' 하는 첫 소리를 줄임
+SOFTEN_LOWPASS = 0.45
+SOFTEN_ATTACK = 0.003
 
 
 # ---------------------------------------------------------------------------
@@ -331,7 +336,11 @@ SOUNDS = {
 
 
 def finish(x: np.ndarray, peak: float) -> np.ndarray:
-    """가장 큰 곳을 peak 로 맞추고, 끝을 아주 짧게 줄여 '틱' 잡음을 없앤다."""
+    """살짝 뭉툭하게 다듬고, 가장 큰 곳을 peak 로 맞추고, 끝을 아주 짧게 줄여 '틱' 잡음을 없앤다."""
+    x = lowpass(lowpass(x, SOFTEN_LOWPASS), SOFTEN_LOWPASS * 0.5)
+    attack = min(int(RATE * SOFTEN_ATTACK), len(x))
+    x = x.copy()
+    x[:attack] *= np.linspace(0.0, 1.0, attack)
     m = float(np.max(np.abs(x)))
     if m > 0.0:
         x = x / m * peak
