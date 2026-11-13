@@ -18,7 +18,7 @@ story_id = "tutorial_section_1"
 
 [sub_resource type="Resource" id="section_2"]
 script = ExtResource("2")
-pass_condition = "[통과] 구덩이 너머 대상 제거 (남은 %d)"
+pass_condition = "[통과] 대상 전부 제거 (남은 %d)"
 title = "사격"
 map_file = "res://levels/prologue/section_2.txt"
 hint = "[명령] 마우스로 조준 · 좌클릭 사격"
