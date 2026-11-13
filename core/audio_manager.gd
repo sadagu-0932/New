@@ -92,7 +92,30 @@ func set_volume(value: float) -> void:
 	Settings.set_volume(snappedf(clampf(value, 0.0, 1.0), step))
 
 
-## 다이얼 값을 Master 버스에 반영 (0 이면 끈다)
+## 소리 종류별 크기 (0~1)
+func category_volume(category: String) -> float:
+	return float(Settings.category_volumes.get(category, _data.volume_default))
+
+
+## 소리 종류별 크기 바꾸기 (한 칸 단위로 맞춘다)
+func set_category_volume(category: String, value: float) -> void:
+	var step := maxf(_data.volume_step, 0.001)
+	Settings.set_category_volume(category, snappedf(clampf(value, 0.0, 1.0), step))
+
+
+## 전체("") 또는 종류별 크기 (슬라이더용)
+func volume_of(category: String) -> float:
+	return volume() if category == "" else category_volume(category)
+
+
+func set_volume_of(category: String, value: float) -> void:
+	if category == "":
+		set_volume(value)
+	else:
+		set_category_volume(category, value)
+
+
+## 전체 크기를 Master 버스에 반영 (0 이면 끈다)
 func _apply_volume() -> void:
 	var v := volume()
 	AudioServer.set_bus_mute(0, v <= 0.0)
@@ -114,10 +137,15 @@ func play(slot: String) -> bool:
 	if now - int(_last_played.get(slot, -100000)) < _data.min_gap_ms:
 		return true
 	_last_played[slot] = now
+	# 소리 종류별 크기 (0 이면 울리지 않음)
+	var category := str(_data.slot_categories.get(slot, ""))
+	var cat_volume := category_volume(category) if category != "" else 1.0
+	if cat_volume <= 0.0:
+		return true
 	var p := _players[_next]
 	_next = (_next + 1) % _players.size()
 	p.stream = stream
-	p.volume_db = _data.volume_db + float(_data.volumes.get(slot, 0.0))
+	p.volume_db = _data.volume_db + float(_data.volumes.get(slot, 0.0)) + linear_to_db(cat_volume)
 	p.pitch_scale = 1.0 if _data.fixed_pitch.has(slot) else 1.0 + randf_range(-_data.pitch_random, _data.pitch_random)
 	p.play()
 	return true

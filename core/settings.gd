@@ -17,7 +17,7 @@ const MOUSE_NAMES := {
 	MOUSE_BUTTON_XBUTTON1: "마우스4", MOUSE_BUTTON_XBUTTON2: "마우스5",
 }
 
-## 소리 크기가 바뀌었을 때 (0~1)
+## 소리 크기(전체 또는 종류별)가 바뀌었을 때. value 는 전체 크기 (0~1)
 signal volume_changed(value: float)
 
 ## 키 설정이나 버튼 위치가 바뀌었을 때 (화면의 키 이름 갱신용)
@@ -29,6 +29,8 @@ var keys: Dictionary = {}
 var touch_positions: Dictionary = {}
 ## 소리 크기 0~1 (음수 = 저장한 적 없음 → data/audio.tres 의 volume_default)
 var volume: float = -1.0
+## 소리 종류 → 크기 0~1 (저장한 적 없는 종류는 빠져 있음 → 기본값)
+var category_volumes: Dictionary = {}
 
 
 func _ready() -> void:
@@ -47,6 +49,16 @@ func set_volume(value: float) -> void:
 	volume_changed.emit(volume)
 
 
+## 소리 종류별 크기 바꾸기 (0~1, 저장까지)
+func set_category_volume(category: String, value: float) -> void:
+	value = clampf(value, 0.0, 1.0)
+	if category_volumes.has(category) and is_equal_approx(value, float(category_volumes[category])):
+		return
+	category_volumes[category] = value
+	save_settings()
+	volume_changed.emit(volume)
+
+
 func load_settings() -> void:
 	if not FileAccess.file_exists(PATH):
 		return
@@ -58,12 +70,19 @@ func load_settings() -> void:
 		touch_positions = t if t is Dictionary else {}
 		var v: Variant = (parsed as Dictionary).get("volume", -1.0)
 		volume = clampf(float(v), 0.0, 1.0) if (v is float or v is int) and float(v) >= 0.0 else -1.0
+		var cv: Variant = (parsed as Dictionary).get("volumes", {})
+		category_volumes = {}
+		if cv is Dictionary:
+			for id: Variant in cv:
+				var x: Variant = (cv as Dictionary)[id]
+				if x is float or x is int:
+					category_volumes[str(id)] = clampf(float(x), 0.0, 1.0)
 
 
 func save_settings() -> void:
 	var f := FileAccess.open(PATH, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"keys": keys, "touch": touch_positions, "volume": volume}))
+		f.store_string(JSON.stringify({"keys": keys, "touch": touch_positions, "volume": volume, "volumes": category_volumes}))
 
 
 # ---------------------------------------------------------------------------

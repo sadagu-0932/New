@@ -156,7 +156,7 @@
 
 - 효과음은 `tools/sound_gen.py` (Python + numpy)가 8비트풍으로 직접 만든다 → `art/audio/<슬롯>.wav`. 다시 실행하면 같은 결과가 나와야 함
 - `Audio` 오토로드가 이벤트 버스에 연결해 울린다. 슬롯 목록·연결은 `core/audio_manager.gd`, 크기·음 높이 변화는 `data/audio.tres`
-- 소리 크기 다이얼(`ui/volume_dial.gd`): 일시정지 화면(스토리판은 타이틀에도). 손잡이 끌어 돌리기·휠·←→ 로 조절, `Settings` 가 `user://settings.json` 에 저장하고 `Audio` 가 Master 버스에 반영. 기본값·한 칸은 `data/audio.tres` (`volume_default`·`volume_step`)
+- 소리 크기 슬라이더(`ui/volume_sliders.gd`): 맨 위 **마스터**(전체 크기) + 소리 종류별(전투·적·보스·스킬·장치·메뉴). 스피드런판은 일시정지 화면 오른쪽, 스토리판은 **설정 창**(`ui/settings_panel.gd`: 소리 슬라이더 / 키 설정 / 돌아가기, 타이틀의 설정·일시정지 메뉴의 설정에서 연다). 막대를 누르거나 끌기·휠·↑↓ 고르고 ←→ 조절. `Settings` 가 `user://settings.json` 에 저장(`volume`·`volumes`), 마스터는 Master 버스, 종류별은 소리마다 반영. 종류 목록·이름·슬롯 → 종류·기본값·한 칸은 `data/audio.tres` (`categories`·`category_names`·`slot_categories`·`volume_default`·`volume_step`)
 - 파일이 없는 슬롯은 무음으로 동작. 소리는 연출이라 게임 로직·리플레이에 영향 없음
 - 숨은 테크도 고유한 소리가 있다 (글자 안내가 아니라 발견했을 때의 손맛)
 - 음악은 미정
@@ -364,7 +364,7 @@ tools/             sprite_gen.py 등 빌드 도구
 - 바깥 세상에서 **전투 중이 아니면 30초마다 탄창이 가득 찬다** (`data/story.tres` 의 `auto_reload_seconds`, 전투가 시작되면 처음부터 다시 셈). 프롤로그(튜토리얼)에는 없다 — 근접으로 탄약을 되찾는 시험을 해치지 않게
 - 나무를 베면 탄약이 채워진다 (`break_ammo`)
 - 이어하기와 일시정지 메뉴의 불러오기는 저장 목록을 연다 (최신이 맨 위에 골라져 있음)
-- 일시정지 메뉴: 계속하기 / 저장 / 불러오기 / 키 설정 / 타이틀로
+- 일시정지 메뉴: 계속하기 / 저장 / 불러오기 / 설정(소리·키 설정) / 타이틀로
 - 주기 검사 때 전투 중이면 전투가 끝난 직후에 검사한다
 
 ## 스토리판 마일스톤

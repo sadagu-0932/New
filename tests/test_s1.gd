@@ -77,8 +77,33 @@ func test_title() -> void:
 	title.activate(StoryTitleScreen.Item.CONTINUE)
 	check(counts["cont"] == 0, "저장이 없으면 이어하기를 고를 수 없음")
 	title.activate(StoryTitleScreen.Item.SETTINGS)
-	check(title.key_panel.is_open, "설정 → 키 설정 창")
-	title.key_panel.close()
+	check(title.settings_panel.is_open, "설정 → 설정 창")
+	var panel := title.settings_panel
+	check(panel.sliders.row_count() == DB.audio.categories.size() + 1, "설정 창: 마스터 + 소리 종류별 슬라이더")
+	var vol_before := Audio.volume()
+	var skill_before := Audio.category_volume("skill")
+	var left := InputEventAction.new()
+	left.action = &"ui_left"
+	left.pressed = true
+	var down := InputEventAction.new()
+	down.action = &"ui_down"
+	down.pressed = true
+	Audio.set_volume(0.5)
+	panel._input(left)
+	check(is_equal_approx(Audio.volume(), 0.5 - DB.audio.volume_step), "설정 창 마스터 줄에서 ← → 소리 줄어듦")
+	var skill_row := panel.sliders.categories.find("skill")
+	for i in skill_row:
+		panel._input(down)
+	Audio.set_category_volume("skill", 0.5)
+	panel._input(left)
+	check(is_equal_approx(Audio.category_volume("skill"), 0.5 - DB.audio.volume_step) and is_equal_approx(Audio.volume(), 0.5 - DB.audio.volume_step), "↓ 로 스킬 줄 → ← 는 스킬 소리만 줄임")
+	Audio.set_volume(vol_before)
+	Audio.set_category_volume("skill", skill_before)
+	title.settings_panel.activate(title.settings_panel.row_keys())
+	check(title.settings_panel.key_panel.is_open, "설정 창 → 키 설정 창")
+	title.settings_panel.key_panel.close()
+	title.settings_panel.activate(title.settings_panel.row_back())
+	check(not title.settings_panel.is_open, "돌아가기 → 설정 창 닫힘")
 	title.activate(StoryTitleScreen.Item.NEW_GAME)
 	check(counts["new"] == 1, "새 게임 요청")
 	title.can_continue = true

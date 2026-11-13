@@ -17,9 +17,8 @@ const COLOR_DISABLED := Color(1, 1, 1, 0.3)
 var selected: int = 0
 ## 이어할 저장이 있는지 (없으면 이어하기를 고를 수 없다). StoryMain 이 타이틀을 띄울 때 채운다
 var can_continue: bool = false
-var key_panel: KeyBindPanel
-## 소리 크기 다이얼 (오른쪽 아래)
-var volume_dial: VolumeDial
+## 설정 창 (소리 크기 다이얼 + 키 설정)
+var settings_panel: SettingsPanel
 
 var _root: Control
 var _labels: Array[Label] = []
@@ -59,19 +58,10 @@ func _ready() -> void:
 		label.mouse_entered.connect(_select.bind(i))
 		_root.add_child(label)
 		_labels.append(label)
-	volume_dial = VolumeDial.new()
-	volume_dial.position = Vector2(272, 126)
-	_root.add_child(volume_dial)
-	# 타이틀(99) 위에 뜨도록 층을 올린다
-	key_panel = KeyBindPanel.new()
-	add_child(key_panel)
-	key_panel.layer = layer + 1
+	# 타이틀(99) 위에 뜬다
+	settings_panel = SettingsPanel.new(layer)
+	add_child(settings_panel)
 	_refresh()
-
-
-func _process(_delta: float) -> void:
-	if volume_dial != null:
-		volume_dial.visible = not key_panel.is_open
 
 
 func set_visible_screen(value: bool) -> void:
@@ -80,7 +70,7 @@ func set_visible_screen(value: bool) -> void:
 		selected = Item.CONTINUE if can_continue else Item.NEW_GAME
 		_refresh()
 	else:
-		key_panel.close()
+		settings_panel.close()
 
 
 func is_showing() -> bool:
@@ -92,7 +82,7 @@ func _is_enabled(i: int) -> bool:
 
 
 func _select(i: int) -> void:
-	if not _root.visible or key_panel.is_open or not _is_enabled(i) or i == selected:
+	if not _root.visible or settings_panel.is_open or not _is_enabled(i) or i == selected:
 		return
 	selected = i
 	Audio.play("ui_move")
@@ -130,15 +120,13 @@ func activate(i: int) -> void:
 		Item.CONTINUE:
 			continue_requested.emit()
 		Item.SETTINGS:
-			# 터치 기기의 버튼 위치 바꾸기는 게임 중 일시정지 → [배치] 에서 한다
-			if not TouchControls.is_enabled():
-				key_panel.open()
+			settings_panel.open()
 		Item.QUIT:
 			get_tree().quit()
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _root.visible or key_panel.is_open or event.is_echo():
+	if not _root.visible or settings_panel.is_open or event.is_echo():
 		return
 	var handled := true
 	if event.is_action_pressed(&"move_up") or event.is_action_pressed(&"ui_up"):
@@ -156,7 +144,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_item_input(event: InputEvent, i: int) -> void:
 	var mb := event as InputEventMouseButton
-	if mb == null or mb.button_index != MOUSE_BUTTON_LEFT or key_panel.is_open:
+	if mb == null or mb.button_index != MOUSE_BUTTON_LEFT or settings_panel.is_open:
 		return
 	# 누를 때 고르고, 뗄 때 확정 (누른 채로 시작해 사격으로 이어지지 않게)
 	if mb.pressed:
