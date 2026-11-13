@@ -12,7 +12,8 @@ TMP="$(mktemp -d)"
 trap 'git -C "$ROOT" worktree remove --force "$TMP" >/dev/null 2>&1 || true' EXIT
 git fetch -q origin gh-pages
 git worktree add -q --detach "$TMP" origin/gh-pages
-find "$TMP" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+# story/ 는 스토리판 웹 (story-mode 브랜치의 tools/deploy_story_web.sh) → 지우지 않는다
+find "$TMP" -mindepth 1 -maxdepth 1 ! -name .git ! -name story -exec rm -rf {} +
 cp export/web/index.* "$TMP"/
 rm -f "$TMP"/*.import
 # 브라우저가 예전 게임 데이터(index.pck)를 기억해 옛 버전이 뜨지 않게, 버전마다 파일 이름을 바꾼다

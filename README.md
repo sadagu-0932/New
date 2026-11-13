@@ -5,6 +5,7 @@
 ## 플레이
 
 - **웹:** https://sadagu-0932.github.io/New/
+- **스토리판 웹:** https://sadagu-0932.github.io/New/story/ (별도 판, `story-mode` 브랜치)
 - **다운로드 (Windows · Linux · Android):** [Releases](https://github.com/sadagu-0932/New/releases/latest)
 
 ## 조작
