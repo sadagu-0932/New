@@ -156,6 +156,7 @@
 
 - 효과음은 `tools/sound_gen.py` (Python + numpy)가 8비트풍으로 직접 만든다 → `art/audio/<슬롯>.wav`. 다시 실행하면 같은 결과가 나와야 함
 - `Audio` 오토로드가 이벤트 버스에 연결해 울린다. 슬롯 목록·연결은 `core/audio_manager.gd`, 크기·음 높이 변화는 `data/audio.tres`
+- 소리 크기 다이얼(`ui/volume_dial.gd`): 일시정지 화면 오른쪽 아래. 손잡이 끌어 돌리기·휠·←→ 로 조절, `Settings` 가 `user://settings.json` 에 저장하고 `Audio` 가 Master 버스에 반영. 기본값·한 칸은 `data/audio.tres` (`volume_default`·`volume_step`)
 - 파일이 없는 슬롯은 무음으로 동작. 소리는 연출이라 게임 로직·리플레이에 영향 없음
 - 숨은 테크도 고유한 소리가 있다 (글자 안내가 아니라 발견했을 때의 손맛)
 - 음악은 미정

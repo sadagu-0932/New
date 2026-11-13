@@ -16,6 +16,9 @@ const MOUSE_NAMES := {
 	MOUSE_BUTTON_XBUTTON1: "마우스4", MOUSE_BUTTON_XBUTTON2: "마우스5",
 }
 
+## 소리 크기가 바뀌었을 때 (0~1)
+signal volume_changed(value: float)
+
 ## 키 설정이나 버튼 위치가 바뀌었을 때 (화면의 키 이름 갱신용)
 signal changed()
 
@@ -23,11 +26,24 @@ signal changed()
 var keys: Dictionary = {}
 ## 터치 버튼 이름 → [x, y]
 var touch_positions: Dictionary = {}
+## 소리 크기 0~1 (음수 = 저장한 적 없음 → data/audio.tres 의 volume_default)
+var volume: float = -1.0
 
 
 func _ready() -> void:
 	load_settings()
 	_apply_keys()
+	volume_changed.emit(volume)
+
+
+## 소리 크기 바꾸기 (0~1, 저장까지)
+func set_volume(value: float) -> void:
+	value = clampf(value, 0.0, 1.0)
+	if is_equal_approx(value, volume):
+		return
+	volume = value
+	save_settings()
+	volume_changed.emit(volume)
 
 
 func load_settings() -> void:
@@ -39,12 +55,14 @@ func load_settings() -> void:
 		var t: Variant = (parsed as Dictionary).get("touch", {})
 		keys = k if k is Dictionary else {}
 		touch_positions = t if t is Dictionary else {}
+		var v: Variant = (parsed as Dictionary).get("volume", -1.0)
+		volume = clampf(float(v), 0.0, 1.0) if (v is float or v is int) and float(v) >= 0.0 else -1.0
 
 
 func save_settings() -> void:
 	var f := FileAccess.open(PATH, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"keys": keys, "touch": touch_positions}))
+		f.store_string(JSON.stringify({"keys": keys, "touch": touch_positions, "volume": volume}))
 
 
 # ---------------------------------------------------------------------------

@@ -6,6 +6,8 @@ extends CanvasLayer
 const TEXT := "일시정지\n\nEsc 계속하기 · R 길게 눌러 처음부터\nK 키 설정"
 
 var key_panel: KeyBindPanel
+## 소리 크기 다이얼 (오른쪽 아래)
+var volume_dial: VolumeDial
 var _root: Control
 var _label: Label
 
@@ -33,6 +35,9 @@ func _ready() -> void:
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(_label)
+	volume_dial = VolumeDial.new()
+	volume_dial.position = Vector2(272, 126)
+	_root.add_child(volume_dial)
 	_root.visible = false
 	key_panel = KeyBindPanel.new()
 	add_child(key_panel)
@@ -42,7 +47,9 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	# 버튼 위치를 바꾸는 동안에는 일시정지 글자를 숨긴다 (버튼·안내와 겹치지 않게)
-	_label.visible = not (TouchControls.instance != null and TouchControls.instance.edit_mode)
+	var editing := TouchControls.instance != null and TouchControls.instance.edit_mode
+	_label.visible = not editing
+	volume_dial.visible = not editing and not key_panel.is_open
 
 
 func _on_pause_changed(paused: bool) -> void:

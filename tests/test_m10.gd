@@ -8,6 +8,7 @@ const MAP := "res://tests/maps/m2_test.txt"
 func run_all() -> void:
 	print("[M10] 다듬기·내보내기")
 	test_audio_silent_without_files()
+	test_volume_dial()
 	await test_screen_fx()
 	await test_afterimage()
 	test_title_ignores_fullscreen_key()
@@ -40,6 +41,38 @@ func test_audio_silent_without_files() -> void:
 	Events.skill_used.emit("blink")
 	Events.skill_used.emit("unknown_skill")
 	check(true, "이벤트로 소리가 울려도 문제없음")
+
+
+func test_volume_dial() -> void:
+	var saved := Settings.volume
+	var dial := VolumeDial.new()
+	add_child(dial)
+	Audio.set_volume(0.5)
+	check(is_equal_approx(Audio.volume(), 0.5), "다이얼 값 0.5")
+	check(is_equal_approx(AudioServer.get_bus_volume_db(0), linear_to_db(0.5)), "전체 소리 크기에 반영")
+	dial.step(1)
+	check(is_equal_approx(Audio.volume(), 0.5 + DB.audio.volume_step), "한 칸 올리기")
+	dial.step(-1)
+	dial.step(-1)
+	check(is_equal_approx(Audio.volume(), 0.5 - DB.audio.volume_step), "한 칸 내리기")
+	check(is_equal_approx(VolumeDial.point_to_value(Vector2(0, -10)), 0.5), "손잡이를 위로 돌리면 가운데 값")
+	check(VolumeDial.point_to_value(Vector2(10, 0)) > 0.5 and VolumeDial.point_to_value(Vector2(-10, 0)) < 0.5, "오른쪽으로 돌리면 커지고 왼쪽은 작아짐")
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = true
+	ev.position = dial._center() + Vector2(-10, 10)
+	dial._gui_input(ev)
+	check(Audio.volume() == 0.0 and AudioServer.is_bus_mute(0), "왼쪽 끝까지 돌리면 소리 끔")
+	ev.pressed = false
+	dial._gui_input(ev)
+	Audio.set_volume(2.0)
+	check(Audio.volume() == 1.0 and not AudioServer.is_bus_mute(0), "최대는 1, 다시 켜짐")
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(Settings.PATH))
+	check(data is Dictionary and float((data as Dictionary).get("volume", -1)) == 1.0, "소리 크기는 설정 파일에 저장")
+	dial.queue_free()
+	Settings.volume = saved
+	Settings.save_settings()
+	Settings.volume_changed.emit(saved)
 
 
 func test_screen_fx() -> void:
