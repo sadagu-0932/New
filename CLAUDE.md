@@ -111,6 +111,7 @@
 - 몸통은 일반 탄에 거의 피해를 받지 않음. 약점(코어)은 반사탄으로만 노출·피격 → 패링이 핵심
 - 완벽 패링 반사탄을 연속으로 맞히면 그로기 → 대량 딜 구간 → 숙련자는 페이즈를 크게 단축
 - HP 0 → 타이머 정지 → 컷씬
+- 보스 체력바는 **지연 체력바**: 맞으면 빨간 막대는 바로 줄고, 줄어든 만큼은 밝은 막대로 잠깐 남았다가 따라 줄어든다 (`data/feel.tres` 의 `boss_bar_trail_delay`·`boss_bar_trail_speed`)
 
 ### 2페이즈 시작 컷씬 (대사 없음)
 
@@ -212,7 +213,7 @@ tools/             sprite_gen.py 등 빌드 도구
 - 수정은 항상 커밋해서 main 에 올린다 (git 에 사용자의 수정 사항이 늘 반영되게)
 - 커밋할 때마다 반드시 `tools/publish.sh` 실행 → main 푸시 + 웹 버전(https://sadagu-0932.github.io/New/) + README 다운로드 링크(download 브랜치의 exe·리눅스·APK) 를 한 번에 갱신. 다운로드 파일이 main 보다 뒤처진 채로 두지 않는다. 플레이 테스트는 사용자가 직접 한다
 - 사용자 설정은 `Settings` 오토로드가 `user://settings.json` 에 저장: PC 키 설정(일시정지 → K), 터치 버튼 위치(일시정지 → [배치]). 안내 글의 키 이름은 `UiText.for_device()` 로 지금 기기·키 설정에 맞춰 보여준다
-- 터치 기기 조준·사격: 오른쪽 스틱을 끌어 조준하고 끝까지 밀면 사격 (사격 버튼 없음, `data/touch.tres` 의 `aim_fire_threshold`)
+- 터치 기기 조준·사격: 오른쪽 스틱을 끌어 조준하고 끝까지 밀면 사격 (사격 버튼 없음, `data/touch.tres` 의 `aim_fire_threshold`). 캐릭터 둘레에 지금 겨누는 방향의 작은 조준점이 뜬다 (`aim_marker_distance`·`aim_marker_alpha`, PC 에는 없음). **탄이 0 이면 끝까지 밀었을 때 사격 대신 근접이 저절로 되풀이**된다 (`auto_melee_interval`·`auto_melee_hold`, 근접으로 탄약이 돌아오면 다시 사격. 모바일 전용)
 - 터치 조작은 안드로이드 APK(기능 태그 `touch_controls`)와 폰·태블릿 브라우저의 웹 버전(web_android·web_ios, 터치되는 맥=아이패드)에서만. PC 와 PC 브라우저에는 나오지 않게. APK 는 `tools/build_apk.sh` (서명 키는 저장소에 올리지 않음 → 환경이 바뀌면 새 키라 폰에서 지우고 다시 설치)
 
 ## 미정 사항

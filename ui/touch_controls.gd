@@ -49,7 +49,13 @@ var _touches: Dictionary = {}
 var _menu_dirs_sent: Dictionary = {}
 ## 버튼 위치 바꾸는 중
 var edit_mode: bool = false
+## 조준 스틱을 끝까지 밀고 있는지 (사격 의도)
 var _firing: bool = false
+## 실제로 사격 키를 누르고 있는지 (탄이 없으면 사격 대신 자동 근접)
+var _shoot_held: bool = false
+## 자동 근접: 근접 키를 누르고 있는지 · 다음 동작까지 남은 시간 (초)
+var _auto_melee_held: bool = false
+var _auto_melee_left: float = 0.0
 var _edit_help: Label
 
 
@@ -176,6 +182,8 @@ func _process(_delta: float) -> void:
 			node.modulate.a = _data.pressed_alpha
 		return
 	var paused := _pause_showing()
+	if play:
+		_update_fire(_delta)
 	_set_stick_visible(_move_stick, play or menu)
 	_set_stick_visible(_aim_stick, play)
 	for b: Dictionary in _buttons:
@@ -432,10 +440,34 @@ func _set_aim(v: Vector2) -> void:
 	if v != Vector2.ZERO:
 		aim_dir = v.normalized()
 	# 끝까지 밀면 사격 (놓거나 덜 밀면 멈춤)
-	var fire := v.length() >= _data.aim_fire_threshold
-	if fire != _firing:
-		_firing = fire
-		_send_action(&"shoot", fire)
+	_firing = v.length() >= _data.aim_fire_threshold
+	_update_fire(0.0)
+
+
+## 끝까지 민 조준 스틱 → 탄이 있으면 사격, 탄이 없으면 자동 근접 (모바일 전용)
+## 자동 근접은 근접 키를 짧게 눌렀다 떼기를 일정 간격으로 되풀이한다 (근접으로 탄약이 돌아오면 다시 사격)
+func _update_fire(delta: float) -> void:
+	var player := get_tree().get_first_node_in_group(Player.GROUP) as Player
+	var empty := player != null and player.ammo != null and player.ammo.current <= 0
+	var want_shoot := _firing and not empty
+	if want_shoot != _shoot_held:
+		_shoot_held = want_shoot
+		_send_action(&"shoot", want_shoot)
+	var want_melee := _firing and empty
+	if not want_melee:
+		if _auto_melee_held:
+			_auto_melee_held = false
+			_send_action(&"melee", false)
+		_auto_melee_left = 0.0
+		return
+	_auto_melee_left -= delta
+	if _auto_melee_held and _auto_melee_left <= _data.auto_melee_interval - _data.auto_melee_hold:
+		_auto_melee_held = false
+		_send_action(&"melee", false)
+	if _auto_melee_left <= 0.0:
+		_auto_melee_held = true
+		_auto_melee_left = _data.auto_melee_interval
+		_send_action(&"melee", true)
 
 
 ## 조준점 (월드 좌표): 플레이어 총구 높이에서 조준 방향으로 aim_distance 만큼

@@ -59,3 +59,8 @@ extends Resource
 @export var afterimage_interval_ticks: int = 0
 ## 잔상이 사라지는 시간 (초)
 @export var afterimage_fade_seconds: float = 0.0
+
+@export_group("보스 체력바")
+## 지연 체력바: 맞은 뒤 줄어든 만큼이 밝게 남아 있는 시간 (초) → 그다음 이 속도(막대 전체 비율/초)로 따라 줄어든다
+@export var boss_bar_trail_delay: float = 0.0
+@export var boss_bar_trail_speed: float = 0.0

@@ -14,6 +14,7 @@ func run_all() -> void:
 	test_title_ignores_fullscreen_key()
 	await test_menu_pointer()
 	await test_touch_controls()
+	await test_touch_aim_marker()
 	await test_key_settings()
 	await test_touch_layout_edit()
 	test_export_preset()
@@ -23,6 +24,7 @@ func run_all() -> void:
 	await test_gun_follows_aim()
 	await test_bullet_looks()
 	await test_hit_effects()
+	await test_boss_bar_trail()
 	if level != null:
 		level.queue_free()
 		level = null
@@ -181,6 +183,48 @@ func test_menu_pointer() -> void:
 
 
 ## 안드로이드 터치 조작: 기본(PC·웹)에서는 꺼져 있고, 조이스틱·버튼이 같은 액션을 누른다
+## 모바일(터치 조작): 캐릭터 둘레에 지금 조준하는 방향의 조준점
+func test_touch_aim_marker() -> void:
+	await new_tutorial_level()
+	check(level.player._aim_marker == null, "PC 에서는 캐릭터 둘레 조준점 없음 (마우스 커서가 조준점)")
+	level.queue_free()
+	level = null
+	TouchControls.force_enabled = true
+	await new_tutorial_level()
+	var p := level.player
+	var m: Sprite2D = p._aim_marker
+	check(m != null and m.visible, "모바일: 캐릭터 둘레에 조준점")
+	input.push(Vector2.ZERO, 2, 0, 0, p.global_position + Vector2(0, 100))
+	await step(2)
+	var off := m.position - Vector2(0, -p.weapon.gun.muzzle_height)
+	check(off.y > 0.0 and absf(off.x) < 2.0 and absf(off.length() - DB.touch.aim_marker_distance) < 1.5, "조준점은 조준 방향(아래)으로 살짝 떨어져 있음 %s" % off)
+	# 탄이 없을 때 조준 스틱을 끝까지 밀면: 사격 대신 근접이 저절로 나간다
+	var tc := TouchControls.new()
+	add_child(tc)
+	await step(1)
+	PlayerInput.use_live_input()
+	p.ammo.set_current(0)
+	var swings := [0]
+	var on_melee := func() -> void: swings[0] += 1
+	Events.melee_started.connect(on_melee)
+	tc._set_aim(Vector2.RIGHT)
+	await step(roundi(DB.touch.auto_melee_interval * 60.0 * 2.5))
+	check(swings[0] >= 2 and not Input.is_action_pressed(&"shoot"), "모바일: 탄이 없을 때 끝까지 밀면 근접이 되풀이됨 (%d번), 사격 키는 누르지 않음" % swings[0])
+	p.ammo.set_current(5)
+	await step(2)
+	check(Input.is_action_pressed(&"shoot"), "탄이 생기면 다시 사격")
+	tc._set_aim(Vector2.ZERO)
+	await step(2)
+	check(not Input.is_action_pressed(&"shoot") and not Input.is_action_pressed(&"melee"), "스틱을 놓으면 사격·근접 모두 멈춤")
+	Events.melee_started.disconnect(on_melee)
+	tc.queue_free()
+	PlayerInput.source = input
+	TouchControls.force_enabled = false
+	level.queue_free()
+	level = null
+	await step(1)
+
+
 func test_touch_controls() -> void:
 	check(not TouchControls.is_enabled(), "PC·웹에서는 터치 조작 꺼짐")
 	var cfg := ConfigFile.new()
@@ -536,3 +580,23 @@ func test_hit_effects() -> void:
 	Projectile.spawn(level.projectiles, Team.ENEMY, p.global_position + Vector2(40, 0), Vector2.LEFT, DB.test_turret.projectile)
 	var absorbed := await wait_until(func() -> bool: return _effects_named(&"hit_absorb") > 0, 30)
 	check(absorbed, "흡수 장막에 닿으면 빨려드는 효과")
+
+
+## 보스 체력바: 지연 체력바 (줄어든 만큼 밝은 막대가 잠깐 남았다가 따라 줄어듦)
+func test_boss_bar_trail() -> void:
+	var bar := BossBar.new()
+	add_child(bar)
+	Events.boss_hp_changed.emit(100, 100)
+	Events.boss_started.emit(null)
+	await get_tree().process_frame
+	Events.boss_hp_changed.emit(60, 100)
+	check(is_equal_approx(bar._fill.size.x, BossBar.BAR_SIZE.x * 0.6), "맞으면 체력 막대는 바로 줄어듦")
+	await get_tree().create_timer(DB.feel.boss_bar_trail_delay * 0.5).timeout
+	check(bar.trail_ratio() >= 0.99, "줄어든 만큼은 잠깐 밝은 막대로 남음 (%.2f)" % bar.trail_ratio())
+	await get_tree().create_timer(DB.feel.boss_bar_trail_delay + 0.4 / DB.feel.boss_bar_trail_speed + 0.2).timeout
+	check(is_equal_approx(bar.trail_ratio(), 0.6), "그 뒤 체력까지 따라 줄어듦 (%.2f)" % bar.trail_ratio())
+	Events.boss_hp_changed.emit(100, 100)
+	check(is_equal_approx(bar.trail_ratio(), 1.0), "체력이 다시 차면 지연 막대도 바로 같이")
+	bar.queue_free()
+	await get_tree().process_frame
+

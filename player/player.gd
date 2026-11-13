@@ -75,6 +75,8 @@ var _shot_dir: Vector2 = Vector2.RIGHT
 ## 총구 불꽃 (총에 붙어 같이 돈다) / 반동으로 뒤로 밀린 거리 (px)
 var _muzzle_flash: AnimatedSprite2D
 var _muzzle: Vector2 = Vector2.ZERO
+## 터치 조작(모바일)일 때만: 지금 조준하는 방향을 보여주는 작은 조준점 (캐릭터에서 살짝 띄움, 화면 표시 전용)
+var _aim_marker: Sprite2D
 var _gun_kick: float = 0.0
 ## 방향별 [몸 SpriteFrames, 망토 SpriteFrames, body_offsets]
 var _view_res: Dictionary = {}
@@ -145,6 +147,12 @@ func _build_children() -> void:
 	_gun.offset = -Vector2(float(pivot[0]), float(pivot[1]))
 	_gun.play(&"idle")
 	add_child(_gun)
+	if TouchControls.is_enabled():
+		_aim_marker = Sprite2D.new()
+		_aim_marker.texture = DB.theme.load_texture("crosshair")
+		_aim_marker.modulate.a = DB.touch.aim_marker_alpha
+		_aim_marker.z_index = 5
+		add_child(_aim_marker)
 	var gun_meta := DB.theme.load_json("gun")
 	var muzzle: Array = gun_meta.get("muzzle", [0.0, 0.0])
 	_muzzle = Vector2(float(muzzle[0]), float(muzzle[1])) - Vector2(float(pivot[0]), float(pivot[1]))
@@ -603,6 +611,7 @@ func _apply_draw_order() -> void:
 
 ## 총: 캐릭터 둘레에 떠서 사격 방향으로 돈다 (그림 하나를 통째로 돌림). 회피·근접·사망 중에는 숨김 (화면 표시 전용)
 func _update_gun() -> void:
+	_update_aim_marker()
 	# 스토리판: 근접 공격은 들고 있는 총으로 후려치는 동작 → 휘두르는 동안 총이 호를 그리며 돈다
 	var swinging := Game.is_story_mode() and melee.is_active() and state == State.NORMAL
 	var hidden_now := state == State.DODGE or state == State.DASH_SLASH or state == State.DEAD \
@@ -631,6 +640,14 @@ func _update_gun() -> void:
 
 
 ## 그림이 향한 방향 (망토가 뒤로 날리는 기준)
+## 모바일 조준점: 총 높이에서 조준 방향으로 aim_marker_distance 만큼 떨어진 곳
+func _update_aim_marker() -> void:
+	if _aim_marker == null:
+		return
+	_aim_marker.visible = state != State.DEAD and not cutscene_lock
+	_aim_marker.position = (Vector2(0.0, -weapon.gun.muzzle_height) + aim_dir.normalized() * DB.touch.aim_marker_distance).round()
+
+
 func _facing_vector() -> Vector2:
 	match view:
 		View.FRONT:

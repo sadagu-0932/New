@@ -6,11 +6,15 @@
 script = ExtResource("1")
 move_stick_center = Vector2(40, 136)
 aim_fire_threshold = 0.6
+auto_melee_interval = 0.36
+auto_melee_hold = 0.08
 aim_stick_center = Vector2(236, 140)
 stick_radius = 14.0
 stick_grab_radius = 44.0
 stick_deadzone = 0.15
 aim_distance = 48.0
+aim_marker_distance = 22.0
+aim_marker_alpha = 0.85
 menu_direction_threshold = 0.6
 action_button_positions = Array[Vector2]([Vector2(300, 126), Vector2(272, 110), Vector2(300, 96), Vector2(244, 96), Vector2(272, 80)])
 action_button_radius = 14.0

@@ -15,8 +15,14 @@ extends Resource
 @export var stick_deadzone: float = 0.0
 ## 조준 조이스틱을 이 비율 이상 밀면 사격
 @export var aim_fire_threshold: float = 0.0
+## 탄이 없을 때 끝까지 밀면 사격 대신 자동 근접: 근접을 되풀이하는 간격 · 한 번 누르고 있는 시간 (초)
+@export var auto_melee_interval: float = 0.0
+@export var auto_melee_hold: float = 0.0
 ## 조준점이 플레이어에서 떨어진 거리 (px)
 @export var aim_distance: float = 0.0
+## 캐릭터 둘레에 보이는 조준점: 총 높이에서 떨어진 거리 (px) · 진하기 (0~1). 어느 방향을 겨누는지 알게
+@export var aim_marker_distance: float = 0.0
+@export var aim_marker_alpha: float = 1.0
 ## 이동 조이스틱을 이 비율 이상 밀면 메뉴에서 방향 입력으로 친다
 @export var menu_direction_threshold: float = 0.0
 
