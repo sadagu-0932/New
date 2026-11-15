@@ -1,0 +1,30 @@
+{
+  "frame_width": 16,
+  "frame_height": 24,
+  "animations": {
+    "npc_miner": {
+      "row": 0,
+      "frames": 2,
+      "fps": 1.5,
+      "loop": true
+    },
+    "npc_homeless": {
+      "row": 1,
+      "frames": 2,
+      "fps": 1.5,
+      "loop": true
+    },
+    "npc_child": {
+      "row": 2,
+      "frames": 2,
+      "fps": 2.5,
+      "loop": true
+    },
+    "npc_afraid": {
+      "row": 3,
+      "frames": 4,
+      "fps": 8.0,
+      "loop": true
+    }
+  }
+}

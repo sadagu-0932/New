@@ -17,12 +17,20 @@ func _ready() -> void:
 	shape.shape = circle
 	add_child(shape)
 	_sprite = AnimatedSprite2D.new()
-	_sprite.sprite_frames = DB.theme.load_sheet("story_props")
-	_sprite.play(data.sprite if data != null and _sprite.sprite_frames.has_animation(data.sprite) else &"npc_a")
+	# 주민 그림은 주인공과 같은 키(16×24, villagers). 없는 이름이면 예전 16×16 그림(story_props)
+	var tall := DB.theme.load_sheet("villagers")
+	if data != null and tall.has_animation(data.sprite):
+		_sprite.sprite_frames = tall
+		_sprite.play(data.sprite)
+		# 아래 칸이 이 칸에 오도록 (발이 주인공 발과 같은 높이)
+		_sprite.position = Vector2(0, -4)
+	else:
+		_sprite.sprite_frames = DB.theme.load_sheet("story_props")
+		_sprite.play(data.sprite if data != null and _sprite.sprite_frames.has_animation(data.sprite) else &"npc_a")
 	add_child(_sprite)
 	_prompt = UiText.make_label()
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt.position = Vector2(-40, -22)
+	_prompt.position = Vector2(-40, -28)
 	_prompt.size = Vector2(80, 12)
 	_prompt.z_index = 50
 	_prompt.visible = false

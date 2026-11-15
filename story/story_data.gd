@@ -13,6 +13,24 @@ extends Resource
 ## 사다리를 오를 때 어두워지는 시간 / 바깥 세상에서 밝아지는 시간 (초)
 @export var ladder_fade_out_seconds: float = 0.0
 @export var ladder_fade_in_seconds: float = 0.0
+## 웨이스톤 순간이동 연출 (TeleportFx, 틱): 마법진 그리기 → (떠날 때) 위로 오르며 원통 → 빛줄기로 가늘어짐
+##   / (도착할 때) 빛줄기가 내려옴 → 원통으로 넓어짐 → 가루로 흩어짐
+@export var teleport_circle_ticks: int = 0
+@export var teleport_rise_ticks: int = 0
+@export var teleport_narrow_ticks: int = 0
+@export var teleport_line_ticks: int = 0
+@export var teleport_widen_ticks: int = 0
+@export var teleport_scatter_ticks: int = 0
+## 마법진 반지름 (px, 캐릭터 크기) · 원통 높이 (px, 캐릭터 키) · 흩어지는 가루 수
+@export var teleport_ring_radius: float = 0.0
+@export var teleport_height: float = 0.0
+@export var teleport_particles: int = 0
+## 떠난 뒤 화면이 살짝 어두워지는 정도(0~1)·시간, 도착하며 다시 밝아지는 시간 (초)
+@export var teleport_dim_alpha: float = 0.0
+@export var teleport_dim_seconds: float = 0.0
+@export var teleport_brighten_seconds: float = 0.0
+## 마법진을 주인공 위치(몸 판정 가운데)에서 아래로 내리는 거리 (px) → 발바닥 높이에 그려지게
+@export var teleport_ground_offset: float = 0.0
 ## 사다리 앞 표시 (%s = 상호작용 키 이름)
 @export var text_climb: String = ""
 ## 스토리 트리거 id → 화면 위쪽에 차례로 흘러가는 글 (Array[String]). 게임을 멈추지 않는다

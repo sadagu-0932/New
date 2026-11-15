@@ -38,9 +38,15 @@ GROUNDS = {
     "w": dict(tileset="tiles_water", floor="Color(0.34, 0.55, 0.35, 1)", wall="Color(0.2, 0.42, 0.68, 1)"),
     "m": dict(tileset="tiles_rock", floor="Color(0.47, 0.55, 0.42, 1)", wall="Color(0.42, 0.4, 0.46, 1)"),
     "p": dict(tileset="tiles_path", floor="Color(0.74, 0.6, 0.4, 1)", wall="Color(0.15, 0.3, 0.21, 1)"),
+    # 수풀(키 큰 풀, 바닥 — 근접으로 베면 짧아진다) · 덤불(벽 — 근접 한 번에 베어진다)
+    "h": dict(tileset="tiles_tallgrass", floor="Color(0.27, 0.47, 0.29, 1)", wall="Color(0.15, 0.3, 0.21, 1)"),
+    "b": dict(tileset="tiles_bush", floor="Color(0.34, 0.55, 0.35, 1)", wall="Color(0.22, 0.4, 0.25, 1)"),
 }
+# 근접으로 벨 수 있는 바닥(수풀) · 한 번에 베어지는 벽(덤불)
+CUTTABLE_FLOOR = "h"
+ONE_HIT = "b"
 # 벽(나무)을 벨 수 있는 땅 종류 (바위·연구소 벽·마을 집은 못 벤다)
-BREAKABLE = "grtpw"
+BREAKABLE = "grtpwb"
 # 묶음별 설정: 그 묶음의 모든 작은 지역에 적용되는 적 수치
 # 골렘 이야기가 벌어지는 연구소 둘레의 세 묶음: 숲용 적 수치 + 다시 만나는 골렘
 _GOLEM_STORY = dict(overrides={"C": "charger_forest", "S": "shooter_forest", "B": "spreader_forest", "Z": "golem_return"})
@@ -334,6 +340,9 @@ def main() -> None:
             d = village_d(x, y)
             if d <= 1.0:
                 set_floor(x, y, "v")
+            elif d <= 1.0 + (1.0 + wobble(x, y) * 1.5) / rx:
+                # 흙바닥과 숲 사이: 풀밭 띠 (나무가 흙 위에 바로 서지 않게, 굴곡지게)
+                set_floor(x, y, "g")
             elif d <= 1.0 + (7.0 + wobble(x, y) * 3.0) / rx:
                 grid[y][x], ground[y][x] = "#", "g"
     # ---- 골렘 터: 빽빽한 숲 속에 숨은 빈터 ----
@@ -706,6 +715,31 @@ def main() -> None:
     # 연구소 둘레는 숲으로 막혀 있고 철길만 뚫려 있다: 철길을 막으면 마을에 닿지 못해야 한다
     assert landmarks["village_gate"] not in flood(False, True), "연구소 숲에 철길 말고 뚫린 길이 있음"
 
+    # ---- 수풀·덤불: 넓은 풀밭에만 (길·철길·마을·연구소·골렘 터·소품 둘레는 비운다) ----
+    near_piece = lambda x, y: any(rect_dist(n, x, y) < 6 for n in ("lab", "village", "golem_lair"))
+    near_prop = {(px + dx, py + dy) for (py, px) in props for dx in range(-2, 3) for dy in range(-2, 3)}
+    near_road = {(x + dx, y + dy) for y in range(N) for x in range(N) if ground[y][x] in "prtv"
+                 for dx in (-1, 0, 1) for dy in (-1, 0, 1)}
+    bushes: set[tuple[int, int]] = set()
+    for y in range(2, N - 2):
+        for x in range(2, N - 2):
+            if grid[y][x] != "." or ground[y][x] != "g" or (x, y) in near_road or near_piece(x, y):
+                continue
+            # 수풀: 부드러운 잡음이 높은 곳에 무리 지어
+            if noise(x, y, 9.0, 77) > 0.63 and (x, y) not in near_prop:
+                ground[y][x] = "h"
+                continue
+            # 덤불: 사방이 트인 풀밭에 드문드문 (길을 막지 않게 이웃 8칸이 모두 바닥, 덤불끼리 붙지 않게)
+            if (x, y) in near_prop or _hash01(x, y, 91) > 0.012:
+                continue
+            if all(grid[y + dy][x + dx] == "." for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy) \
+                    and not any((x + dx, y + dy) in bushes for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+                grid[y][x] = "#"
+                ground[y][x] = "b"
+                bushes.add((x, y))
+    rows_out = ["".join(r) for r in grid]
+    print(f"  수풀 {sum(r.count('h') for r in ground)}칸 · 덤불 {len(bushes)}개")
+
     OUT.mkdir(parents=True, exist_ok=True)
     head = "; tools/build_world.py 가 만든다. 직접 고치지 말 것 (layout.json·조각 맵·build_world.py 를 고친다)\n"
     (OUT / "world.txt").write_text("; 바깥 세상 — 넓은 정사각형 한 장\n" + head + "\n".join(rows_out) + "\n", encoding="utf-8")
@@ -787,6 +821,8 @@ boss_room_rect = Rect2i({lair[0]}, {lair[1]}, {lair[2]}, {lair[3]})
 boss_cleared_flag = "golem_destroyed"
 landmarks = {marks}
 break_hits = 2
+break_hits_by_ground = {{"{ONE_HIT}": 1}}
+cut_grounds = "{CUTTABLE_FLOOR}"
 break_drop_item = "wood"
 break_ammo = 3
 enemy_overrides = {{}}

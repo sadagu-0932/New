@@ -36,6 +36,7 @@ tab_names = Array[String](["스킬", "무기", "갑옷", "아이템"])
 category_names = Array[String](["무기", "갑옷", "소모품", "재료", "자료"])
 text_in_combat = "전투 중에는 바꿀 수 없다"
 text_skill2_locked = "스킬2 칸은 아직 잠겨 있다"
+text_skill_in_other_slot = "이미 %s 칸에 있는 스킬이다"
 text_empty = "가진 것이 없다"
 text_equipped = "장착"
 text_used = "사용했다"

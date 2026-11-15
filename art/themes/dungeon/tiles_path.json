@@ -69,22 +69,91 @@
       16,
       0
     ],
-    "wall_face": [
+    "wall_top_alt1": [
       17,
       0
     ],
-    "pit": [
+    "wall_top_alt2": [
       18,
       0
     ],
-    "floor": [
+    "wall_face": [
       19,
       0
     ],
-    "floor_alt": [
+    "pit": [
       20,
+      0
+    ],
+    "floor": [
+      21,
+      0
+    ],
+    "floor_alt": [
+      22,
+      0
+    ],
+    "floor_edge_n": [
+      23,
+      0
+    ],
+    "floor_edge_s": [
+      24,
+      0
+    ],
+    "floor_edge_ns": [
+      25,
+      0
+    ],
+    "floor_edge_w": [
+      26,
+      0
+    ],
+    "floor_edge_nw": [
+      27,
+      0
+    ],
+    "floor_edge_sw": [
+      28,
+      0
+    ],
+    "floor_edge_nsw": [
+      29,
+      0
+    ],
+    "floor_edge_e": [
+      30,
+      0
+    ],
+    "floor_edge_ne": [
+      31,
+      0
+    ],
+    "floor_edge_se": [
+      32,
+      0
+    ],
+    "floor_edge_nse": [
+      33,
+      0
+    ],
+    "floor_edge_we": [
+      34,
+      0
+    ],
+    "floor_edge_nwe": [
+      35,
+      0
+    ],
+    "floor_edge_swe": [
+      36,
+      0
+    ],
+    "floor_edge_nswe": [
+      37,
       0
     ]
   },
-  "wall_over_floor": true
+  "wall_over_floor": true,
+  "edge_floor": true
 }

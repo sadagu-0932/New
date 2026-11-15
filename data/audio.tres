@@ -68,6 +68,9 @@ slot_categories = {
 "switch": "world",
 "start": "world",
 "split": "world",
+"teleport_out": "world",
+"teleport_in": "world",
+"grass_cut": "combat",
 "ui_move": "ui",
 "ui_confirm": "ui"
 }

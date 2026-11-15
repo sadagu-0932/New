@@ -2015,35 +2015,88 @@ def _top_variants(base, deco) -> list[tuple[str, Canvas]]:
     return out
 
 
+# 가장자리 굴곡: 칸 안 위치(0~15) → 풀이 번져 들어오는 깊이 (이웃 칸과 이어지게 양 끝은 같은 값)
+EDGE_DEPTH = [3, 3, 4, 3, 2, 2, 3, 4, 4, 3, 2, 3, 4, 3, 2, 3]
+
+
+def _grass_fringe(base: Canvas, n: bool, s_: bool, w: bool, e: bool, seed: int) -> Canvas:
+    """흙길·마을 흙의 가장자리: 맞닿은 쪽에서 풀이 번져 들어온다 (굴곡진 경계 + 어두운 경계선 + 풀포기)."""
+    t = base.copy()
+    rr = random.Random(seed)
+    for i in range(16):
+        for side, on in (("n", n), ("s", s_), ("w", w), ("e", e)):
+            if not on:
+                continue
+            depth = EDGE_DEPTH[i] if side in "nw" else EDGE_DEPTH[15 - i]
+            for k in range(depth + 1):
+                x, y = {"n": (i, k), "s": (i, 15 - k), "w": (k, i), "e": (15 - k, i)}[side]
+                if k < depth:
+                    col = "green"
+                    roll = rr.random()
+                    if roll < 0.18:
+                        col = "green_dark"
+                    elif roll < 0.28:
+                        col = "green_light"
+                    t.set(x, y, c(col))
+                else:
+                    # 경계: 흙 쪽으로 어두운 테두리 (풀 그림자)
+                    if t.px[y][x] is not None and t.px[y][x] not in (c("green"), c("green_dark"), c("green_light")):
+                        t.set(x, y, c("brown_dark"))
+    # 경계에서 흙 쪽으로 삐져나온 풀포기
+    for side, on in (("n", n), ("s", s_), ("w", w), ("e", e)):
+        if not on:
+            continue
+        for i in (4, 11):
+            depth = EDGE_DEPTH[i] if side in "nw" else EDGE_DEPTH[15 - i]
+            x, y = {"n": (i, depth), "s": (i, 15 - depth), "w": (depth, i), "e": (15 - depth, i)}[side]
+            t.set(x, y, c("green_light"))
+    return t
+
+
+def _fringe_variants(base: Canvas, seed: int) -> list[tuple[str, Canvas]]:
+    out: list[tuple[str, Canvas]] = []
+    for mask in range(1, 16):
+        n, s_, w, e = bool(mask & 1), bool(mask & 2), bool(mask & 4), bool(mask & 8)
+        suffix = ("n" if n else "") + ("s" if s_ else "") + ("w" if w else "") + ("e" if e else "")
+        out.append(("floor_edge_" + suffix, _grass_fringe(base, n, s_, w, e, seed + mask)))
+    return out
+
+
 def build_story_tiles() -> None:
     # ------------------------------------------------------------------
     # 연구소: 금속 판 바닥, 두꺼운 천장 + 패널 벽 (환기구·화면·배관이 섞인다)
     # ------------------------------------------------------------------
     rng = random.Random(2001)
 
-    def lab_floor(kind: int) -> Canvas:
+    def lab_floor(kind: int, seams: str = "nw") -> Canvas:
+        """연구소 바닥: 큰 금속판. 판 사이 이음매만 옅게 (나사·잔무늬 없이 눈이 편하게).
+        seams: 이음매가 있는 쪽 (n 위 · w 왼쪽) — 무늬마다 달라 판 크기가 들쭉날쭉해진다."""
         t = Canvas(16, 16)
         t.fill(c("stone_dark"))
-        t.line(0, 0, 15, 0, c("shadow"))
-        t.line(0, 0, 0, 15, c("shadow"))
-        t.line(1, 1, 15, 1, c("stone"))
-        t.line(1, 1, 1, 15, c("stone"))
-        for x, y in ((3, 3), (13, 3), (3, 13), (13, 13)):
-            t.set(x, y, c("stone_light"))
-            t.set(x, y + 1, c("shadow"))
-        _speckle(t, rng, "stone", 3)
-        if kind == 1:  # 경고 줄무늬
-            for i in range(4, 12):
-                t.set(i, 8, c("yellow") if (i // 2) % 2 == 0 else c("outline"))
-                t.set(i, 9, c("orange") if (i // 2) % 2 == 0 else c("outline"))
-        elif kind == 2:  # 배수 격자
-            for y in range(5, 11):
+        # 판 이음매: 어두운 줄 + 그 안쪽에 아주 옅은 밝은 줄 (빛을 받는 모서리)
+        if "n" in seams:
+            t.line(0, 0, 15, 0, c("shadow"))
+            for x in range(1, 16, 2):
+                t.set(x, 1, c("stone"))
+        if "w" in seams:
+            t.line(0, 0, 0, 15, c("shadow"))
+        if kind == 1:  # 결이 난 판 (옅은 가로 결 두 줄)
+            for x in range(3, 13, 3):
+                t.set(x, 6, c("stone"))
+                t.set(x + 1, 11, c("stone"))
+        elif kind == 2:  # 작은 배수구 (어두운 틈만, 낮은 대비)
+            for y in (6, 8, 10):
                 t.line(5, y, 10, y, c("shadow"))
-            for x in (6, 8, 10):
-                t.line(x, 5, x, 10, c("outline"))
-        elif kind == 3:  # 푸른 유도선
-            t.line(2, 8, 13, 8, c("navy"))
-            t.line(4, 8, 11, 8, c("blue"))
+        elif kind == 3:  # 푸른 유도선 (가늘게)
+            t.line(0, 8, 15, 8, c("navy"))
+        elif kind == 4:  # 닳은 판 (밝게 닳은 자국)
+            for x, y in ((5, 6), (6, 6), (7, 7), (10, 10), (11, 10)):
+                t.set(x, y, c("stone"))
+        elif kind == 5:  # 마른 물자국 (어두운 고리)
+            for x, y in ((6, 5), (7, 5), (8, 5), (5, 6), (9, 6), (5, 7), (9, 7), (6, 8), (7, 8), (8, 8)):
+                t.set(x, y, c("shadow"))
+        elif kind == 6:  # 끌린 자국 (비스듬한 옅은 줄)
+            t.line(3, 12, 11, 4, c("stone"))
         return t
 
     def lab_top() -> Canvas:
@@ -2108,7 +2161,10 @@ def build_story_tiles() -> None:
                 t.line(x0 - 1, 9, x0 + 3, 9, c("outline"))
         return t
 
-    lab_tiles = [("floor", lab_floor(0)), ("floor_alt", lab_floor(1)), ("floor_alt2", lab_floor(2)),
+    lab_tiles = [("floor", lab_floor(0)), ("floor_b", lab_floor(0, "n")), ("floor_c", lab_floor(0, "w")),
+                 ("floor_d", lab_floor(0, "")), ("floor_e", lab_floor(0, "nw")), ("floor_f", lab_floor(0, "n")),
+                 ("floor_p1", lab_floor(4, "nw")), ("floor_p2", lab_floor(5, "n")), ("floor_p3", lab_floor(6, "")),
+                 ("floor_alt", lab_floor(1)), ("floor_alt2", lab_floor(2)),
                  ("floor_alt3", lab_floor(3)), ("floor_shadow", _shadowed(lab_floor(0), "shadow"))]
     lab_tiles += _top_variants(lab_top, lab_top_deco)
     lab_tiles += [("wall_face", lab_face()), ("wall_face_alt1", lab_face(1)), ("wall_face_alt2", lab_face(2)),
@@ -2120,11 +2176,59 @@ def build_story_tiles() -> None:
     # ------------------------------------------------------------------
     rng = random.Random(2002)
 
-    def dirt(kind: int) -> Canvas:
+    # 다져진 흙 무늬 (무늬마다 다른 자리에 옅은 얼룩·결)
+    DIRT_MARKS = [
+        [("tan", 3, 4, 3), ("tan", 10, 11, 4), ("brown_dark", 12, 3, 2), ("brown_dark", 5, 12, 2)],
+        [("tan", 9, 3, 4), ("tan", 2, 10, 3), ("brown_dark", 6, 7, 2), ("brown_dark", 13, 13, 2)],
+        [("tan", 6, 13, 4), ("tan", 12, 6, 3), ("brown_dark", 2, 3, 2), ("brown_dark", 9, 9, 2)],
+    ]
+
+    for _seed in range(3, 8):
+        _r = random.Random(4600 + _seed)
+        DIRT_MARKS.append([(_r.choice(["tan", "tan", "brown_dark"]), _r.randrange(1, 12), _r.randrange(1, 15), _r.randint(2, 4))
+                           for _ in range(4)])
+
+    def dirt_patch(kind: int) -> Canvas:
+        """마을 흙의 넓은 얼룩: 밟혀 닳은 밝은 흙 · 자갈 · 젖어 어두운 흙 · 풀포기."""
+        t = Canvas(16, 16)
+        rr = random.Random(4700 + kind)
+        def soft(col: str, amount: float) -> None:
+            # 가운데는 짙고 칸 가장자리로 갈수록 옅게 흩뿌린다 (이웃 칸과 네모 경계가 보이지 않게)
+            for y in range(16):
+                for x in range(16):
+                    d = (((x - 7.5) / 8.0) ** 2 + ((y - 7.5) / 8.0) ** 2) ** 0.5
+                    if rr.random() < amount * max(0.0, 1.0 - d):
+                        t.set(x, y, c(col))
+
+        if kind == 0:   # 밟혀 닳은 밝은 흙
+            t.fill(c("brown"))
+            soft("tan", 0.75)
+        elif kind == 1:  # 자갈
+            t.fill(c("brown"))
+            for _ in range(7):
+                x, y = rr.randrange(1, 15), rr.randrange(1, 15)
+                t.set(x, y, c("stone"))
+                t.set(x + 1, y, c("stone_light") if rr.random() < 0.4 else c("stone"))
+                t.set(x, y + 1, c("brown_dark"))
+        elif kind == 2:  # 젖어 어두운 흙
+            t.fill(c("brown"))
+            soft("brown_dark", 0.55)
+        else:            # 듬성듬성 풀포기
+            t.fill(c("brown"))
+            for x, y in ((4, 6), (11, 4), (8, 12), (13, 11)):
+                t.set(x, y, c("green_dark"))
+                t.set(x - 1, y - 1, c("green"))
+                t.set(x + 1, y - 1, c("green"))
+        return t
+
+    def dirt(kind: int, mark: int = 0) -> Canvas:
         t = Canvas(16, 16)
         t.fill(c("brown"))
-        _speckle(t, rng, "brown_dark", 9)
-        _speckle(t, rng, "tan", 5)
+        for col, x0, y0, length in DIRT_MARKS[mark]:
+            # 가로로 짧게 끌린 결 (다져진 흙). 밝은 결은 위, 어두운 결은 패인 자리
+            t.line(x0, y0, min(x0 + length - 1, 15), y0, c(col))
+            if col == "tan":
+                t.set(x0 + 1, y0 + 1, c("brown_dark"))
         if kind == 1:  # 자갈
             for x, y in ((4, 5), (5, 5), (4, 6), (10, 11), (11, 11), (11, 10)):
                 t.set(x, y, c("stone"))
@@ -2226,23 +2330,133 @@ def build_story_tiles() -> None:
             t.line(3, 15, 12, 15, c("stone_light"))
         return t
 
-    vil = [("floor", dirt(0)), ("floor_alt", dirt(1)), ("floor_alt2", dirt(2)), ("floor_alt3", dirt(3)),
+    def house_upper(kind: str = "") -> Canvas:
+        """2층 벽: 처마 그림자 아래 나무 판벽 + 가로 들보 (아래층 벽과 이어진다). 창문·간판·양끝 기둥."""
+        t = Canvas(16, 16)
+        t.fill(c("tan"))
+        t.line(0, 0, 15, 0, c("plum"))       # 처마 그림자
+        t.line(0, 1, 15, 1, c("brown_dark"))
+        for y in range(3, 16, 4):            # 판자 결
+            for x in range(0, 16):
+                if (x + y) % 7 == 0:
+                    t.set(x, y, c("skin"))
+        for x in (3, 7, 11, 15):
+            t.line(x, 2, x, 15, c("brown"))
+        t.line(0, 14, 15, 14, c("brown_dark"))   # 층 사이 들보
+        t.line(0, 15, 15, 15, c("brown"))
+        if kind == "l":
+            for x in (0, 1):
+                t.line(x, 1, x, 15, c("brown_dark"))
+            t.line(0, 0, 0, 15, c("outline"))
+        elif kind == "r":
+            for x in (14, 15):
+                t.line(x, 1, x, 15, c("brown_dark"))
+            t.line(15, 0, 15, 15, c("outline"))
+        elif kind == "window":
+            for y in range(4, 11):
+                t.line(5, y, 10, y, c("navy"))
+            for x0, y0, x1, y1 in ((4, 3, 11, 3), (4, 11, 11, 11), (4, 3, 4, 11), (11, 3, 11, 11), (7, 4, 7, 10), (5, 7, 10, 7)):
+                t.line(x0, y0, x1, y1, c("brown_dark"))
+            t.set(6, 5, c("sky"))
+            t.set(9, 9, c("yellow"))
+            t.line(3, 12, 12, 12, c("brown"))      # 창턱
+            t.set(4, 13, c("green"))               # 화분
+            t.set(5, 13, c("red"))
+        elif kind == "sign":                       # 문 위 간판 (광산촌: 곡괭이)
+            for y in range(5, 11):
+                t.line(3, y, 12, y, c("brown"))
+            t.line(3, 4, 12, 4, c("brown_dark"))
+            t.line(3, 11, 12, 11, c("brown_dark"))
+            t.line(5, 9, 10, 6, c("stone_light"))
+            t.line(9, 5, 11, 7, c("stone_light"))
+            t.set(4, 3, c("outline"))
+            t.set(11, 3, c("outline"))
+        return t
+
+    vil = [("floor", dirt(0)), ("floor_b", dirt(0, 1)), ("floor_c", dirt(0, 2)), ("floor_d", dirt(0, 3)),
+           ("floor_e", dirt(0, 4)), ("floor_f", dirt(0, 5)), ("floor_g", dirt(0, 6)), ("floor_h", dirt(0, 7)),
+           ("floor_p1", dirt_patch(0)), ("floor_p2", dirt_patch(1)), ("floor_p3", dirt_patch(2)), ("floor_p4", dirt_patch(3)),
+           ("floor_alt", dirt(1)), ("floor_alt2", dirt(2)), ("floor_alt3", dirt(3)),
            ("floor_shadow", _shadowed(dirt(0), "brown_dark"))]
+    vil += _fringe_variants(dirt(0), 3100)
     vil += _top_variants(roof, roof_deco)
     vil += [("wall_face", house_face()), ("wall_face_l", house_face("l")), ("wall_face_r", house_face("r")),
             ("wall_face_window", house_face("window")), ("wall_face_door", house_face("door")), ("pit", tile_pit())]
-    _save_tileset("tiles_village", vil)
+    vil += [("wall_face_upper", house_upper()), ("wall_face_upper_l", house_upper("l")), ("wall_face_upper_r", house_upper("r")),
+            ("wall_face_upper_window", house_upper("window")), ("wall_face_upper_door", house_upper("sign"))]
+    _save_tileset("tiles_village", vil, {"edge_floor": True})
 
     # ------------------------------------------------------------------
     # 숲: 풀 바닥, 벽 = 나무. 수풀 가장자리는 둥글게 뚫려 밑의 풀이 보인다. 베어 내면 그루터기
     # ------------------------------------------------------------------
     rng = random.Random(2003)
 
-    def grass(kind: int) -> Canvas:
+    # 풀잎 결: 칸 안 고정 자리 (이웃 칸과 이어져도 줄무늬가 생기지 않게 엇갈림)
+    BLADES = [(2, 3), (9, 1), (13, 6), (5, 9), (11, 12), (1, 14), (7, 14), (14, 11)]
+
+    def blade(t: Canvas, x: int, y: int, tall: bool = False) -> None:
+        """풀잎 한 포기: 어두운 밑동 + 밝은 끝 (ㅅ 모양)."""
+        t.set(x, y, c("green_dark"))
+        t.set(x - 1, y - 1, c("green_dark"))
+        t.set(x + 1, y - 1, c("green_light"))
+        if tall:
+            t.set(x, y - 1, c("green_dark"))
+            t.set(x + 1, y - 2, c("green_light"))
+
+    # 풀포기 자리 (무늬마다 다르게: 이웃 칸과 이어져도 줄이 지지 않게)
+    GRASS_LAYOUTS = [
+        [(3, 4), (11, 2), (7, 10), (14, 12), (1, 13)],
+        [(6, 2), (13, 7), (2, 9), (10, 14)],
+        [(9, 5), (3, 1), (5, 13), (13, 11), (15, 3)],
+    ]
+
+    # 바탕 무늬 8가지: 풀포기 자리를 무늬마다 고정 시드로 흩뿌린다 (3~5포기)
+    for _seed in range(3, 8):
+        _r = random.Random(4400 + _seed)
+        GRASS_LAYOUTS.append([(_r.randrange(2, 15), _r.randrange(2, 15)) for _ in range(_r.randint(3, 5))])
+
+    def grass_patch(kind: int) -> Canvas:
+        """넓은 얼룩 무늬 (잡음이 높은 곳): 풀이 무성한 자리 · 작은 꽃 무리 · 클로버."""
         t = Canvas(16, 16)
         t.fill(c("green"))
-        _speckle(t, rng, "green_dark", 8)
-        _speckle(t, rng, "green_light", 5)
+        grass_texture(t, 4950 + kind, density=0.22, tall=3)
+        rr = random.Random(4500 + kind)
+        for _ in range(4):
+            x, y = rr.randrange(1, 15), rr.randrange(2, 15)
+            t.set(x, y, c("green_dark"))
+            t.set(x - 1, y - 1, c("green_dark"))
+            t.set(x + 1, y - 1, c("green_dark") if rr.random() < 0.7 else c("green_light"))
+        if kind == 1:   # 흰 꽃 무리
+            for x, y in ((4, 5), (6, 4), (5, 7), (11, 11), (12, 9)):
+                t.set(x, y, c("white"))
+        elif kind == 2:  # 노란 꽃 무리
+            for x, y in ((9, 4), (11, 5), (3, 11), (5, 12)):
+                t.set(x, y, c("yellow"))
+                t.set(x, y + 1, c("green_dark"))
+        elif kind == 3:  # 클로버 (밝은 잎)
+            for x, y in ((4, 4), (5, 4), (4, 5), (11, 10), (12, 10), (12, 11), (8, 13)):
+                t.set(x, y, c("green_light"))
+        return t
+
+    def grass_texture(t: Canvas, seed: int, density: float = 0.16, tall: int = 2, light: float = 0.02) -> None:
+        """칸 전체를 풀잎으로 채운다: 세로로 짧은 어두운 잎결 + 드문 밝은 잎끝 (빈 바탕이 보이지 않게, 대비는 낮게).
+        tall = 잎 길이(px). 칸 경계를 넘는 잎은 반대쪽에서 이어지게 감싼다 (이웃 칸과 이음매가 보이지 않게)."""
+        rr = random.Random(seed)
+        for y in range(16):
+            for x in range(16):
+                if rr.random() < density:
+                    length = rr.randint(1, tall)
+                    lean = rr.choice((-1, 0, 0, 1))
+                    for k in range(length):
+                        t.set((x + (lean if k == length - 1 else 0)) % 16, (y - k) % 16, c("green_dark"))
+                    if rr.random() < light * 4:
+                        t.set((x + lean) % 16, (y - length) % 16, c("green_light"))
+
+    def grass(kind: int, layout: int = 0) -> Canvas:
+        """풀밭: 칸 전체가 잔잔한 풀잎 결로 덮인다 (빈 곳 없이, 대비는 낮게). 무늬마다 잎 자리가 다르다."""
+        t = Canvas(16, 16)
+        t.fill(c("green"))
+        grass_texture(t, 4900 + layout)
         if kind == 1:  # 풀포기
             for x0, y0 in ((3, 12), (11, 5)):
                 t.line(x0, y0, x0, y0 - 2, c("green_light"))
@@ -2259,21 +2473,46 @@ def build_story_tiles() -> None:
             t.line(9, 9, 11, 9, c("green_dark"))
         return t
 
-    def canopy() -> Canvas:
+    # 숲 지붕 잎 뭉치 배치 (무늬마다 다르게, 칸 경계를 넘나드는 뭉치는 양쪽에 반씩)
+    CANOPY_LAYOUTS = [
+        [(4, 4, 3.4), (12, 3, 3.2), (3, 12, 3.3), (11, 11, 3.5), (8, 8, 2.2)],
+        [(3, 3, 3.0), (10, 5, 3.6), (5, 11, 3.4), (13, 13, 2.8), (15, 0, 2.4)],
+        [(6, 3, 3.3), (13, 8, 3.2), (2, 9, 3.0), (9, 13, 3.4), (0, 0, 2.2)],
+    ]
+
+    def canopy(layout: int = 0) -> Canvas:
         t = Canvas(16, 16)
         t.fill(c("green_dark"))
-        # 잎 뭉치: 왼쪽 위가 밝은 둥근 덩어리 넷
-        for cx, cy in ((4, 4), (12, 3), (3, 12), (11, 11)):
+        blobs = CANOPY_LAYOUTS[layout]
+        # 잎 뭉치: 아래쪽은 어둡고(그늘) 가운데는 초록, 왼쪽 위는 밝게 (햇빛이 왼쪽 위에서)
+        for cx, cy, rad in blobs:
             for y in range(16):
                 for x in range(16):
-                    d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-                    if d <= 3.2:
-                        t.set(x, y, c("green"))
-            t.set(cx - 1, cy - 2, c("green_light"))
-            t.set(cx - 2, cy - 1, c("green_light"))
-            t.set(cx, cy - 2, c("green_light"))
-        for x, y in ((8, 7), (7, 8), (15, 8), (0, 7), (8, 15), (8, 0)):
-            t.set(x, y, c("shadow"))
+                    for ox, oy in ((0, 0), (16, 0), (-16, 0), (0, 16), (0, -16)):
+                        dx, dy = x - (cx + ox), y - (cy + oy)
+                        d = (dx * dx + dy * dy) ** 0.5
+                        if d <= rad:
+                            col = "green"
+                            if dy + dx * 0.4 > rad * 0.45:
+                                col = "green_dark"
+                            elif dy + dx * 0.5 < -rad * 0.55:
+                                col = "green_light"
+                            t.set(x, y, c(col))
+            # 잎 결: 밝은 점 두어 개
+            t.set(int(cx) - 1, int(cy) - 1, c("green_light"))
+        # 뭉치 사이 깊은 틈
+        for x, y in ((8, 0), (0, 7), (15, 8), (8, 15), (7, 8)):
+            if layout == 0:
+                t.set(x, y, c("shadow"))
+        if layout == 1:
+            for x, y in ((7, 8), (8, 9), (1, 6), (14, 9)):
+                t.set(x, y, c("shadow"))
+        if layout == 2:
+            for x, y in ((6, 7), (5, 8), (12, 12), (15, 3)):
+                t.set(x, y, c("shadow"))
+            # 열매 몇 알
+            t.set(10, 9, c("red"))
+            t.set(11, 9, c("crimson"))
         return t
 
     # 가장자리 물결: 그 쪽 가장자리에서 얼마나 파내는지 (칸 안 위치별)
@@ -2336,11 +2575,87 @@ def build_story_tiles() -> None:
         t.set(11, 9, c("outline"))
         return t
 
-    forest = [("floor", grass(0)), ("floor_alt", grass(1)), ("floor_alt2", grass(2)), ("floor_alt3", grass(3)),
+    forest = [("floor", grass(0)), ("floor_b", grass(0, 1)), ("floor_c", grass(0, 2)), ("floor_d", grass(0, 3)),
+              ("floor_e", grass(0, 4)), ("floor_f", grass(0, 5)), ("floor_g", grass(0, 6)), ("floor_h", grass(0, 7)),
+              ("floor_p1", grass_patch(0)), ("floor_p2", grass_patch(1)), ("floor_p3", grass_patch(2)), ("floor_p4", grass_patch(3)),
+              ("floor_alt", grass(1)), ("floor_alt2", grass(2)), ("floor_alt3", grass(3)),
               ("floor_stump", stump())]
     forest += _top_variants(canopy, canopy_deco)
+    # 안쪽 지붕 무늬 두 가지 더 (LevelBuilder 가 칸 좌표로 섞는다)
+    forest += [("wall_top_alt1", canopy(1)), ("wall_top_alt2", canopy(2))]
     forest += [("wall_face", trunk_face()), ("pit", tile_pit())]
     _save_tileset("tiles_forest", forest, {"wall_over_floor": True})
+
+    # ------------------------------------------------------------------
+    # 수풀(키 큰 풀): 바닥 칸. 근접 공격에 닿으면 베여 짧은 그루터기 풀이 된다 (floor_stump)
+    # 덤불: 벽 칸(지나갈 수 없음). 근접 한 번이면 베어진다 → 그루터기
+    # ------------------------------------------------------------------
+    def tall_grass(seed: int) -> Canvas:
+        """키 큰 풀 한 칸: 칸 아래쪽에서 위로 뻗은 긴 잎 다발 (어두운 밑동 → 초록 → 밝은 끝), 칸을 거의 다 덮는다."""
+        t = Canvas(16, 16)
+        t.fill(c("green_dark"))
+        rr = random.Random(seed)
+        # 잎을 아래에서 위 순서로 그린다 (앞쪽 잎이 뒤쪽 잎을 덮게). 밑동 높이는 칸마다 흩어진다
+        blades = []
+        for _ in range(26):
+            blades.append((rr.randrange(0, 16), rr.randrange(4, 20), rr.randint(4, 8), rr.choice((-1, 0, 1))))
+        blades.sort(key=lambda b: b[1])
+        for x, base, h, lean in blades:
+            for k in range(h):
+                xx = (x + (lean if k > h // 2 else 0) + (lean if k > h - 2 else 0)) % 16
+                yy = (base - k) % 16
+                col = "green_dark" if k < 2 else ("green" if k < h - 1 else "green_light")
+                t.set(xx, yy, c(col))
+        return t
+
+    def cut_grass(seed: int) -> Canvas:
+        """베인 수풀: 짧게 잘린 풀 + 흩어진 풀잎 조각."""
+        t = Canvas(16, 16)
+        t.fill(c("green"))
+        grass_texture(t, seed, density=0.3, tall=1, light=0.0)
+        rr = random.Random(seed + 1)
+        for _ in range(5):
+            x, y = rr.randrange(1, 15), rr.randrange(1, 15)
+            t.set(x, y, c("green_light"))
+            t.set(x + 1, y, c("green_light"))
+        return t
+
+    def bush(seed: int) -> Canvas:
+        """덤불: 둥글게 부푼 잎 덩어리 (아래 그늘, 위 밝은 잎), 열매 몇 알 · 바닥은 풀."""
+        t = grass(0, seed % 8)
+        rr = random.Random(seed)
+        for y in range(1, 15):
+            for x in range(1, 15):
+                dx, dy = x - 7.5, (y - 8.5) * 1.15
+                d = (dx * dx + dy * dy) ** 0.5
+                bump = 6.2 + 0.8 * math.sin(math.atan2(dy, dx) * 5 + seed)
+                if d <= bump:
+                    col = "green"
+                    if dy > 2.5 or dx + dy > 6:
+                        col = "green_dark"
+                    elif dx + dy < -5:
+                        col = "green_light"
+                    if rr.random() < 0.12:
+                        col = "green_dark" if col != "green_dark" else "green"
+                    t.set(x, y, c(col))
+                elif d <= bump + 1:
+                    t.set(x, y, c("outline"))
+        for x in range(3, 13):                  # 바닥 그림자
+            t.set(x, 15, c("shadow"))
+        if seed % 2 == 0:                       # 열매
+            for x, y in ((5, 6), (9, 8), (7, 10)):
+                t.set(x, y, c("red"))
+        return t
+
+    tall = [("floor", tall_grass(5100)), ("floor_b", tall_grass(5101)), ("floor_c", tall_grass(5102)),
+            ("floor_d", tall_grass(5103)), ("floor_stump", cut_grass(5110))]
+    tall += [(name, cv) for name, cv in forest if not name.startswith("floor")]
+    _save_tileset("tiles_tallgrass", tall, {"wall_over_floor": True})
+    bush_tiles = [(name, cv) for name, cv in forest if name.startswith("floor") and name != "floor_stump"]
+    bush_tiles += [("floor_stump", cut_grass(5120))]
+    bush_tiles += [("wall_top", bush(5130)), ("wall_top_alt1", bush(5131)), ("wall_top_alt2", bush(5132)),
+                   ("wall_face", bush(5133)), ("pit", tile_pit())]
+    _save_tileset("tiles_bush", bush_tiles)
 
     # ------------------------------------------------------------------
     # 철길: 풀밭 위에 자갈 바닥 + 침목 + 레일 두 줄. 이웃 칸과 이어진다 (곧은 것·꺾인 것·끝)
@@ -2448,8 +2763,46 @@ def build_story_tiles() -> None:
             t.line(0, 4, 15, 4, c("blue"))
         return t
 
+    def shore(n: bool, s_: bool, w: bool, e: bool) -> Canvas:
+        """물가: 물이 아닌 쪽마다 풀둑 → 젖은 모래 → 얕은 물(밝음) → 거품 점, 그 안쪽은 깊은 물."""
+        t = water(0)
+        rr = random.Random(2400 + n * 1 + s_ * 2 + w * 4 + e * 8)
+        for i in range(16):
+            for side, on in (("n", n), ("s", s_), ("w", w), ("e", e)):
+                if not on:
+                    continue
+                bank = EDGE_DEPTH[i] - 1 if side in "nw" else EDGE_DEPTH[15 - i] - 1
+                layers = ["green"] * bank + ["green_dark", "tan", "sky", "sky"]
+                for k, col in enumerate(layers):
+                    x, y = {"n": (i, k), "s": (i, 15 - k), "w": (k, i), "e": (15 - k, i)}[side]
+                    cur = t.px[y][x]
+                    # 다른 쪽 물가가 이미 칠한 땅은 덮지 않는다 (모서리)
+                    if cur in (c("green"), c("green_dark"), c("tan")) and col in ("sky",):
+                        continue
+                    if col == "green" and rr.random() < 0.2:
+                        col = "green_light"
+                    t.set(x, y, c(col))
+                # 거품
+                k = len(layers)
+                x, y = {"n": (i, k), "s": (i, 15 - k), "w": (k, i), "e": (15 - k, i)}[side]
+                if (i + k) % 3 == 0 and t.px[y][x] in (c("blue"), c("navy"), c("sky")):
+                    t.set(x, y, c("cyan"))
+        return t
+
+    def water_deep(kind: int) -> Canvas:
+        t = water(0)
+        if kind == 1:  # 반짝이는 물결
+            t.line(4, 9, 8, 9, c("sky"))
+            t.set(6, 8, c("white"))
+            t.line(10, 3, 12, 3, c("cyan"))
+        return t
+
     water_tiles = [(name, cv) for name, cv in forest if name != "pit"]
-    water_tiles += [("pit", water(0)), ("pit_alt", water(1)), ("pit_n", water(2))]
+    water_tiles += [("pit", water(0)), ("pit_alt", water(1)), ("pit_alt2", water_deep(1))]
+    for mask in range(1, 16):
+        n, s_, w, e = bool(mask & 1), bool(mask & 2), bool(mask & 4), bool(mask & 8)
+        suffix = ("n" if n else "") + ("s" if s_ else "") + ("w" if w else "") + ("e" if e else "")
+        water_tiles.append(("pit_" + suffix, shore(n, s_, w, e)))
     _save_tileset("tiles_water", water_tiles, {"wall_over_floor": True})
 
     # ------------------------------------------------------------------
@@ -2469,16 +2822,37 @@ def build_story_tiles() -> None:
             t.line(5, 8, 7, 8, c("shadow"))
         return t
 
-    def rock_top() -> Canvas:
+    ROCK_LAYOUTS = [
+        [(4, 5, 4.2), (12, 4, 3.6), (8, 12, 4.4)],
+        [(5, 10, 4.6), (12, 11, 3.4), (11, 3, 3.8)],
+        [(3, 3, 3.4), (10, 7, 4.8), (4, 13, 3.2)],
+    ]
+
+    def rock_top(layout: int = 0) -> Canvas:
+        """바위 언덕 윗면: 둥근 바위 덩이(왼쪽 위가 밝고 오른쪽 아래 그늘) + 틈 + 이끼."""
         t = Canvas(16, 16)
-        t.fill(c("stone"))
-        rr = random.Random(2008)
-        for _ in range(12):
+        t.fill(c("stone_dark"))
+        rr = random.Random(2008 + layout)
+        for cx, cy, rad in ROCK_LAYOUTS[layout]:
+            for y in range(16):
+                for x in range(16):
+                    dx, dy = x - cx, y - cy
+                    d = (dx * dx + dy * dy) ** 0.5
+                    if d <= rad:
+                        col = "stone"
+                        if dx + dy > rad * 0.7:
+                            col = "stone_dark"
+                        elif dx + dy < -rad * 0.6:
+                            col = "stone_light"
+                        t.set(x, y, c(col))
+            t.set(int(cx - rad * 0.5), int(cy - rad * 0.5), c("pale"))
+        for _ in range(6):
             t.set(rr.randrange(0, 16), rr.randrange(0, 16), c("stone_light"))
-        for _ in range(10):
-            t.set(rr.randrange(0, 16), rr.randrange(0, 16), c("stone_dark"))
-        t.line(3, 5, 7, 6, c("stone_dark"))
-        t.line(9, 11, 13, 10, c("stone_dark"))
+        # 이끼 한두 점
+        for _ in range(3):
+            x, y = rr.randrange(0, 16), rr.randrange(0, 16)
+            t.set(x, y, c("green_dark"))
+            t.set(min(x + 1, 15), y, c("green"))
         return t
 
     def rock_deco(t: Canvas, n: bool, s_: bool, w: bool, e: bool) -> None:
@@ -2496,21 +2870,34 @@ def build_story_tiles() -> None:
             t.line(0, 14, 15, 14, c("stone_dark"))
             t.line(0, 15, 15, 15, c("shadow"))
 
-    def cliff() -> Canvas:
+    def cliff(kind: int = 0) -> Canvas:
+        """바위 절벽 앞면: 윗단은 밝은 턱, 가로 지층 두 줄, 세로 균열, 아래는 그늘과 풀포기."""
         t = Canvas(16, 16)
         t.fill(c("stone_dark"))
-        t.line(0, 0, 15, 0, c("stone"))
-        for x0, y0, x1, y1 in ((2, 1, 3, 9), (7, 2, 6, 12), (11, 1, 12, 8), (14, 4, 13, 13)):
+        t.line(0, 0, 15, 0, c("stone_light"))
+        t.line(0, 1, 15, 1, c("stone"))
+        for y in (5, 10):
+            for x in range(16):
+                t.set(x, y, c("shadow") if (x + kind) % 5 else c("stone"))
+            for x in range(0, 16, 3):
+                t.set(x, y - 1, c("stone"))
+        cracks = [((3, 2, 4, 9), (11, 6, 10, 12)), ((6, 2, 7, 11), (13, 3, 12, 9))][kind % 2]
+        for x0, y0, x1, y1 in cracks:
             t.line(x0, y0, x1, y1, c("shadow"))
             t.line(x0 + 1, y0, x1 + 1, y1, c("stone"))
-        t.line(0, 13, 15, 13, c("shadow"))
-        t.line(0, 14, 15, 14, c("outline"))
-        t.line(0, 15, 15, 15, c("green_dark"))
+        t.line(0, 12, 15, 12, c("shadow"))
+        t.line(0, 13, 15, 13, c("outline"))
+        t.line(0, 14, 15, 14, c("green_dark"))
+        t.line(0, 15, 15, 15, c("green"))
+        for x in (2, 9, 13):
+            t.set(x, 13, c("green"))
+            t.set(x, 12, c("green_light") if x != 9 else c("green"))
         return t
 
     rock_tiles = [("floor", gravel(0)), ("floor_alt", gravel(1)), ("floor_shadow", _shadowed(gravel(0), "green_dark"))]
     rock_tiles += _top_variants(rock_top, rock_deco)
-    rock_tiles += [("wall_face", cliff()), ("pit", water(0))]
+    rock_tiles += [("wall_top_alt1", rock_top(1)), ("wall_top_alt2", rock_top(2))]
+    rock_tiles += [("wall_face", cliff(0)), ("wall_face_alt1", cliff(1)), ("pit", water(0))]
     _save_tileset("tiles_rock", rock_tiles)
 
     # ------------------------------------------------------------------
@@ -2525,8 +2912,10 @@ def build_story_tiles() -> None:
             t.set(rng.randrange(0, 16), rng.randrange(0, 16), c("brown"))
         for _ in range(6):
             t.set(rng.randrange(0, 16), rng.randrange(0, 16), c("skin"))
-        for x, y in ((0, 2), (0, 9), (15, 5), (15, 13), (3, 0), (11, 0), (6, 15), (13, 15)):
-            t.set(x, y, c("green"))
+        # 오래 밟힌 두 줄 자국 (가로세로 어느 쪽으로 이어져도 어색하지 않게 옅게)
+        for x in range(0, 16, 2):
+            t.set(x, 5, c("brown"))
+            t.set(x + 1, 11, c("brown"))
         if kind == 1:
             for x, y in ((6, 6), (7, 6), (6, 7), (10, 11)):
                 t.set(x, y, c("stone"))
@@ -2534,7 +2923,8 @@ def build_story_tiles() -> None:
 
     road_tiles = [(name, cv) for name, cv in forest if not name.startswith("floor") or name == "floor_stump"]
     road_tiles += [("floor", road(0)), ("floor_alt", road(1))]
-    _save_tileset("tiles_path", road_tiles, {"wall_over_floor": True})
+    road_tiles += _fringe_variants(road(0), 3200)
+    _save_tileset("tiles_path", road_tiles, {"wall_over_floor": True, "edge_floor": True})
 
     trail_tiles = [(name, cv) for name, cv in forest if not name.startswith("floor")]
     trail_tiles += [("floor", trampled(0)), ("floor_alt", trampled(1)), ("floor_alt2", trampled(2)),
@@ -2638,6 +3028,116 @@ NPC_AFRAID = [
     "....opoopo......",
     "...obo.obo......",
     "...ooo.ooo......",
+]
+
+# ---- 주민 16×24 (주인공과 같은 키. 아이는 작다) ----
+# 늙은 광부: 등불 달린 안전모, 흰 수염, 어깨에 멘 곡괭이, 가죽 조끼
+VILLAGER_MINER = [
+    "................",
+    "............k...",
+    ".....ooooookkk..",
+    "....oYYYwYYok...",
+    "...oYYYYYYYYo...",
+    "..oooooooooooo..",
+    "...offffffffo...",
+    "...ofeffffefo...",
+    "...offffffffo...",
+    "...owffffffwo...",
+    "...owwwffwwwo...",
+    "....owwwwwwo....",
+    "...occwwwwcco...",
+    "..occcccccccco..",
+    "..ofocccccccofo.",
+    "..ofocccccccofo.",
+    "..oo.cbbbbbc.oo.",
+    "....occccccco...",
+    "....opppppppo...",
+    "....oppo.oppo...",
+    "....oppo.oppo...",
+    "....oppo.oppo...",
+    "...obbbo.obbbo..",
+    "...ooooo.ooooo..",
+]
+# 집 잃은 주민: 기운 누더기, 등에 큰 짐 보따리, 헝클어진 머리
+VILLAGER_HOMELESS = [
+    "................",
+    "................",
+    ".....o.ooo.o....",
+    "....ohhhhhhho...",
+    "...ohhhhhhhhho..",
+    "....ohffffffho..",
+    "....offeffeffo..",
+    "....offffffffo..",
+    ".....offffffo...",
+    "..SSSoofffoo....",
+    ".SSSSSoccccco...",
+    "oSSSSSccccccco..",
+    "oSSdSScdccccfo..",
+    "oSSSSSccccccfo..",
+    ".oSSSocccdccfo..",
+    "..ooo.occccco...",
+    "......ocdccco...",
+    "......occcco....",
+    ".....opppppo....",
+    ".....oppoppo....",
+    ".....oppoppo....",
+    ".....oppoppo....",
+    "....obbo.obbo...",
+    "....oooo.oooo...",
+]
+# 아이: 작은 키, 큰 머리, 머리끈(빨강), 손을 흔든다
+VILLAGER_CHILD = [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "......oooo..rr..",
+    ".....ohhhhoorr..",
+    "....ohhhhhho.r..",
+    "....ohffffho....",
+    "....ofeffefo..o.",
+    "....offffffo.of.",
+    ".....offffo.of..",
+    ".....occccco.o..",
+    "....ofcccccco...",
+    "....ofccccco....",
+    ".....occccco....",
+    ".....occccco....",
+    ".....oppppo.....",
+    ".....op..po.....",
+    ".....op..po.....",
+    ".....op..po.....",
+    "....obo..obo....",
+    "....ooo..ooo....",
+]
+# 겁먹은 주민: 움츠러든 어깨, 두 손을 가슴 앞에 모음, 이마의 땀방울
+VILLAGER_AFRAID = [
+    "................",
+    "................",
+    "................",
+    ".....oooooo..s..",
+    "....ohhhhhho.s..",
+    "...ohhhhhhhho...",
+    "...ohffffffho...",
+    "....ofoffofo....",
+    "....offffffo....",
+    "....offoofffo...",
+    ".....offffo.....",
+    "...occcffccco...",
+    "..occcffffccco..",
+    "..occcffffccco..",
+    "...occcccccco...",
+    "...occcccccco...",
+    "....occcccco....",
+    "....opppppppo...",
+    "....oppo.oppo...",
+    "....oppo.oppo...",
+    "...oppo..oppo...",
+    "...oppo..oppo...",
+    "..obbo...obbo...",
+    "..oooo...oooo...",
 ]
 
 RUBBLE_A = [
@@ -2890,6 +3390,37 @@ def build_story_props() -> None:
         cv.set(12 + k, 3 - k, c("cyan"))
         cv.set(2 - k, 12, c("cyan"))
         return cv
+
+    def villager24(rows: list[str], cmap: dict, idle: str = "bob") -> list[Canvas]:
+        assert len(rows) == 24 and all(len(r) == 16 for r in rows), "주민 그림 크기"
+        base_map = {".": None, "o": "outline", "f": "skin", "e": "outline", "b": "brown_dark"}
+        base_map.update(cmap)
+        base = Canvas.from_rows(rows, base_map)
+        if idle == "shake":   # 겁먹은 주민: 좌우로 떤다
+            return [base, base.moved(1, 0), base, base.moved(-1, 0)]
+        if idle == "wave":    # 아이: 손을 흔든다 (팔이 한 칸 올라간다)
+            other = base.copy()
+            for y, x in ((10, 14), (11, 13), (12, 12), (11, 14), (12, 13)):
+                other.set(x, y, None)
+            other.set(14, 9, c("outline"))
+            other.set(14, 10, c("skin"))
+            other.set(13, 11, c("outline"))
+            other.set(12, 12, c("outline"))
+            return [base, other]
+        # 숨쉬기: 몸통이 한 칸 내려앉았다 올라온다
+        return [base, base.shift_rows(1, 16, 1)]
+
+    v_miner = villager24(VILLAGER_MINER, {"Y": "yellow", "w": "white", "c": "brown", "p": "navy", "k": "stone_light"})
+    v_miner[1].set(8, 3, c("orange"))     # 등불이 깜빡인다
+    v_homeless = villager24(VILLAGER_HOMELESS, {"h": "brown_dark", "c": "stone", "d": "stone_dark", "p": "brown", "S": "tan"})
+    v_child = villager24(VILLAGER_CHILD, {"h": "orange", "c": "red", "p": "navy", "r": "red"}, "wave")
+    v_afraid = villager24(VILLAGER_AFRAID, {"h": "pale", "c": "green", "p": "green_dark", "s": "sky"}, "shake")
+    save_sheet("villagers", 16, 24, [
+        ("npc_miner", v_miner, 1.5, True),
+        ("npc_homeless", v_homeless, 1.5, True),
+        ("npc_child", v_child, 2.5, True),
+        ("npc_afraid", v_afraid, 8.0, True),
+    ])
 
     save_sheet("story_props", 16, 16, [
         ("pickup", [sparkle("yellow", 0), sparkle("yellow", 1)], 4.0, True),

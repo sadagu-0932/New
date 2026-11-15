@@ -77,12 +77,24 @@
       18,
       0
     ],
-    "wall_face": [
+    "wall_top_alt1": [
       19,
       0
     ],
-    "pit": [
+    "wall_top_alt2": [
       20,
+      0
+    ],
+    "wall_face": [
+      21,
+      0
+    ],
+    "wall_face_alt1": [
+      22,
+      0
+    ],
+    "pit": [
+      23,
       0
     ]
   }

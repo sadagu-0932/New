@@ -25,6 +25,8 @@ extends Resource
 @export var category_names: Array[String] = []
 @export var text_in_combat: String = ""
 @export var text_skill2_locked: String = ""
+## 다른 스킬 칸에 이미 있는 스킬을 고를 때 (%s = 그 칸의 키 이름)
+@export var text_skill_in_other_slot: String = ""
 @export var text_empty: String = ""
 @export var text_equipped: String = ""
 @export var text_used: String = ""

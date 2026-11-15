@@ -5,104 +5,136 @@
       0,
       0
     ],
-    "floor_alt": [
+    "floor_b": [
       1,
       0
     ],
-    "floor_alt2": [
+    "floor_c": [
       2,
       0
     ],
-    "floor_alt3": [
+    "floor_d": [
       3,
       0
     ],
-    "floor_shadow": [
+    "floor_e": [
       4,
       0
     ],
-    "wall_top": [
+    "floor_f": [
       5,
       0
     ],
-    "wall_top_n": [
+    "floor_p1": [
       6,
       0
     ],
-    "wall_top_s": [
+    "floor_p2": [
       7,
       0
     ],
-    "wall_top_ns": [
+    "floor_p3": [
       8,
       0
     ],
-    "wall_top_w": [
+    "floor_alt": [
       9,
       0
     ],
-    "wall_top_nw": [
+    "floor_alt2": [
       10,
       0
     ],
-    "wall_top_sw": [
+    "floor_alt3": [
       11,
       0
     ],
-    "wall_top_nsw": [
+    "floor_shadow": [
       12,
       0
     ],
-    "wall_top_e": [
+    "wall_top": [
       13,
       0
     ],
-    "wall_top_ne": [
+    "wall_top_n": [
       14,
       0
     ],
-    "wall_top_se": [
+    "wall_top_s": [
       15,
       0
     ],
-    "wall_top_nse": [
+    "wall_top_ns": [
       16,
       0
     ],
-    "wall_top_we": [
+    "wall_top_w": [
       17,
       0
     ],
-    "wall_top_nwe": [
+    "wall_top_nw": [
       18,
       0
     ],
-    "wall_top_swe": [
+    "wall_top_sw": [
       19,
       0
     ],
-    "wall_top_nswe": [
+    "wall_top_nsw": [
       20,
       0
     ],
-    "wall_face": [
+    "wall_top_e": [
       21,
       0
     ],
-    "wall_face_alt1": [
+    "wall_top_ne": [
       22,
       0
     ],
-    "wall_face_alt2": [
+    "wall_top_se": [
       23,
       0
     ],
-    "wall_face_alt3": [
+    "wall_top_nse": [
       24,
       0
     ],
-    "pit": [
+    "wall_top_we": [
       25,
+      0
+    ],
+    "wall_top_nwe": [
+      26,
+      0
+    ],
+    "wall_top_swe": [
+      27,
+      0
+    ],
+    "wall_top_nswe": [
+      28,
+      0
+    ],
+    "wall_face": [
+      29,
+      0
+    ],
+    "wall_face_alt1": [
+      30,
+      0
+    ],
+    "wall_face_alt2": [
+      31,
+      0
+    ],
+    "wall_face_alt3": [
+      32,
+      0
+    ],
+    "pit": [
+      33,
       0
     ]
   }

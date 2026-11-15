@@ -80,14 +80,17 @@ func _tick_reload(player: Player) -> void:
 	if reload_ticks < 0 or CombatState.in_combat(get_tree()):
 		reload_ticks = interval      # 전투 중이면 처음부터 다시 센다
 		return
+	# 탄을 전부 쓴 뒤에만 센다 (남아 있으면 처음부터 다시) → 0발이 되고 interval 뒤에 가득 찬다
+	if player.ammo.current > 0:
+		reload_ticks = interval
+		return
 	reload_ticks -= 1
 	if reload_ticks > 0:
 		return
 	reload_ticks = interval
-	if player.ammo.current < player.ammo.maximum:
-		player.ammo.set_current(player.ammo.maximum)
-		Events.toast.emit(DB.story.text_reloaded)
-		Audio.play("ui_confirm")
+	player.ammo.set_current(player.ammo.maximum)
+	Events.toast.emit(DB.story.text_reloaded)
+	Audio.play("ui_confirm")
 
 
 func _exit_tree() -> void:

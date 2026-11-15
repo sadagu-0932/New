@@ -11,6 +11,8 @@ extends RefCounted
 ##          wall_face_alt1~3 (문이 없는 타일셋에서 칸 좌표로 섞음)
 ##   meta "connect_floor": true 면 바닥이 이웃과 이어진다 (철길): floor_ + 이어진 쪽 글자 n·s·w·e (예: floor_we, floor_ne)
 ##   meta "wall_over_floor": true 면 벽 칸 밑에도 바닥을 깐다 (나무처럼 가장자리가 뚫린 그림용)
+##   meta "edge_floor": true 면 다른 타일 그림과 맞닿은 쪽에 풀이 번진 가장자리를 쓴다 (흙길·마을 흙): floor_edge_ + 맞닿은 쪽 글자
+##   물(pit)은 물이 아닌 쪽마다 물가를 그린다: pit_ + 그 쪽 글자 (pit_n, pit_sw 등). 숲 지붕 안쪽은 wall_top_alt1·2 를 섞는다
 ## 한 맵에 타일 그림을 여러 개 섞어 쓸 수 있다 (구역마다 다른 그림): 칸마다 pick 이 고른다.
 
 const FLOOR := "Floor"
@@ -28,7 +30,7 @@ static func build(map: LevelMap, theme: ThemeData, tilesets: Array[String] = ["t
 		var meta := theme.load_json(tilesets[i])
 		_add_source(tile_set, i, theme.load_texture(tilesets[i]), meta)
 		sets[tilesets[i]] = {"source": i, "tiles": meta.get("tiles", {}), "over_floor": bool(meta.get("wall_over_floor", false)),
-			"connect": bool(meta.get("connect_floor", false))}
+			"connect": bool(meta.get("connect_floor", false)), "edge": bool(meta.get("edge_floor", false))}
 	root.set_meta(&"sets", sets)
 	root.set_meta(&"default_set", tilesets[0])
 	root.set_meta(&"pick", pick)
@@ -75,21 +77,67 @@ static func paint(root: Node2D, map: LevelMap, cell: Vector2i, stump: bool = fal
 					suffix += String(pair[0])
 			if tiles.has("floor_%s" % suffix):
 				floor_name = "floor_%s" % suffix
+		elif bool(tile_info.get("edge", false)) and floor_name != "floor_stump":
+			# 흙길·마을 흙: 다른 땅과 맞닿은 쪽에 풀이 번져 자연스럽게 이어진다
+			var edge := ""
+			for pair: Array in [["n", Vector2i.UP], ["s", Vector2i.DOWN], ["w", Vector2i.LEFT], ["e", Vector2i.RIGHT]]:
+				var other := cell + (pair[1] as Vector2i)
+				if _set_for(root, other)["source"] != source and not map.is_pit(other):
+					edge += String(pair[0])
+			if not edge.is_empty() and tiles.has("floor_edge_%s" % edge):
+				floor_name = "floor_edge_%s" % edge
 		floor_layer.set_cell(cell, source, _coords(tiles, floor_name))
 	elif map.is_wall(cell):
 		if bool(tile_info["over_floor"]):
 			floor_layer.set_cell(cell, source, _coords(tiles, "floor"))
 		wall_layer.set_cell(cell, source, _coords(tiles, _wall_name(tiles, map, cell)))
 	elif map.is_pit(cell):
-		# 물: 위쪽이 물이 아니면 물가, 나머지는 칸 좌표로 물결을 섞는다
+		# 물: 물이 아닌 쪽마다 물가(풀둑·모래·거품), 안쪽은 칸 좌표로 물결을 섞는다
 		var pit_name := "pit"
-		if tiles.has("pit_n") and not map.is_pit(cell + Vector2i.UP):
+		var shore := ""
+		for pair: Array in [["n", Vector2i.UP], ["s", Vector2i.DOWN], ["w", Vector2i.LEFT], ["e", Vector2i.RIGHT]]:
+			if not map.is_pit(cell + (pair[1] as Vector2i)):
+				shore += String(pair[0])
+		if not shore.is_empty() and tiles.has("pit_%s" % shore):
+			pit_name = "pit_%s" % shore
+		elif not shore.is_empty() and shore.contains("n") and tiles.has("pit_n"):
 			pit_name = "pit_n"
-		elif tiles.has("pit_alt") and (cell.x * 3 + cell.y * 5) % 4 == 0:
+		elif tiles.has("pit_alt") and cell_hash(cell, 21) % 5 == 0:
 			pit_name = "pit_alt"
+		elif tiles.has("pit_alt2") and cell_hash(cell, 22) % 7 == 0:
+			pit_name = "pit_alt2"
 		wall_layer.set_cell(cell, source, _coords(tiles, pit_name))
 	else:
 		wall_layer.erase_cell(cell)
+
+
+## 바탕 무늬 이름들 (floor, floor_b … floor_h) · 넓은 얼룩 무늬 (floor_p1 …)
+const BASE_FLOORS: Array[String] = ["floor", "floor_b", "floor_c", "floor_d", "floor_e", "floor_f", "floor_g", "floor_h"]
+const PATCH_FLOORS: Array[String] = ["floor_p1", "floor_p2", "floor_p3", "floor_p4"]
+
+
+## 칸 좌표 → 0~(n-1) 섞인 정수 (게임 RNG 를 쓰지 않음. 선형 식처럼 대각선 줄무늬가 생기지 않게)
+static func cell_hash(cell: Vector2i, seed: int = 0) -> int:
+	var h := (cell.x * 374761393 + cell.y * 668265263 + seed * 1442695041) & 0x7fffffff
+	h = ((h ^ (h >> 13)) * 1274126177) & 0x7fffffff
+	return (h ^ (h >> 16)) & 0x7fffffff
+
+
+## 부드러운 값 잡음 0~1 (scale 칸마다 격자, 사이는 매끄럽게) — 넓은 얼룩 자리
+static func cell_noise(cell: Vector2i, scale: float, seed: int) -> float:
+	var fx := cell.x / scale
+	var fy := cell.y / scale
+	var x0 := int(floor(fx))
+	var y0 := int(floor(fy))
+	var tx := fx - x0
+	var ty := fy - y0
+	tx = tx * tx * (3.0 - 2.0 * tx)
+	ty = ty * ty * (3.0 - 2.0 * ty)
+	var a := float(cell_hash(Vector2i(x0, y0), seed) % 1000) / 999.0
+	var b := float(cell_hash(Vector2i(x0 + 1, y0), seed) % 1000) / 999.0
+	var c := float(cell_hash(Vector2i(x0, y0 + 1), seed) % 1000) / 999.0
+	var d := float(cell_hash(Vector2i(x0 + 1, y0 + 1), seed) % 1000) / 999.0
+	return lerpf(lerpf(a, b, tx), lerpf(c, d, tx), ty)
 
 
 static func _floor_name(tiles: Dictionary, map: LevelMap, cell: Vector2i, stump: bool) -> String:
@@ -97,15 +145,27 @@ static func _floor_name(tiles: Dictionary, map: LevelMap, cell: Vector2i, stump:
 		return "floor_stump"
 	if tiles.has("floor_shadow") and map.is_wall(cell + Vector2i.UP):
 		return "floor_shadow"
-	# 바닥 무늬는 칸 좌표로 정한다 (게임 RNG 를 쓰지 않음)
-	var h := (cell.x * 7 + cell.y * 13) % 11
+	# 드문 장식 무늬 (꽃·돌멩이·배수구 등): 칸마다 섞인 값으로 고른다
+	var h := cell_hash(cell, 11) % 23
 	if h == 0:
 		return "floor_alt"
-	if h == 4 and tiles.has("floor_alt2"):
+	if h == 7 and tiles.has("floor_alt2"):
 		return "floor_alt2"
-	if h == 8 and tiles.has("floor_alt3"):
+	if h == 15 and tiles.has("floor_alt3"):
 		return "floor_alt3"
-	return "floor"
+	# 넓은 얼룩: 부드러운 잡음이 높은 곳엔 얼룩 무늬 (풀이 무성한 곳·밟혀 닳은 곳)
+	if tiles.has("floor_p1") and cell_noise(cell, 7.0, 5) > 0.62:
+		var patches: Array[String] = []
+		for n in PATCH_FLOORS:
+			if tiles.has(n):
+				patches.append(n)
+		return patches[cell_hash(cell, 3) % patches.size()]
+	# 바탕 무늬: 있는 것 중에서 칸마다 섞는다
+	var bases: Array[String] = []
+	for n in BASE_FLOORS:
+		if tiles.has(n):
+			bases.append(n)
+	return bases[cell_hash(cell, 1) % bases.size()]
 
 
 ## 벽 앞면인지: 벽이고 바로 아래가 바닥
@@ -113,21 +173,46 @@ static func _is_face(map: LevelMap, cell: Vector2i) -> bool:
 	return map.is_wall(cell) and map.is_floor(cell + Vector2i.DOWN)
 
 
+## 2층 벽인지 (타일 그림에 wall_face_upper 가 있을 때만): 앞면 바로 위이고, 그 위에도 벽(지붕)이 있다
+static func _is_upper(tiles: Dictionary, map: LevelMap, cell: Vector2i) -> bool:
+	return tiles.has("wall_face_upper") and map.is_wall(cell) and _is_face(map, cell + Vector2i.DOWN) \
+		and map.is_wall(cell + Vector2i.UP)
+
+
+## 앞면이나 2층 벽 (지붕 처마가 이 위에 온다)
+static func _is_front(tiles: Dictionary, map: LevelMap, cell: Vector2i) -> bool:
+	return _is_face(map, cell) or _is_upper(tiles, map, cell)
+
+
 static func _wall_name(tiles: Dictionary, map: LevelMap, cell: Vector2i) -> String:
 	if _is_face(map, cell):
 		return _face_name(tiles, map, cell)
+	if _is_upper(tiles, map, cell):
+		# 2층 벽: 아래층 앞면 줄을 따라 (문 위는 간판, 창문 위는 창문, 양끝은 기둥)
+		var below := _face_name(tiles, map, cell + Vector2i.DOWN)
+		var upper := {"wall_face_door": "wall_face_upper_door", "wall_face_window": "wall_face_upper_window",
+			"wall_face_l": "wall_face_upper_l", "wall_face_r": "wall_face_upper_r"}.get(below, "wall_face_upper") as String
+		return upper if tiles.has(upper) else "wall_face_upper"
 	# 윗면: 열린 쪽(벽이 아닌 쪽)에 따라 가장자리 그림을 고른다
 	var suffix := ""
 	if not map.is_wall(cell + Vector2i.UP):
 		suffix += "n"
-	if _is_face(map, cell + Vector2i.DOWN):
+	if _is_front(tiles, map, cell + Vector2i.DOWN):
 		suffix += "s"
 	if not map.is_wall(cell + Vector2i.LEFT):
 		suffix += "w"
 	if not map.is_wall(cell + Vector2i.RIGHT):
 		suffix += "e"
 	var tile_name := "wall_top_%s" % suffix
-	return tile_name if not suffix.is_empty() and tiles.has(tile_name) else "wall_top"
+	if suffix.is_empty():
+		# 안쪽 윗면: 칸 좌표로 무늬를 섞는다 (숲 지붕이 한 장처럼 반복되지 않게)
+		var h := cell_hash(cell, 31) % 3
+		if h == 1 and tiles.has("wall_top_alt1"):
+			return "wall_top_alt1"
+		if h == 2 and tiles.has("wall_top_alt2"):
+			return "wall_top_alt2"
+		return "wall_top"
+	return tile_name if tiles.has(tile_name) else "wall_top"
 
 
 static func _face_name(tiles: Dictionary, map: LevelMap, cell: Vector2i) -> String:
@@ -147,7 +232,7 @@ static func _face_name(tiles: Dictionary, map: LevelMap, cell: Vector2i) -> Stri
 		if left > 0 and right > 0 and absi(left - door) % 2 == 0 and tiles.has("wall_face_window"):
 			return "wall_face_window"
 	elif not tiles.has("wall_face_door"):
-		var h := (cell.x * 5 + cell.y * 3) % 7
+		var h := cell_hash(cell, 41) % 7
 		for i in 3:
 			if h == i * 2 + 1 and tiles.has("wall_face_alt%d" % (i + 1)):
 				return "wall_face_alt%d" % (i + 1)

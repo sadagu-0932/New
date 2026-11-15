@@ -10,6 +10,10 @@ const SLOTS := [
 	"skill", "skill_blink", "skill_absorb", "skill_decoy", "skill_shockwave", "skill_mark",
 	"gate", "switch", "start", "split", "boss_start", "boss_groggy", "boss_defeat",
 	"ui_move", "ui_confirm",
+	# 스토리판 웨이스톤 순간이동 (출발·도착)
+	"teleport_out", "teleport_in",
+	# 수풀 베기
+	"grass_cut",
 	# 숨은 테크 (글자 안내가 아니라 발견했을 때의 손맛)
 	"execute", "reparry", "dash_slash", "combo",
 ]

@@ -35,6 +35,8 @@ const COLOR_SLOT := Color(0.13, 0.11, 0.17)
 const COLOR_BORDER := Color(0.36, 0.32, 0.42)
 const COLOR_SELECTED := Color(0.97, 0.78, 0.35)
 const COLOR_LOCKED := Color(0.08, 0.07, 0.1)
+## 바꿀 스킬 칸으로 고른 칸의 테두리
+const COLOR_TARGET := Color(0.62, 0.89, 0.94)
 const NOTICE_SECONDS := 1.6
 
 ## 지금 진행 중인 런 (StoryMain 이 넣어 준다)
@@ -62,6 +64,8 @@ var _notice_left: float = 0.0
 var _was_paused: bool = false
 var _item_icons: SpriteFrames
 var _skill_icons: SpriteFrames
+## 아래 보유 스킬을 넣을 칸 (먼저 Q·F 칸을 눌러 고른다, 열 때는 Q)
+var skill_target: int = Inventory.SLOT_Q
 var _font: Font
 
 
@@ -171,6 +175,7 @@ func open() -> bool:
 		return false
 	is_open = true
 	reading = false
+	skill_target = Inventory.SLOT_Q
 	_doc_root.visible = false
 	_was_paused = get_tree().paused
 	get_tree().paused = true
@@ -353,9 +358,9 @@ func _help_text(slot: Dictionary) -> String:
 	var entry: Variant = slot["entry"]
 	match String(slot["kind"]):
 		KIND_SKILL:
-			action = "클릭·Enter %s 지정" % Settings.key_name(&"skill")
-			if Story.inventory.skill2_unlocked():
-				action += " · 우클릭·%s %s 지정" % [Settings.key_name(&"skill2"), Settings.key_name(&"skill2")]
+			action = "클릭·Enter %s 칸에 넣기" % _slot_key(skill_target)
+		KIND_SKILL_Q, KIND_SKILL_F:
+			action = "클릭·Enter 이 칸을 바꾸기 → 아래 스킬을 고르세요"
 		KIND_ARMOR:
 			action = "클릭·Enter 벗기" if entry != null else ""
 		KIND_BAG:
@@ -378,12 +383,19 @@ func _draw_slots() -> void:
 		var locked: bool = slot["kind"] == KIND_SKILL_F and not Story.inventory.skill2_unlocked()
 		_canvas.draw_rect(rect, COLOR_LOCKED if locked else COLOR_SLOT)
 		_canvas.draw_rect(rect, COLOR_SELECTED if i == selected else COLOR_BORDER, false)
+		# 바꿀 스킬 칸으로 고른 칸: 두 겹 테두리
+		var kind := String(slot["kind"])
+		if (kind == KIND_SKILL_Q and skill_target == Inventory.SLOT_Q) or (kind == KIND_SKILL_F and skill_target == Inventory.SLOT_F):
+			_canvas.draw_rect(rect.grow(1.0), COLOR_TARGET, false)
+			_canvas.draw_rect(rect.grow(-1.0), COLOR_TARGET, false)
 		var icon := _icon_of(slot["entry"])
 		if icon == null and slot["kind"] == KIND_ARMOR:
 			# 빈 갑옷류 칸: 투구·갑옷·바지 윤곽을 흐리게 (글자 대신 그림)
 			icon = _slot_icon(String(slot["slot"]))
 		if icon != null:
-			_canvas.draw_texture(icon, rect.position + Vector2(2, 2))
+			# 다른 칸(바꾸려는 칸이 아닌 쪽)에 이미 있는 스킬은 흐리게 → 고를 수 없음
+			var dim := kind == KIND_SKILL and Story.inventory.skill_ids[1 - skill_target] == entry_id(slot["entry"])
+			_canvas.draw_texture(icon, rect.position + Vector2(2, 2), Color(1, 1, 1, 0.35) if dim else Color.WHITE)
 		var count := _count_of(slot)
 		if count > 1:
 			var text := str(count)
@@ -413,6 +425,11 @@ func _slot_icon(armor_slot: String) -> Texture2D:
 	return _item_icons.get_frame_texture(anim, 0) if _item_icons.has_animation(anim) else null
 
 
+## 스킬 칸 번호 → 키 이름 (Q·F)
+func _slot_key(slot_index: int) -> String:
+	return Settings.key_name(&"skill") if slot_index == Inventory.SLOT_Q else Settings.key_name(&"skill2")
+
+
 ## 칸 왼쪽 위 글자: 보유 스킬이 어느 키에 지정돼 있는지, 빈 스킬 칸의 키 이름
 func _tag_of(slot: Dictionary) -> String:
 	var inv := Story.inventory
@@ -437,16 +454,31 @@ func activate(to_f: bool = false) -> void:
 	var inv := Story.inventory
 	var slot := slots[selected]
 	var entry: Variant = slot["entry"]
+	# Q·F 스킬 칸: 아래 보유 스킬을 넣을 칸으로 고른다
+	if slot["kind"] == KIND_SKILL_Q or slot["kind"] == KIND_SKILL_F:
+		var t := Inventory.SLOT_Q if slot["kind"] == KIND_SKILL_Q else Inventory.SLOT_F
+		if t == Inventory.SLOT_F and not inv.skill2_unlocked():
+			_show_notice(DB.inventory.text_skill2_locked)
+			return
+		skill_target = t
+		Audio.play("ui_move")
+		_update_view()
+		return
 	if entry == null:
 		return
 	var restricted := CombatState.is_restricted(get_tree())
 	match String(slot["kind"]):
 		KIND_SKILL:
-			if to_f and not inv.skill2_unlocked():
+			# 고른 칸(Q·F)에 넣는다. 같은 스킬은 두 칸에 둘 수 없다
+			var target := Inventory.SLOT_F if to_f else skill_target
+			var id := (entry as SkillData).id
+			if target == Inventory.SLOT_F and not inv.skill2_unlocked():
 				_show_notice(DB.inventory.text_skill2_locked)
 			elif restricted:
 				_show_notice(DB.inventory.text_in_combat)
-			elif inv.set_skill(Inventory.SLOT_F if to_f else Inventory.SLOT_Q, (entry as SkillData).id):
+			elif inv.skill_ids[1 - target] == id:
+				_show_notice(DB.inventory.text_skill_in_other_slot % _slot_key(1 - target))
+			elif inv.set_skill(target, id):
 				Audio.play("ui_confirm")
 		KIND_ARMOR:
 			if restricted:
@@ -549,7 +581,7 @@ func _input(event: InputEvent) -> void:
 		if i >= 0:
 			selected = i
 			_update_view()
-			activate(button.button_index == MOUSE_BUTTON_RIGHT)
+			activate(false)
 		get_viewport().set_input_as_handled()
 
 
@@ -577,6 +609,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed(&"menu_confirm") or event.is_action_pressed(&"dodge"):
 		activate(false)
 	elif event.is_action_pressed(&"skill2"):
-		activate(true)
+		# F: 바꿀 스킬 칸을 F 로 (Q 키는 이동에 겹치지 않게 칸 클릭으로)
+		if Story.inventory.skill2_unlocked():
+			skill_target = Inventory.SLOT_F if skill_target == Inventory.SLOT_Q else Inventory.SLOT_Q
+			Audio.play("ui_move")
+			_update_view()
+		else:
+			_show_notice(DB.inventory.text_skill2_locked)
 	# 열려 있는 동안에는 아래(게임·일시정지)로 입력을 넘기지 않는다
 	get_viewport().set_input_as_handled()

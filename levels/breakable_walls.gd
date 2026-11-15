@@ -14,6 +14,8 @@ var area: AreaData
 var _hits: Dictionary = {}
 ## 칸 → 마지막으로 맞은 휘두르기 번호
 var _last_swing: Dictionary = {}
+## 베인 수풀 칸 (다시 베지 않게)
+var _cut: Dictionary = {}
 
 
 func _init(owner_level: Level, area_data: AreaData) -> void:
@@ -40,7 +42,10 @@ func _physics_process(_delta: float) -> void:
 	for y in range(from.y, to.y + 1):
 		for x in range(from.x, to.x + 1):
 			var cell := Vector2i(x, y)
-			if not can_break(cell) or int(_last_swing.get(cell, -1)) == melee.swing_id:
+			if int(_last_swing.get(cell, -1)) == melee.swing_id:
+				continue
+			var grass := level.map.is_floor(cell) and area.cuttable_floor_at(cell) and not _cut.has(cell)
+			if not grass and not can_break(cell):
 				continue
 			# 원(근접 판정)과 칸(네모)이 닿는지
 			var rect := Rect2(Vector2(cell * LevelMap.TILE_SIZE), Vector2.ONE * LevelMap.TILE_SIZE)
@@ -48,7 +53,10 @@ func _physics_process(_delta: float) -> void:
 			if nearest.distance_to(center) > radius:
 				continue
 			_last_swing[cell] = melee.swing_id
-			hit(cell)
+			if grass:
+				cut_grass(cell)
+			else:
+				hit(cell)
 
 
 ## 쓰러지는 나무 연출 (화면 표시 전용): 베어 낸 나무 그림이 그루터기를 축으로 옆으로 넘어가며 사라진다
@@ -96,10 +104,26 @@ func hit(cell: Vector2i) -> bool:
 	var pos := LevelMap.cell_center(cell)
 	Effect.spawn(&"hit_enemy", pos)
 	Audio.play("melee_hit")
-	if int(_hits[cell]) < maxi(area.break_hits, 1):
+	if int(_hits[cell]) < area.hits_to_break(cell):
 		return false
 	_break(cell)
 	return true
+
+
+## 수풀 한 칸을 벤다: 짧게 잘린 풀로 다시 그리고 풀잎이 흩날린다 (불러오면 다시 자라 있다)
+func cut_grass(cell: Vector2i) -> void:
+	_cut[cell] = true
+	LevelBuilder.paint(level.tiles, level.map, cell, true)
+	# 풀잎이 흩날린다 (타격 이펙트를 풀빛으로 물들여 작게)
+	var fx := Effect.spawn(&"hit_enemy", LevelMap.cell_center(cell), 0.0, 0.6)
+	if fx != null:
+		fx.modulate = Color(0.45, 0.85, 0.4)
+	Audio.play("grass_cut")
+
+
+## 베인 수풀 칸인지 (테스트용)
+func is_cut(cell: Vector2i) -> bool:
+	return _cut.has(cell)
 
 
 func _break(cell: Vector2i) -> void:
@@ -120,7 +144,8 @@ func _break(cell: Vector2i) -> void:
 			for dx in range(-1, 2):
 				var n := c + Vector2i(dx, dy)
 				LevelBuilder.paint(level.tiles, m, n, n == cell)
-	_spawn_falling_tree(cell, cells.size() > 1)
+	if area.hits_to_break(cell) > 1:
+		_spawn_falling_tree(cell, cells.size() > 1)
 	Effect.spawn(&"enemy_death", LevelMap.cell_center(cell))
 	Events.wall_broken.emit(cell)
 	if not area.break_drop_item.is_empty():

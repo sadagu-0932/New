@@ -133,12 +133,9 @@ func set_skill(slot: int, id: String) -> bool:
 		return false
 	if slot == SLOT_F and not skill2_unlocked():
 		return false
-	var other := 1 - slot
-	if skill_ids[other] == id:
-		# Q 는 비워 둘 수 없다 → 맞바꿀 것이 없으면 거절
-		if other == SLOT_Q and skill_ids[slot].is_empty():
-			return false
-		skill_ids[other] = skill_ids[slot]
+	# 같은 스킬을 두 칸에 둘 수 없다 (사용자 결정): 다른 칸에 이미 있으면 거절
+	if skill_ids[1 - slot] == id:
+		return false
 	skill_ids[slot] = id
 	Events.inventory_changed.emit()
 	Events.loadout_changed.emit()

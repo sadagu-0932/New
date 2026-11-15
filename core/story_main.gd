@@ -28,8 +28,12 @@ var _fade_layer: CanvasLayer
 var _fade: ColorRect
 ## 막의 진하기가 바뀌는 속도 (초당, + 어두워짐 / - 밝아짐). 0 = 그대로
 var _fade_speed: float = 0.0
+## 어두워지는 목표 (1 = 완전히 검게)
+var _fade_target: float = 1.0
 ## 다 어두워졌을 때 부를 것
 var _on_faded: Callable = Callable()
+## 순간이동 연출 중 (두 번 겹치지 않게)
+var _teleporting: bool = false
 
 
 func _ready() -> void:
@@ -156,6 +160,7 @@ func _player() -> Player:
 
 
 func _free_run() -> void:
+	_teleporting = false
 	if run != null:
 		# 일시정지 메뉴에서 나갈 때 메뉴도 닫히게
 		run.set_paused(false)
@@ -275,18 +280,51 @@ func teleport(waystone_id: String) -> bool:
 	var p := _player()
 	if area == null or not Story.waystones.has(waystone_id) or p == null or CombatState.is_restricted(get_tree()):
 		return false
+	if _teleporting:
+		return false
 	var pos := area.waystone_arrival(waystone_id)
+	# 연출: 발밑 마법진 → 원통 → 빛줄기로 사라짐 → (도착) 마법진 → 빛줄기 → 원통 → 가루로 흩어짐 (TeleportFx)
+	_teleporting = true
+	p.set_cutscene_lock(true)
+	var out := TeleportFx.depart(p)
+	out.position = p.global_position + Vector2(0, DB.story.teleport_ground_offset)
+	run.level.effects.add_child(out)
+	# 빛줄기로 사라진 뒤 화면이 살짝 어두워졌다가, 도착 자리에서 다시 밝아진다
+	out.finished.connect(func() -> void:
+		fade_out(DB.story.teleport_dim_seconds, _teleport_arrive.bind(area, pos), DB.story.teleport_dim_alpha))
+	return true
+
+
+## 순간이동 도착: 그 자리로 옮기고 도착 연출. 연출이 끝나면 다시 움직일 수 있다
+func _teleport_arrive(area: AreaData, pos: Vector2) -> void:
+	if run == null or _player() == null:
+		_teleporting = false
+		return
 	if area.id == Story.area:
 		# 같은 세계 안: 화면을 바꾸지 않고 그 자리로 옮긴다
-		p.teleport(pos)
-		Effect.spawn(&"perfect", pos, 0.0, 2.0)
+		_player().teleport(pos)
 	else:
 		var state := _carry_state()
 		state["pos"] = [pos.x, pos.y]
 		Story.area = area.id
 		_start_run(state)
+	var p := _player()
+	p.set_cutscene_lock(true)
+	fade_in(DB.story.teleport_brighten_seconds, DB.story.teleport_dim_alpha)
+	var fx := TeleportFx.arrive(p)
+	fx.position = pos + Vector2(0, DB.story.teleport_ground_offset)
+	run.level.effects.add_child(fx)
+	fx.finished.connect(func() -> void:
+		_teleporting = false
+		if is_instance_valid(p):
+			p.modulate = Color.WHITE
+			p.set_cutscene_lock(false))
 	Events.toast.emit(area.place_name(pos))
-	return true
+
+
+## 순간이동 연출 중인지
+func is_teleporting() -> bool:
+	return _teleporting
 
 
 func _carry_state() -> Dictionary:
@@ -386,17 +424,18 @@ func _build_fade() -> void:
 	_fade_layer.add_child(_fade)
 
 
-## 화면을 seconds 동안 어둡게 한 뒤 done 을 부른다
-func fade_out(seconds: float, done: Callable = Callable()) -> void:
+## 화면을 seconds 동안 어둡게 한 뒤 done 을 부른다 (target = 얼마나 어둡게, 1 = 완전히 검게)
+func fade_out(seconds: float, done: Callable = Callable(), target: float = 1.0) -> void:
 	_on_faded = done
-	_fade_speed = 1.0 / maxf(seconds, 0.01)
+	_fade_target = clampf(target, 0.0, 1.0)
+	_fade_speed = _fade_target / maxf(seconds, 0.01)
 
 
-## 어두운 화면을 seconds 동안 밝힌다
-func fade_in(seconds: float) -> void:
-	_fade.color.a = 1.0
+## 어두운 화면을 seconds 동안 밝힌다 (from = 시작 어둡기)
+func fade_in(seconds: float, from: float = 1.0) -> void:
+	_fade.color.a = from
 	_on_faded = Callable()
-	_fade_speed = -1.0 / maxf(seconds, 0.01)
+	_fade_speed = -from / maxf(seconds, 0.01)
 
 
 func is_fading() -> bool:
@@ -406,8 +445,8 @@ func is_fading() -> bool:
 func _tick_fade(delta: float) -> void:
 	if _fade_speed == 0.0:
 		return
-	_fade.color.a = clampf(_fade.color.a + _fade_speed * delta, 0.0, 1.0)
-	if _fade_speed > 0.0 and _fade.color.a >= 1.0:
+	_fade.color.a = clampf(_fade.color.a + _fade_speed * delta, 0.0, _fade_target if _fade_speed > 0.0 else 1.0)
+	if _fade_speed > 0.0 and _fade.color.a >= _fade_target:
 		_fade_speed = 0.0
 		var done := _on_faded
 		_on_faded = Callable()
@@ -454,6 +493,7 @@ func go_title() -> void:
 	_fade_speed = 0.0
 	_on_faded = Callable()
 	_fade.color.a = 0.0
+	_teleporting = false
 	save_list.close()
 	title.can_continue = StorySave.has_any()
 	title.set_visible_screen(true)

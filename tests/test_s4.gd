@@ -549,7 +549,9 @@ func test_map_and_teleport() -> void:
 	var lv := _lv()
 	panel.choose(0)
 	await step(3)
-	check(not panel.is_open and not get_tree().paused and _zone() == "lab", "'여기로 순간이동' → 연구소 탑으로")
+	check(not panel.is_open and not get_tree().paused and main.is_teleporting(), "'여기로 순간이동' → 지도가 닫히고 순간이동 연출")
+	await wait_until(func() -> bool: return not main.is_teleporting(), 200)
+	check(_zone() == "lab", "연구소 탑으로 도착")
 	check(_lv() == lv, "같은 세상 안의 순간이동은 화면을 다시 띄우지 않음")
 	check(_p().global_position.distance_to(_waystone("lab_exit").global_position) <= LevelMap.TILE_SIZE * 1.5 and _p().health.current == hp, "탑 옆에 도착, 체력 그대로")
 	# 핀은 저장된다
@@ -576,9 +578,34 @@ func test_map_and_teleport() -> void:
 	e.queue_free()
 	await step(2)
 	check(not main.teleport("boss_gate"), "켜지 않은 탑으로는 갈 수 없음")
+	var start_pos := _p().global_position
 	check(main.teleport("village"), "전투가 끝나면 순간이동 가능")
+	check(not main.teleport("village") and main.is_teleporting(), "연출 중에는 겹쳐 부를 수 없음")
 	await step(3)
-	check(_zone() == "village", "광산촌으로 돌아옴")
+	var fx: TeleportFx = null
+	for n in _lv().effects.get_children():
+		if n is TeleportFx:
+			fx = n
+	check(fx != null and fx.mode == TeleportFx.Mode.DEPART and _p().cutscene_lock and _p().global_position == start_pos,
+		"순간이동: 먼저 발밑 마법진 (그 자리에 멈춤)")
+	check(fx._ground != null and fx._ground.get_parent() == _lv().props and fx._ground.get_index() >= 0
+		and _lv().props.get_index() < _p().get_index(), "마법진은 주인공보다 아래 층에 그려짐 (주인공이 마법진 위에 섬)")
+	var d := DB.story
+	await wait_until(func() -> bool: return fx.stage == TeleportFx.Stage.NARROW, d.teleport_circle_ticks + d.teleport_rise_ticks + 5)
+	check(_p().modulate.a < 0.3, "마법진이 위로 오르며 원통 → 주인공은 빛 속으로 흐려짐 (%.2f)" % _p().modulate.a)
+	await wait_until(func() -> bool: return main._fade.color.a > d.teleport_dim_alpha * 0.5, d.teleport_narrow_ticks + 20)
+	check(main._fade.color.a > d.teleport_dim_alpha * 0.5 and main._fade.color.a <= d.teleport_dim_alpha + 0.01, "사라진 뒤 화면이 살짝 어두워짐 (%.2f)" % main._fade.color.a)
+	await wait_until(func() -> bool: return _zone() == "village", roundi(d.teleport_dim_seconds * 60.0) + 20)
+	var arrive: TeleportFx = null
+	for n in _lv().effects.get_children():
+		if n is TeleportFx and (n as TeleportFx).mode == TeleportFx.Mode.ARRIVE:
+			arrive = n
+	check(arrive != null and _p().cutscene_lock, "빛줄기로 사라진 뒤 도착 자리에서 마법진 → 빛줄기 → 원통")
+	await wait_until(func() -> bool: return arrive.stage == TeleportFx.Stage.SCATTER, d.teleport_circle_ticks + d.teleport_line_ticks + d.teleport_widen_ticks + 5)
+	check(arrive._particles.size() == d.teleport_particles, "원통이 가루로 흩어짐")
+	await wait_until(func() -> bool: return not main.is_teleporting(), d.teleport_scatter_ticks + 5)
+	check(_zone() == "village" and not _p().cutscene_lock and _p().modulate.a == 1.0, "광산촌으로 돌아옴 → 다시 움직일 수 있음")
+	check(main._fade.color.a <= 0.0, "도착하며 화면이 다시 밝아짐")
 
 
 func test_forest() -> void:
@@ -663,12 +690,40 @@ func test_forest() -> void:
 		for i in world.break_hits:
 			lv.breakable.hit(tree2)
 	check(p.ammo.current == world.break_ammo, "나무를 베면 탄약이 %d발 채워짐 (%d)" % [world.break_ammo, p.ammo.current])
-	# 전투 중이 아니면 일정 시간마다 재장전
-	p.ammo.set_current(0)
+	# 수풀(키 큰 풀)은 근접에 닿으면 베이고, 덤불은 한 번에 베어진다
+	var grass_cell := Vector2i(-1, -1)
+	var bush_cell := Vector2i(-1, -1)
+	for yy in range(20, lv.map.height - 20):
+		for xx in range(20, lv.map.width - 20):
+			var cc := Vector2i(xx, yy)
+			var gch := world.ground_at(cc)
+			if grass_cell.x < 0 and gch == "h" and lv.map.is_floor(cc) and lv.map.is_floor(cc + Vector2i.LEFT):
+				grass_cell = cc
+			if bush_cell.x < 0 and gch == "b" and lv.map.is_wall(cc) and lv.map.is_floor(cc + Vector2i.LEFT):
+				bush_cell = cc
+		if grass_cell.x >= 0 and bush_cell.x >= 0:
+			break
+	check(grass_cell.x >= 0 and bush_cell.x >= 0, "세상에 수풀과 덤불이 있음")
+	p.teleport(LevelMap.cell_center(grass_cell + Vector2i.LEFT))
+	await step(2)
+	input.push(Vector2.ZERO, 1, 0, InputFrame.MELEE, LevelMap.cell_center(grass_cell))
+	await step(p.weapon.melee.active_ticks + p.weapon.melee.recovery_ticks + 3)
+	check(lv.breakable.is_cut(grass_cell), "수풀은 근접에 닿으면 베임")
+	p.teleport(LevelMap.cell_center(bush_cell + Vector2i.LEFT))
+	await step(2)
+	input.push(Vector2.ZERO, 1, 0, InputFrame.MELEE, LevelMap.cell_center(bush_cell))
+	await step(p.weapon.melee.active_ticks + p.weapon.melee.recovery_ticks + 3)
+	check(lv.map.is_floor(bush_cell), "덤불은 근접 한 번에 베어짐")
+	# 전투 중이 아니면, 탄을 전부 쓴 뒤 일정 시간이 지나면 재장전 (남아 있으면 하지 않음)
 	var director: AreaDirector = lv.area_director
+	p.ammo.set_current(2)
 	director.reload_ticks = 3
 	await step(5)
-	check(p.ammo.current == p.ammo.maximum, "전투 중이 아니면 %d초마다 재장전" % int(DB.story.auto_reload_seconds))
+	check(p.ammo.current == 2, "탄이 남아 있으면 재장전하지 않음")
+	p.ammo.set_current(0)
+	director.reload_ticks = 3
+	await step(5)
+	check(p.ammo.current == p.ammo.maximum, "탄을 다 쓰면 전투 중이 아닐 때 %d초 뒤 재장전" % int(DB.story.auto_reload_seconds))
 	check(director.reload_ticks > int(DB.story.auto_reload_seconds * 60.0) - 10, "재장전 뒤 다시 처음부터 셈")
 	p.teleport(LevelMap.cell_center(stand))
 	input.push(Vector2(dir), 20, 0, 0, LevelMap.cell_center(tree))

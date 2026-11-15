@@ -255,6 +255,35 @@ def switch() -> np.ndarray:
                tone(0.03, 3000, wave_fn=square, duty=0.25) * 0.2)
 
 
+def teleport_out() -> np.ndarray:
+    # 순간이동 출발: 마법진이 그려지는 맑은 반짝임 → 위로 솟는 빛줄기 "쉬이이익"
+    sparkle = mix(*[at(tone(0.18, note(24 + s), wave_fn=sine, decay=2.2), i * 0.06) * 0.45
+                    for i, s in enumerate([0, 4, 7, 12])])
+    # 연출 길이에 맞춤: 마법진(~0.37초) → 오르는 원통(~0.5초) → 빛줄기로 사라짐(~0.3초)
+    rise = at(tone(0.75, 300, 1600, triangle, attack=0.12, decay=1.4) * 0.5, 0.35)
+    whoosh = at(lowpass(noise(0.7, 2), 0.55) * env(int(RATE * 0.7), 0.4, 1.5) * 0.6, 0.5)
+    return mix(sparkle, rise, whoosh)
+
+
+def teleport_in() -> np.ndarray:
+    # 순간이동 도착: 내리꽂히는 빛 "슈웅" → 착지 "쿵" → 가루가 흩어지는 반짝임
+    # 연출 길이에 맞춤: 마법진(~0.37초) → 빛줄기가 내리꽂힘(~0.25초) → 원통·가루
+    fall = at(tone(0.3, 1400, 280, triangle, attack=0.02, decay=1.2) * 0.45, 0.32)
+    whoosh = at(lowpass(noise(0.3, 2), 0.5) * env(int(RATE * 0.3), 0.15, 1.2) * 0.5, 0.32)
+    thump = at(tone(0.22, 120, 55, sine, decay=2.0), 0.62) * 0.9
+    glitter = mix(*[at(tone(0.12, note(31 - s), wave_fn=sine, decay=2.5), 0.85 + i * 0.07) * 0.35
+                    for i, s in enumerate([0, 3, 7, 10, 12])])
+    # 마법진이 그려질 때의 맑은 울림
+    chime = mix(*[at(tone(0.2, note(19 + s), wave_fn=sine, decay=2.2), i * 0.08) * 0.3 for i, s in enumerate([0, 5, 12])])
+    return mix(chime, fall, whoosh, thump, glitter)
+
+
+def grass_cut() -> np.ndarray:
+    # 수풀 베기: 짧고 가벼운 "샥" (높은 잡음이 빠르게 사라짐)
+    swish = lowpass(noise(0.12, 1), 0.2) * env(int(RATE * 0.12), 0.005, 2.5) * 0.7
+    return mix(swish, tone(0.05, 900, 500, triangle, decay=2.0) * 0.15)
+
+
 def start() -> np.ndarray:
     # 출발선 통과: 짧은 "띠-링!"
     return seq(tone(0.06, note(12), wave_fn=square, duty=0.25, decay=0.8), tone(0.2, note(19), wave_fn=square, duty=0.25, decay=1.6))
@@ -332,6 +361,9 @@ SOUNDS = {
     "boss_start": (boss_start, 0.9), "boss_groggy": (boss_groggy, 0.85), "boss_defeat": (boss_defeat, 0.95),
     "ui_move": (ui_move, 0.35), "ui_confirm": (ui_confirm, 0.5),
     "execute": (execute, 0.9), "reparry": (reparry, 0.85), "dash_slash": (dash_slash, 0.75), "combo": (combo, 0.7),
+    # 스토리판 순간이동 (맨 뒤에 둔다: 앞 소리들의 잡음 난수가 바뀌지 않게)
+    "teleport_out": (teleport_out, 0.6), "teleport_in": (teleport_in, 0.65),
+    "grass_cut": (grass_cut, 0.35),
 }
 
 

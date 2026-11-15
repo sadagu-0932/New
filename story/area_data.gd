@@ -26,6 +26,10 @@ extends Resource
 @export var breakable_grounds: String = ""
 ## 몇 번 쳐야 베어지는지, 벨 때마다 얻는 아이템 id ("" = 없음)
 @export var break_hits: int = 0
+## 땅 종류마다 따로 정한 벨 횟수 (예: 덤불 "b" → 1). 없으면 break_hits
+@export var break_hits_by_ground: Dictionary = {}
+## 근접 공격이 닿으면 베이는 바닥 땅 종류 (수풀 "h" → 짧게 잘린 풀로 바뀐다)
+@export var cut_grounds: String = ""
 @export var break_drop_item: String = ""
 ## 나무를 벨 때마다 채워지는 탄약 (발)
 @export var break_ammo: int = 0
@@ -217,6 +221,17 @@ func tilesets() -> Array[String]:
 
 
 ## 그 칸의 벽을 벨 수 있는 땅인지
+## 그 칸의 벽을 베는 데 필요한 횟수
+func hits_to_break(cell: Vector2i) -> int:
+	return maxi(int(break_hits_by_ground.get(ground_at(cell), break_hits)), 1)
+
+
+## 그 칸이 근접으로 베이는 바닥(수풀)인지
+func cuttable_floor_at(cell: Vector2i) -> bool:
+	var g := ground_at(cell)
+	return not g.is_empty() and not cut_grounds.is_empty() and cut_grounds.contains(g)
+
+
 func breakable_at(cell: Vector2i) -> bool:
 	var g := ground_at(cell)
 	return not g.is_empty() and breakable_grounds.contains(g)

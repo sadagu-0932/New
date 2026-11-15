@@ -5,92 +5,144 @@
       0,
       0
     ],
-    "floor_alt": [
+    "floor_b": [
       1,
       0
     ],
-    "floor_alt2": [
+    "floor_c": [
       2,
       0
     ],
-    "floor_alt3": [
+    "floor_d": [
       3,
       0
     ],
-    "floor_stump": [
+    "floor_e": [
       4,
       0
     ],
-    "wall_top": [
+    "floor_f": [
       5,
       0
     ],
-    "wall_top_n": [
+    "floor_g": [
       6,
       0
     ],
-    "wall_top_s": [
+    "floor_h": [
       7,
       0
     ],
-    "wall_top_ns": [
+    "floor_p1": [
       8,
       0
     ],
-    "wall_top_w": [
+    "floor_p2": [
       9,
       0
     ],
-    "wall_top_nw": [
+    "floor_p3": [
       10,
       0
     ],
-    "wall_top_sw": [
+    "floor_p4": [
       11,
       0
     ],
-    "wall_top_nsw": [
+    "floor_alt": [
       12,
       0
     ],
-    "wall_top_e": [
+    "floor_alt2": [
       13,
       0
     ],
-    "wall_top_ne": [
+    "floor_alt3": [
       14,
       0
     ],
-    "wall_top_se": [
+    "floor_stump": [
       15,
       0
     ],
-    "wall_top_nse": [
+    "wall_top": [
       16,
       0
     ],
-    "wall_top_we": [
+    "wall_top_n": [
       17,
       0
     ],
-    "wall_top_nwe": [
+    "wall_top_s": [
       18,
       0
     ],
-    "wall_top_swe": [
+    "wall_top_ns": [
       19,
       0
     ],
-    "wall_top_nswe": [
+    "wall_top_w": [
       20,
       0
     ],
-    "wall_face": [
+    "wall_top_nw": [
       21,
       0
     ],
-    "pit": [
+    "wall_top_sw": [
       22,
+      0
+    ],
+    "wall_top_nsw": [
+      23,
+      0
+    ],
+    "wall_top_e": [
+      24,
+      0
+    ],
+    "wall_top_ne": [
+      25,
+      0
+    ],
+    "wall_top_se": [
+      26,
+      0
+    ],
+    "wall_top_nse": [
+      27,
+      0
+    ],
+    "wall_top_we": [
+      28,
+      0
+    ],
+    "wall_top_nwe": [
+      29,
+      0
+    ],
+    "wall_top_swe": [
+      30,
+      0
+    ],
+    "wall_top_nswe": [
+      31,
+      0
+    ],
+    "wall_top_alt1": [
+      32,
+      0
+    ],
+    "wall_top_alt2": [
+      33,
+      0
+    ],
+    "wall_face": [
+      34,
+      0
+    ],
+    "pit": [
+      35,
       0
     ]
   },

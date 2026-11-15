@@ -69,80 +69,88 @@
       16,
       0
     ],
-    "wall_face": [
+    "wall_top_alt1": [
       17,
       0
     ],
-    "pit": [
+    "wall_top_alt2": [
       18,
       0
     ],
-    "floor": [
+    "wall_face": [
       19,
       0
     ],
-    "floor_alt": [
+    "pit": [
       20,
       0
     ],
-    "floor_we": [
+    "floor": [
       21,
       0
     ],
-    "floor_ns": [
+    "floor_alt": [
       22,
       0
     ],
-    "floor_ne": [
+    "floor_we": [
       23,
       0
     ],
-    "floor_nw": [
+    "floor_ns": [
       24,
       0
     ],
-    "floor_se": [
+    "floor_ne": [
       25,
       0
     ],
-    "floor_sw": [
+    "floor_nw": [
       26,
       0
     ],
-    "floor_n": [
+    "floor_se": [
       27,
       0
     ],
-    "floor_s": [
+    "floor_sw": [
       28,
       0
     ],
-    "floor_w": [
+    "floor_n": [
       29,
       0
     ],
-    "floor_e": [
+    "floor_s": [
       30,
       0
     ],
-    "floor_nwe": [
+    "floor_w": [
       31,
       0
     ],
-    "floor_swe": [
+    "floor_e": [
       32,
       0
     ],
-    "floor_nsw": [
+    "floor_nwe": [
       33,
       0
     ],
-    "floor_nse": [
+    "floor_swe": [
       34,
       0
     ],
-    "floor_nswe": [
+    "floor_nsw": [
       35,
+      0
+    ],
+    "floor_nse": [
+      36,
+      0
+    ],
+    "floor_nswe": [
+      37,
       0
     ]
   },

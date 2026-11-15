@@ -65,32 +65,40 @@
       15,
       0
     ],
-    "wall_face": [
+    "wall_top_alt1": [
       16,
       0
     ],
-    "pit": [
+    "wall_top_alt2": [
       17,
       0
     ],
-    "floor": [
+    "wall_face": [
       18,
       0
     ],
-    "floor_alt": [
+    "pit": [
       19,
       0
     ],
-    "floor_alt2": [
+    "floor": [
       20,
       0
     ],
-    "floor_alt3": [
+    "floor_alt": [
       21,
       0
     ],
-    "floor_stump": [
+    "floor_alt2": [
       22,
+      0
+    ],
+    "floor_alt3": [
+      23,
+      0
+    ],
+    "floor_stump": [
+      24,
       0
     ]
   },
